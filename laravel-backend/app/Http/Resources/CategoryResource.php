@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\ResolvesMediaUrls;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class CategoryResource extends JsonResource
 {
+    use ResolvesMediaUrls;
+
     /**
      * @return array<string, mixed>
      */
@@ -23,13 +26,13 @@ class CategoryResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'details' => $this->details,
-            'header_image' => $this->header_image,
-            'thumbnail_image' => $this->thumbnail_image,
+            'header_image' => $this->mediaUrl($this->header_image),
+            'thumbnail_image' => $this->mediaUrl($this->thumbnail_image),
             'position_order' => $this->position_order,
             'seo' => [
                 'meta_title' => $this->meta_title ?: $this->title,
                 'meta_description' => $this->meta_description,
-                'og_image' => $this->og_image ?: $this->thumbnail_image,
+                'og_image' => $this->mediaUrl($this->og_image ?: $this->thumbnail_image),
             ],
         ];
     }

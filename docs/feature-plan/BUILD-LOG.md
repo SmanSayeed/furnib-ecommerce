@@ -49,6 +49,13 @@ Next.js 16 storefront consuming the catalog API, dark mobile-first theme:
 - **Verified live in browser** (home, category w/ 5 products, order modal, product page, mobile drawer). tsc + eslint clean.
 - Pending: admin Inertia React UI; web checkout is a stub until Phase 3.
 
+### Cloudflare R2 storage ✅ ENABLED & verified (branch `feat/r2-storage`)
+- Installed `league/flysystem-aws-s3-v3`; `config/filesystems.php` r2 disk wired to `R2_*` env (backend only, never client).
+- Verified put/exists/delete against bucket `furnib-ecommerce`; public images served via r2.dev URL (no custom domain).
+- API resources now emit **absolute image URLs** via the active `StorageRepository` (driver-agnostic: local `/storage` or R2 public URL) — new `ResolvesMediaUrls` trait.
+- Storage driver setting flipped to `r2`; uploaded a demo image and **confirmed it renders on the storefront** (5 product images load from r2.dev, 900px). 108 tests, Larastan 0, Pint clean.
+- ⚠️ Owner to rotate the R2 API token (secret surfaced in a session); env names: `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_BUCKET`, `R2_DEFAULT_REGION=auto`, `R2_URL`.
+
 ### What remains (big picture)
 - Phase 3: orders + web checkout + invoice PDF.
 - Phase 4: SSLCommerz, OTP auth, SMS, SteadFast, SMTP (interfaces ready; need owner's API keys).

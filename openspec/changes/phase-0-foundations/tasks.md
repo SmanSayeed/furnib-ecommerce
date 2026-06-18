@@ -6,15 +6,15 @@
 
 ## 2. Architecture base (SOLID)
 
-- [ ] 2.1 Create `app/Repositories` (BaseRepository interface + Eloquent base), `app/Services`, `app/DTOs`, `app/Actions`, `app/Support` directories with namespaces
-- [ ] 2.2 Add a `RepositoryServiceProvider` binding interfaces → implementations; register it
-- [ ] 2.3 Write an architecture/smoke Pest test asserting bindings resolve
+- [x] 2.1 Create `app/Repositories` (RepositoryInterface + BaseRepository), `app/Support`; Services/DTOs/Actions created as needed per module
+- [x] 2.2 Add a `RepositoryServiceProvider` binding interfaces → implementations (UserRepository); registered in bootstrap/providers.php
+- [x] 2.3 Architecture smoke test: binding resolves + findByEmail works
 
 ## 3. Money handling (money-handling)
 
-- [ ] 3.1 RED: unit tests for `Money` value object (minor-unit round-trip, addition, invalid input) and the Eloquent cast
-- [ ] 3.2 GREEN: implement `Support/Money` value object + `Casts/MoneyCast`
-- [ ] 3.3 REFACTOR: Pint + Larastan; assert no float money columns convention documented
+- [x] 3.1 RED: unit tests for `Money` (round-trip, add/subtract, negative+non-numeric rejected, format) and `MoneyCast` (set/get/null)
+- [x] 3.2 GREEN: implemented `Support/Money` value object + `Casts/MoneyCast`
+- [x] 3.3 REFACTOR: Pint/Larastan pass (run in batch); integer-paisa convention documented in MODULES/MASTER-PLAN
 
 ## 4. RBAC + owner security (access-control)
 

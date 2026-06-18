@@ -10,6 +10,12 @@
 
 ## Progress
 
+### Admin panel — Step 1: shell + Dashboard  ✅ (branch `feat/theming-and-category-redesign`)
+- **Responsive UI/UX rulebook** written from web research: `docs/admin-ui/RESPONSIVE-UI-GUIDE.md` (+ binding rule in `CLAUDE.md`). Golden rule: mobile sidebar = off-canvas overlay (shadcn `ui/sidebar` Sheet), never an in-flow column.
+- **RBAC grouped sidebar** (`nav-groups.tsx` + reworked `app-sidebar.tsx`): Overview · Catalog · Sales · Customers · Payments · Shipping · Marketing · Settings · System. Permission-gated via shared `auth.permissions` (added to `HandleInertiaRequests`); unbuilt modules show a "Soon" badge (disabled), live links flip on as each module ships. Site & branding is the first live item.
+- **Dashboard** (`DashboardController` + `dashboard.tsx`): real KPIs (products/published/categories/low-stock), recharts "Products by category" bar (brand orange), responsive recent-products list (table on desktop, stacked cards on mobile), orders/revenue empty-state (Phase 3). `max-w-7xl` container.
+- Installed `recharts`. Gates: admin `types:check` + `eslint` clean, Pint + Larastan 0, `vite build` ok, app boots (`/login` 200, `/dashboard`→login). Live admin screens to be checked by the owner (login required; assistant can't enter passwords).
+
 ### Navigation rework (header + mobile tab bar)  ✅ (branch `feat/theming-and-category-redesign`)
 - **Inquiry** button on product cards now always shows the **"Inquiry"** label + an **authentic WhatsApp glyph** (shared `WhatsAppIcon`). Verified text + icon + one-row fit on mobile.
 - **Header is no longer sticky** (static) — category hero image is no longer hidden under it (desktop + mobile). Non-sticky → scrolls away on down, returns on up.

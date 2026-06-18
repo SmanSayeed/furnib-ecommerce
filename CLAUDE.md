@@ -44,6 +44,11 @@ Commit message footer: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
 - **Next.js:** ISR for catalog reads, dynamic/server-actions for checkout & auth (secrets server-side), Suspense + skeletons, Zod validation, lodash debounce, optimistic UI, mobile-first.
 - **Gates (Definition of Done):** Pest green · Larastan max clean · Pint clean · eslint/type-check clean · authz + validation present · no secret in client bundle · audit log on sensitive writes · openspec change archived.
 
+## ADMIN UI — RESPONSIVE RULES (mandatory)
+- **Every admin page MUST follow `docs/admin-ui/RESPONSIVE-UI-GUIDE.md`.** Mobile-first, premium dashboard quality.
+- **Golden rule:** below `md` (768px) the sidebar is an **off-canvas overlay drawer** (shadcn `ui/sidebar` Sheet) — NEVER an in-flow column (that breaks the page). Content stays full-width.
+- Tap targets ≥44px (≥24px + 8px spacing min). Tables → stacked cards on mobile. Forms single-column + sticky save bar. Always include loading/empty/error states. Verify light + dark, down to 360px.
+
 ## SKILLS to use on this project
 - `shadcn-ui` — admin + storefront components.
 - `frontend-design` — distinctive, non-generic storefront UI (Lovinna inspiration).

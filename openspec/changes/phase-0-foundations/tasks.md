@@ -18,13 +18,13 @@
 
 ## 4. RBAC + owner security (access-control)
 
-- [ ] 4.1 RED: feature tests — roles seeded idempotently, permission gate denies `editor` on `orders.manage`, owner has all permissions
-- [ ] 4.2 GREEN: permissions catalog + `RoleSeeder` from the MASTER-PLAN §6 matrix; clear permission cache in seeder
-- [ ] 4.3 RED: tests — owner seeded from env, missing `OWNER_EMAIL` aborts, no hardcoded creds
-- [ ] 4.4 GREEN: `OwnerSeeder` reading `OWNER_EMAIL`/`OWNER_BOOTSTRAP_PASSWORD` (argon2id), assign owner role
-- [ ] 4.5 RED: tests — first login forces password change, then forces 2FA enrollment before protected routes
-- [ ] 4.6 GREEN: `must_change_password` + `two_factor_required` flags, middleware enforcing both via Fortify
-- [ ] 4.7 Test: codebase contains no filesystem-destruction capability (guard test)
+- [x] 4.1 RED: feature tests — roles seeded idempotently, gate denies `editor` on `orders.manage`, owner has all, manager matrix
+- [x] 4.2 GREEN: config/rbac.php matrix + `PermissionRoleSeeder` (cache reset before role sync); HasRoles on User
+- [x] 4.3 RED: tests — owner seeded from config/env, missing email aborts, no duplicate on re-run
+- [x] 4.4 GREEN: `OwnerSeeder` + `AdminSeeder` from env (hashed; argon2id in prod, bcrypt locally — Windows lacks argon2)
+- [x] 4.5 RED: middleware tests — forces password change, then 2FA enrolment, then allows access
+- [x] 4.6 GREEN: `must_change_password` + `two_factor_required` columns + `EnsureAccountSecured` middleware (alias `account.secured`)
+- [x] 4.7 Guard test: app code has no shell/filesystem-destruction capability (Symfony Finder scan)
 
 ## 5. Audit logging (audit-logging)
 

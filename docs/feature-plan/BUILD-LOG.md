@@ -14,9 +14,11 @@
 - ✅ 1.1 Deps installed + pinned (spatie permission/data/activitylog, sanctum, intervention/image, dompdf, league/csv).
 - ✅ 1.2 Vendor configs/migrations published + migrated to `furnib-ecommerce`.
 - ✅ 1.3 Baseline green — enabled RefreshDatabase in Pest.php; 39 starter tests pass.
-- ⏳ 2. Architecture base (Repository/Service/DTO/Action + provider).
-- ⏳ 3. Money value object + cast.
-- ⏳ 4. RBAC + owner 2FA bootstrap.
+- ✅ 2. Architecture base — RepositoryInterface + BaseRepository + UserRepository, RepositoryServiceProvider.
+- ✅ 3. Money value object + MoneyCast (integer paisa).
+- ✅ 4. RBAC + bootstrap — config/rbac.php matrix, PermissionRoleSeeder, OwnerSeeder (a@a.com) + AdminSeeder (admin@gmail.com), `must_change_password`/`two_factor_required` + `EnsureAccountSecured` middleware, no-backdoor guard test. **62 tests pass.**
+  - Note: argon2id needs Linux/libsodium; on Windows local we hash with bcrypt. Set `HASH_DRIVER=argon2id` in prod.
+  - Note: bootstrap creds live in `.env` only (a@a.com / admin@gmail.com), forced change + (owner) 2FA on first login.
 - ⏳ 5. Audit logging.
 - ⏳ 6. Encrypted settings.
 - ⏳ 7. Storage abstraction (server/R2).

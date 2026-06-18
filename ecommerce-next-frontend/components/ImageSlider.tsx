@@ -15,12 +15,12 @@ export function ImageSlider({ slides, title }: { slides: Slide[]; title: string 
 
   return (
     <div>
-      {/* Big preview */}
-      <div className="relative aspect-square w-full overflow-hidden bg-surface sm:aspect-[4/3]">
+      {/* Big preview — contain so the full product image is visible (no crop) */}
+      <div className="relative aspect-square w-full overflow-hidden bg-white sm:aspect-[4/3]">
         <SafeImage
           src={items[index].url}
           alt={items[index].alt}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
         />
         {hasMany && (
           <>

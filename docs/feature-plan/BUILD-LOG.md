@@ -13,8 +13,8 @@
 ### Navigation rework (header + mobile tab bar)  ✅ (branch `feat/theming-and-category-redesign`)
 - **Inquiry** button on product cards now always shows the **"Inquiry"** label + an **authentic WhatsApp glyph** (shared `WhatsAppIcon`). Verified text + icon + one-row fit on mobile.
 - **Header is no longer sticky** (static) — category hero image is no longer hidden under it (desktop + mobile). Non-sticky → scrolls away on down, returns on up.
-- **Desktop**: top-right nav `Home · Categories · WhatsApp` + theme toggle; no bottom bar (verified `display:none` at ≥md).
-- **Mobile**: fixed `MobileTabBar` (Categories · Home · WhatsApp), **auto-hides on scroll down, shows on scroll up** (verified via deterministic scroll dispatch). Old floating circles (`FloatingNav`) removed; category drawer is now `CategoryDrawer` opened via a `furnib:open-categories` window event from header/bar. `main` gets `pb-16 md:pb-0` so content clears the bar.
+- **Desktop**: header = Logo + `Home` + theme toggle; plus **floating action buttons** (`FloatingActions`, desktop-only) — bottom-left categories menu + bottom-right green WhatsApp. No bottom bar (verified `display:none` at ≥md).
+- **Mobile**: floating buttons hidden; fixed `MobileTabBar` (Categories · Home · WhatsApp), **auto-hides on scroll down, shows on scroll up** (verified via deterministic scroll dispatch). Category drawer is `CategoryDrawer` opened via a `furnib:open-categories` window event (from header/bar/floating). `main` gets `pb-16 md:pb-0` so content clears the bar.
 - **Orders**: deferred — the Orders nav button and `/orders` page were removed for now (will return in Phase 3). `/orders` 404s.
 - **Banners category** fully gone from storefront (drawer + home show only chair/decor-item/table); seeder skips `banners/`. Verified.
 - Storefront `tsc` + `eslint` clean.

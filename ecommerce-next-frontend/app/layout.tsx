@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { CategoryDrawer } from "@/components/CategoryDrawer";
+import { FloatingActions } from "@/components/FloatingActions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileTabBar } from "@/components/MobileTabBar";
@@ -54,12 +55,12 @@ export default async function RootLayout({
           <Header
             logoLight={settings?.logo_light}
             logoDark={settings?.logo_dark}
-            whatsapp={settings?.whatsapp}
           />
           <main className="flex-1 pb-16 md:pb-0">{children}</main>
           <Footer />
           <CategoryDrawer categories={categories} />
           <MobileTabBar whatsapp={settings?.whatsapp} />
+          <FloatingActions whatsapp={settings?.whatsapp} />
         </ThemeProvider>
       </body>
     </html>

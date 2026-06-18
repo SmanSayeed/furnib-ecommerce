@@ -24,4 +24,24 @@
 - ✅ 7. Storage abstraction — StorageRepository (server default, R2 switchable), loud-fail on missing R2 creds.
 - ✅ 8. API foundation — `/api/v1`, Sanctum, uniform error envelope (`ApiExceptionRenderer`), rate limiters (otp/auth/orders).
 
-**Phase 0 done.** Next: merge to master, then Phase 1 — Catalog (categories + products + image pipeline + admin list/recycle-bin/CSV + storefront read API).
+**Phase 0 done & merged to master.**
+
+### Phase 1 — Catalog  (in progress on `feat/phase-1-catalog`)
+- ✅ OpenSpec change proposed (5 capability specs + tasks), validated.
+- ✅ 1. Category module — migration, model (SEO/softDeletes/scopes), factory, repository, service (auto unique slug), admin CRUD (RBAC-gated) + storefront list/show API + resource, audited. **90 tests, Larastan 0, Pint clean.**
+  - Fixed a latent bug: `shouldRenderJsonWhen` now also honours `expectsJson()`, so admin JSON endpoints return 422 envelopes instead of 302 redirects on validation errors.
+- ✅ 2. Product module (data layer) — products + product_images migrations, Product/ProductImage models (Money cast paisa, soft deletes, relations, stock logic, social-thumbnail fallback), factory, ProductRepository + ProductService (auto slug/sku, max-6 images rule). Admin write CRUD endpoints PENDING.
+- ✅ 4. Catalog read API — `/api/v1/categories` (active list), `/api/v1/categories/{slug}` (with paginated published products), `/api/v1/products/{slug}` (404 on draft). Category/Product resources. **99 tests, Larastan 0, Pint clean.**
+- ✅ 2.4 Admin product CRUD — store/update/destroy gated by `catalog.manage` (StoreProductRequest/UpdateProductRequest).
+- ✅ 3. Image optimization — `ImageOptimizer` (intervention/image v4: decodePath + WebpEncoder) → WebP via `StorageRepository::put()`; large images downscaled.
+- ✅ 5. Admin listing & lifecycle — `adminPaginate` (search title/SKU/slug, filter status/category/stock/date, sort, paginate), recycle bin (trashed/restore/forceDelete), `ExportProductsCsv` (league/csv).
+- ✅ 6.1 Quality gate: **108 tests, Larastan 0, Pint clean.** Sample data seeder (`CatalogSampleSeeder`) → 2 categories, 10 products locally.
+
+**Phase 1 backend COMPLETE.** Pending for later: admin **Inertia React UI** pages (pair with Phase 2 storefront). Phase 1 ready to merge + tag v0.1.0.
+
+### What remains (big picture)
+- Phase 2: Next.js storefront UI (home, category infinite-scroll, product slider, floating WhatsApp/menu) + admin React pages.
+- Phase 3: orders + web checkout + invoice PDF.
+- Phase 4: SSLCommerz, OTP auth, SMS, SteadFast, SMTP (interfaces ready; need owner's API keys).
+- Phase 5: GTM/GA4/Pixel/Clarity + Meta CAPI, SEO/sitemap/JSON-LD, feeds.
+- Phase 6: settings surfaces, owner maintenance lock, security hardening.

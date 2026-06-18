@@ -24,6 +24,13 @@ abstract class DiskStorage implements StorageRepository
         return $name;
     }
 
+    public function put(string $path, string $contents): string
+    {
+        Storage::disk($this->disk())->put($path, $contents);
+
+        return $path;
+    }
+
     public function url(string $path): string
     {
         return Storage::disk($this->disk())->url($path);

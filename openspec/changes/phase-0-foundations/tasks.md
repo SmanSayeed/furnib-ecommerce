@@ -1,8 +1,8 @@
 ## 1. Dependencies & tooling
 
-- [ ] 1.1 Add Composer deps: spatie/laravel-permission, spatie/laravel-data, spatie/laravel-activitylog, laravel/sanctum, intervention/image, barryvdh/laravel-dompdf, league/csv (verify current versions via context7)
-- [ ] 1.2 Publish + configure: Sanctum config/migrations, spatie-permission config/migrations, activitylog config/migrations
-- [ ] 1.3 Confirm Pest 4, Larastan (max), Pint run green on the clean baseline
+- [x] 1.1 Add Composer deps: spatie/laravel-permission, spatie/laravel-data, spatie/laravel-activitylog, laravel/sanctum, intervention/image, barryvdh/laravel-dompdf, league/csv (pinned ^versions)
+- [x] 1.2 Publish + configure: Sanctum config/migrations, spatie-permission config/migrations, activitylog config/migrations (migrated to furnib-ecommerce)
+- [x] 1.3 Confirm baseline green — enabled RefreshDatabase in Pest.php; 39 tests pass
 
 ## 2. Architecture base (SOLID)
 

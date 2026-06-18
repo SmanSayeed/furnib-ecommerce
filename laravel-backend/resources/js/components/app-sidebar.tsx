@@ -42,7 +42,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'catalog.view',
         items: [
             { title: 'Products', icon: Package, soon: true },
-            { title: 'Categories', icon: FolderTree, soon: true },
+            { title: 'Categories', href: '/admin/catalog/categories', icon: FolderTree },
             { title: 'Inventory', icon: Boxes, soon: true },
         ],
     },

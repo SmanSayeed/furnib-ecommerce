@@ -16,6 +16,12 @@
 - **Dashboard** (`DashboardController` + `dashboard.tsx`): real KPIs (products/published/categories/low-stock), recharts "Products by category" bar (brand orange), responsive recent-products list (table on desktop, stacked cards on mobile), orders/revenue empty-state (Phase 3). `max-w-7xl` container.
 - Installed `recharts`. Gates: admin `types:check` + `eslint` clean, Pint + Larastan 0, `vite build` ok, app boots (`/login` 200, `/dashboard`→login). Live admin screens to be checked by the owner (login required; assistant can't enter passwords).
 
+### Admin panel — Step 2a: Categories management UI  ✅ (branch `feat/theming-and-category-redesign`)
+- `Admin\Catalog\CategoryUiController` (Inertia, separate from the JSON API) + `Admin\CategoryFormRequest` (file-aware, SVG blocked) reusing `CategoryService`. Routes `/admin/catalog/categories` (index `catalog.view`; create/store/edit/update/destroy `catalog.manage`).
+- Pages `catalog/categories/index.tsx` (responsive list — table on desktop, stacked cards on mobile, thumbnail/status/order, edit + delete-with-confirm, empty state) and `catalog/categories/form.tsx` (single-column, slug auto, status, header/thumbnail upload with live preview, SEO, **sticky save bar**). Sidebar "Categories" flipped live.
+- **7 Pest feature tests** (permission gate, list renders, create+auto-slug, image upload stored, SVG rejected, update, soft-delete). Full suite **121 passed / 318 assertions**. Pint + Larastan 0, admin types+eslint clean, `vite build` ok.
+- Next (Step 2b): Products UI (list + create/edit + 1 main + ≤6 gallery upload, price/discount/stock/SEO, recycle bin).
+
 ### Navigation rework (header + mobile tab bar)  ✅ (branch `feat/theming-and-category-redesign`)
 - **Inquiry** button on product cards now always shows the **"Inquiry"** label + an **authentic WhatsApp glyph** (shared `WhatsAppIcon`). Verified text + icon + one-row fit on mobile.
 - **Header is no longer sticky** (static) — category hero image is no longer hidden under it (desktop + mobile). Non-sticky → scrolls away on down, returns on up.

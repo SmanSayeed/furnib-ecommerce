@@ -50,5 +50,8 @@ Commit message footer: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
 - SMS = provider-agnostic `SmsGateway` interface now; concrete BD adapter later.
 - **Client hosts** the app; **license code skipped for now** → future **Phase 7** (signed heartbeat + reversible Suspended state; disable, never destroy). Until paid: don't hand over source/server access; rely on a written contract.
 
-## LANGUAGE
-Owner often chats in **Bangla**; reply in Bangla when asked. Use English UI terms (Discounted price, Stock, etc.) — no awkward literal translations like "কাটা-দাম".
+## LANGUAGE — ALWAYS (this project)
+- **Always reply in easy, native, casual Dhakaiya Bangla** — warm and friendly, like the owner's "Dhakaia mama". No stiff/literary Bangla, no heavy Sanskritized words. Short, plain sentences.
+- Keep **technical & UI terms in English** (database, migration, service, repository, Discounted price, Stock, deploy, commit, push…) — don't force awkward Bangla translations like "কাটা-দাম".
+- Code, file paths, commands, and code comments stay in English. Only the conversation/explanation is Dhakaiya Bangla.
+- Switch to English only if the owner explicitly asks for English.

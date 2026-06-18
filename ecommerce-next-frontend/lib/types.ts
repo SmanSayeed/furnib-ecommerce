@@ -57,3 +57,18 @@ export type CategoryWithProducts = {
   products: Product[];
   meta: PageMeta;
 };
+
+export type SiteSettings = {
+  site_name: string | null;
+  tagline: string | null;
+  whatsapp: string | null;
+  contact: {
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+  };
+  logo_light: string | null;
+  logo_dark: string | null;
+  favicon: string | null;
+  banners: string[];
+};

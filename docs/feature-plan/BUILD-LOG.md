@@ -10,6 +10,45 @@
 
 ## Progress
 
+### Navigation rework (header + mobile tab bar)  ✅ (branch `feat/theming-and-category-redesign`)
+- **Inquiry** button on product cards now always shows the **"Inquiry"** label + an **authentic WhatsApp glyph** (shared `WhatsAppIcon`). Verified text + icon + one-row fit on mobile.
+- **Header is no longer sticky** (static) — category hero image is no longer hidden under it (desktop + mobile). Non-sticky → scrolls away on down, returns on up.
+- **Desktop**: top-right nav `Home · Categories · WhatsApp` + theme toggle; no bottom bar (verified `display:none` at ≥md).
+- **Mobile**: fixed `MobileTabBar` (Categories · Home · WhatsApp), **auto-hides on scroll down, shows on scroll up** (verified via deterministic scroll dispatch). Old floating circles (`FloatingNav`) removed; category drawer is now `CategoryDrawer` opened via a `furnib:open-categories` window event from header/bar. `main` gets `pb-16 md:pb-0` so content clears the bar.
+- **Orders**: deferred — the Orders nav button and `/orders` page were removed for now (will return in Phase 3). `/orders` 404s.
+- **Banners category** fully gone from storefront (drawer + home show only chair/decor-item/table); seeder skips `banners/`. Verified.
+- Storefront `tsc` + `eslint` clean.
+
+### Catalog feed redesign + Admin branding settings  ✅ (branch `feat/theming-and-category-redesign`)
+**Storefront product feed (browser-verified via DOM/computed-style; screenshot tool was flaky):**
+- Product card stripped to a **big full-bleed image slider** (mobile left/right padding = 0, measured 0→375) + **one-row controls** below: `[৳price (+ strikethrough discount, currency symbol only, no "PRICE" label)] [Inquiry — WhatsApp green #25D366 w/ icon] [Order Now — orange]`. Fits one row on mobile (price 148 / inquiry 42 / order 146, no wrap). Removed product name, In Stock badge, SKU and description from the card.
+- Slider: thumbnails now **below** the preview in all breakpoints (single-column feed); arrows + `n/total` counter; tap thumb/arrow swaps preview.
+- Feed = centered `max-w-2xl` column, tight spacing (`space-y-3`), IntersectionObserver infinite scroll (page-by-page autoload, no full load). Floating WhatsApp button recoloured **green** with WhatsApp glyph.
+
+**Admin-managed branding (`settings.manage` gated):**
+- `Setting` 'branding' group via `SettingsService`. `SiteSettingController` (edit/update) — site_name, tagline, whatsapp, contact phone/email/address + **logo (light/dark) and favicon uploads** via `StorageRepository` (old file cleaned up on replace). Routes in `routes/settings.php`. **SVG uploads disabled** (stored-XSS risk) — PNG/JPG/WebP only (favicon PNG/ICO).
+- Public `GET /api/v1/settings` (`Api\SettingController`) — non-secret branding + resolved media URLs.
+- Admin Inertia page `settings/site.tsx` (+ "Site & branding" nav item) with text fields, file inputs, live previews, validation errors, toast.
+- **6 Pest feature tests pass** (403 gate, text save, logo upload stored, SVG rejected, bad-whatsapp rejected, public API). Pint + Larastan 0. Admin `tsc` + `eslint` clean; `vite build` succeeds.
+- Storefront now **consumes** `/api/v1/settings`: dynamic `<title>`/tagline (verified "Furnib.com — Feel the Comfort" from DB), logo URLs (fallback to `/public/logo/*.png`), favicon (fallback `/logo/furnib-favicon.png`), WhatsApp number (floating + product actions). Header uses lighter **mid** logo files.
+- ⚠️ **Build note:** `pnpm run build` (laravel-backend) runs `php artisan wayfinder:generate`; system `php` is 8.1 (fails). Prepend PHP 8.3 to PATH for the build.
+
+**Home banners + footer + category images (follow-up):**
+- **Category header/thumbnail** auto-set to the first product's image (`DummyCatalogSeeder::backfillCategoryImage`) — verified hero loads from R2.
+- **Home banners** admin-managed: `banner_1`/`banner_2` added to branding settings (uploads, AVIF allowed), public API returns `banners[]`. Storefront `BannerCarousel` (auto-rotate, dots/arrows) shown on home when banners exist, else the gradient `Hero`. Seeded 2 defaults from `dummy-products/banners` (`DummyCatalogSeeder::seedBanners`, idempotent, excludes the SSLCommerz logo). Verified 2 banners render from R2.
+- **Footer:** SSLCommerz payment logo (`/public/sslcommerz.avif`) shown just above the copyright line.
+- Fix: `seedBanners` run had also created a stray **"Banners" category** (the seeder iterated `dummy-products/banners`); seeder now skips `banners/`, stray category force-deleted. Categories back to chair/table/decor-item.
+- Quality: storefront `tsc`+`eslint` clean, admin `types:check`+`lint:check` clean, Pint + Larastan 0, 6 Pest tests still pass.
+
+### Theming + Catalog UX  ✅ (branch `feat/theming-and-category-redesign`, browser-verified)
+- **Light/dark theme** — `next-themes` (system default + toggle). `globals.css` rewritten with light `:root` + `.dark` token sets; brand **orange** (`--brand`/`--accent`) primary, theme-overridable. `ThemeProvider` + `ThemeToggle` (CSS-swapped icons, no hydration flash). Hero gradient now uses `var(--brand)`.
+- **Logo** — `Logo` component swaps `/logo/furnib-light.svg` ↔ `/logo/furnib-dark.svg` by theme (pure CSS `.dark`). Placeholders + `public/logo/README.md` shipped; owner drops official files with same names (no code change). Slim sticky `Header` (logo left, toggle right).
+- **Category page redesign** — product cards now **100% width**, mobile **0** horizontal padding (image edge-to-edge), desktop padded (`max-w-6xl px-6`). **No product detail page** (route removed); WhatsApp links point to the category page.
+- **Per-product slider** (`ImageSlider`) — desktop: vertical thumbnail rail left of preview + arrows + `n/total` counter (matches reference). Mobile: thumbnails **below** preview; tap thumb or arrows to change. Verified: full-bleed on mobile (left 0 / right 375), thumb→preview swap, light+dark, desktop+mobile.
+- **Demo data** — `DummyCatalogSeeder` reads `dummy-products/<category>/<product>/*.avif` (3 categories, 9 products, 33 images), uploads via `StorageRepository` to R2, sets `main_image` + gallery (≤6). Idempotent. Old placeholder products purged. `dummy-products/` gitignored.
+- **AVIF note** — source images are AVIF (not "favp"); served as-is (modern-browser + Next/Image native). Admin uploads still normalise to WebP (broader PHP/GD tooling).
+- Quality: storefront `tsc` + `eslint` clean.
+
 ### Phase 0 — Foundations  ✅ COMPLETE (81 tests, Larastan 0 errors, Pint clean)
 - ✅ 1.1 Deps installed + pinned (spatie permission/data/activitylog, sanctum, intervention/image, dompdf, league/csv).
 - ✅ 1.2 Vendor configs/migrations published + migrated to `furnib-ecommerce`.

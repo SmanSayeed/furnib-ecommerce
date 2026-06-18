@@ -9,7 +9,7 @@ export function Hero() {
         className="absolute inset-0 opacity-[0.08]"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 30% 20%, #16a34a 0, transparent 45%), radial-gradient(circle at 80% 70%, #16a34a 0, transparent 40%)",
+            "radial-gradient(circle at 30% 20%, var(--brand) 0, transparent 45%), radial-gradient(circle at 80% 70%, var(--brand) 0, transparent 40%)",
         }}
       />
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center animate-in">

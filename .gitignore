@@ -1,0 +1,8 @@
+# Local demo product images (source for DummyCatalogSeeder).
+# Kept out of version control — they are temporary placeholder photos.
+# To seed on another machine, copy this folder there, or replace with real assets.
+/dummy-products/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

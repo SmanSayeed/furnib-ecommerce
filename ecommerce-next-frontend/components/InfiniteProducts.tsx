@@ -8,10 +8,12 @@ export function InfiniteProducts({
   slug,
   initial,
   meta,
+  whatsapp,
 }: {
   slug: string;
   initial: Product[];
   meta: PageMeta;
+  whatsapp?: string | null;
 }) {
   const [products, setProducts] = useState<Product[]>(initial);
   const [page, setPage] = useState(meta.current_page);
@@ -57,9 +59,14 @@ export function InfiniteProducts({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3 sm:space-y-4">
       {products.map((p) => (
-        <ProductRow key={p.id} product={p} />
+        <ProductRow
+          key={p.id}
+          product={p}
+          categorySlug={slug}
+          whatsapp={whatsapp}
+        />
       ))}
       {page < lastPage && (
         <div ref={sentinel} className="py-6 text-center text-sm text-muted">

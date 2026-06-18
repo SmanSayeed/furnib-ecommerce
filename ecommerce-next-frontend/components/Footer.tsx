@@ -24,6 +24,17 @@ export function Footer() {
         >
           Contact us on WhatsApp
         </a>
+        <div className="mt-10 flex flex-col items-center gap-2">
+          <span className="text-xs uppercase tracking-wider text-muted/70">
+            Pay securely with
+          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/sslcommerz.avif"
+            alt="Pay with SSLCommerz"
+            className="h-auto w-full max-w-md"
+          />
+        </div>
         <p className="mt-8 text-xs text-muted/60">
           © {config.siteName} — All rights reserved.
         </p>

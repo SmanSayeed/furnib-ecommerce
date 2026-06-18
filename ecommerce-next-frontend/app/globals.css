@@ -1,14 +1,37 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (next-themes toggles `.dark` on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Light theme (default) ---- */
 :root {
+  --background: #ffffff;
+  --surface: #f6f6f4;
+  --surface-2: #ececea;
+  --foreground: #1c1917;
+  --muted: #6b7280;
+  --border: #e6e4e0;
+  /* Brand orange — primary, theme-overridable */
+  --brand: #e85d1f;
+  --accent: #e85d1f;
+  --accent-hover: #cf4f17;
+  --on-accent: #ffffff;
+  color-scheme: light;
+}
+
+/* ---- Dark theme ---- */
+.dark {
   --background: #0b0b0c;
   --surface: #141416;
   --surface-2: #1c1c1f;
   --foreground: #f5f5f4;
   --muted: #a1a1aa;
   --border: #2a2a2e;
-  --accent: #16a34a;
-  --accent-hover: #22c55e;
+  --brand: #ef6b2c;
+  --accent: #ef6b2c;
+  --accent-hover: #ff7d42;
+  --on-accent: #ffffff;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -18,8 +41,10 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-brand: var(--brand);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
   --font-sans: var(--font-geist-sans);
 }
 
@@ -28,6 +53,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 a {
@@ -48,4 +76,13 @@ a {
 
 .animate-in {
   animation: fadeIn 0.4s ease both;
+}
+
+/* Hide scrollbar on thumbnail strips while keeping scroll behaviour. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

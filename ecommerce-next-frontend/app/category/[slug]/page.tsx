@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CategoryGrid } from "@/components/CategoryGrid";
 import { InfiniteProducts } from "@/components/InfiniteProducts";
 import { SafeImage } from "@/components/SafeImage";
-import { getCategories, getCategory } from "@/lib/api";
+import { getCategories, getCategory, getSettings } from "@/lib/api";
 import { imageUrl } from "@/lib/image";
 
 export const revalidate = 60;
@@ -33,7 +33,10 @@ export default async function CategoryPage({
   if (!data) notFound();
 
   const { category, products, meta } = data;
-  const allCategories = await getCategories();
+  const [allCategories, settings] = await Promise.all([
+    getCategories(),
+    getSettings(),
+  ]);
 
   return (
     <div>
@@ -56,11 +59,16 @@ export default async function CategoryPage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-6 py-12">
-        <InfiniteProducts slug={slug} initial={products} meta={meta} />
+      <div className="mx-auto w-full max-w-2xl px-0 py-5 sm:px-4 sm:py-8">
+        <InfiniteProducts
+          slug={slug}
+          initial={products}
+          meta={meta}
+          whatsapp={settings?.whatsapp}
+        />
       </div>
 
-      <section className="mx-auto max-w-5xl px-6 pb-16">
+      <section className="mx-auto max-w-2xl px-4 pb-16 sm:px-4">
         <h2 className="mb-8 text-center text-2xl font-bold sm:text-3xl">
           Explore Collections
         </h2>

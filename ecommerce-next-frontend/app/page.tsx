@@ -1,16 +1,21 @@
+import { BannerCarousel } from "@/components/BannerCarousel";
 import { FeaturedCollections } from "@/components/FeaturedCollections";
 import { Hero } from "@/components/Hero";
-import { getCategories } from "@/lib/api";
+import { getCategories, getSettings } from "@/lib/api";
 import { whatsappGeneral } from "@/lib/whatsapp";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const categories = await getCategories();
+  const [categories, settings] = await Promise.all([
+    getCategories(),
+    getSettings(),
+  ]);
+  const banners = settings?.banners ?? [];
 
   return (
     <>
-      <Hero />
+      {banners.length > 0 ? <BannerCarousel banners={banners} /> : <Hero />}
       <FeaturedCollections categories={categories} />
 
       <section className="border-t border-border bg-surface/40">
@@ -23,10 +28,10 @@ export default async function Home() {
             are ready stock, and immediate delivery can be arranged.
           </p>
           <a
-            href={whatsappGeneral()}
+            href={whatsappGeneral(settings?.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-hover"
+            className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-on-accent transition hover:bg-accent-hover"
           >
             Contact us on WhatsApp
           </a>

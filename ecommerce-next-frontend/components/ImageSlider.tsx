@@ -11,15 +11,18 @@ export function ImageSlider({ slides, title }: { slides: Slide[]; title: string 
   const go = (delta: number) =>
     setIndex((prev) => (prev + delta + items.length) % items.length);
 
+  const hasMany = items.length > 1;
+
   return (
     <div>
-      <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border bg-surface">
+      {/* Big preview */}
+      <div className="relative aspect-square w-full overflow-hidden bg-surface sm:aspect-[4/3]">
         <SafeImage
           src={items[index].url}
           alt={items[index].alt}
           className="h-full w-full object-cover"
         />
-        {items.length > 1 && (
+        {hasMany && (
           <>
             <button
               type="button"
@@ -37,20 +40,27 @@ export function ImageSlider({ slides, title }: { slides: Slide[]; title: string 
             >
               ›
             </button>
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
+              {index + 1}/{items.length}
+            </span>
           </>
         )}
       </div>
 
-      {items.length > 1 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+      {/* Thumbnails below preview */}
+      {hasMany && (
+        <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto px-3">
           {items.map((s, idx) => (
             <button
               type="button"
               key={idx}
               onClick={() => setIndex(idx)}
               aria-label={`View image ${idx + 1}`}
-              className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                idx === index ? "border-accent" : "border-border opacity-70"
+              aria-current={idx === index}
+              className={`aspect-square w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                idx === index
+                  ? "border-accent"
+                  : "border-border opacity-70 hover:opacity-100"
               }`}
             >
               <SafeImage src={s.url} alt={s.alt} className="h-full w-full object-cover" />

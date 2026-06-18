@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\SettingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,9 @@ Route::prefix('v1')->group(function () {
         'status' => 'ok',
         'service' => 'furnib-api',
     ]));
+
+    // Public branding/site settings for the storefront
+    Route::get('settings', [SettingController::class, 'index']);
 
     // Storefront catalog (read-only)
     Route::get('categories', [CategoryController::class, 'index']);

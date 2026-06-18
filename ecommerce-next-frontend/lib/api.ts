@@ -1,5 +1,11 @@
 import { config } from "./config";
-import type { Category, CategoryWithProducts, PageMeta, Product } from "./types";
+import type {
+  Category,
+  CategoryWithProducts,
+  PageMeta,
+  Product,
+  SiteSettings,
+} from "./types";
 
 const REVALIDATE = 60;
 
@@ -44,4 +50,13 @@ export async function getProduct(slug: string): Promise<Product | null> {
   }
 }
 
-export type { Category, CategoryWithProducts, PageMeta, Product };
+export async function getSettings(): Promise<SiteSettings | null> {
+  try {
+    const json = await api<{ data: SiteSettings }>("/settings");
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export type { Category, CategoryWithProducts, PageMeta, Product, SiteSettings };

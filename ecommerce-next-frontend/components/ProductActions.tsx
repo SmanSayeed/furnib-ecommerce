@@ -7,76 +7,115 @@ import { imageUrl } from "@/lib/image";
 import type { Product } from "@/lib/types";
 import { whatsappInquiry, whatsappOrder } from "@/lib/whatsapp";
 import { SafeImage } from "./SafeImage";
+import { WhatsAppIcon } from "./WhatsAppIcon";
 
-export function ProductActions({ product }: { product: Product }) {
+export function ProductActions({
+  product,
+  categorySlug,
+  whatsapp,
+}: {
+  product: Product;
+  categorySlug: string;
+  whatsapp?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState(1);
-  const productUrl = `${config.siteUrl}/product/${product.slug}`;
+  const productUrl = `${config.siteUrl}/category/${categorySlug}`;
   const unit = product.discount_price ?? product.price;
   const total = (unit.minor * qty) / 100;
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-center">
-          <span className="text-[11px] uppercase tracking-wider text-muted">Price</span>
+      <div className="flex items-stretch gap-2">
+        {/* Price (currency icon only, no label) */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center rounded-xl border border-border bg-surface px-3 py-2 leading-tight">
           {product.discount_price ? (
-            <span>
-              <span className="text-lg font-bold text-accent">
+            <>
+              <span className="truncate text-base font-extrabold text-accent sm:text-lg">
                 {product.discount_price.formatted}
               </span>
-              <span className="ml-2 text-sm text-muted line-through">
+              <span className="truncate text-xs text-muted line-through">
                 {product.price.formatted}
               </span>
-            </span>
+            </>
           ) : (
-            <span className="text-lg font-bold">{product.price.formatted}</span>
+            <span className="truncate text-base font-extrabold sm:text-lg">
+              {product.price.formatted}
+            </span>
           )}
         </div>
 
+        {/* Inquiry (WhatsApp green) */}
         <a
-          href={whatsappInquiry(product, productUrl)}
+          href={whatsappInquiry(product, productUrl, whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 font-semibold transition hover:bg-surface-2"
+          aria-label="Inquiry on WhatsApp"
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5b] sm:gap-2 sm:px-4 sm:text-base"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-accent">
-            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z" />
-          </svg>
-          Inquiry
+          <WhatsAppIcon size={18} />
+          <span>Inquiry</span>
         </a>
 
+        {/* Order Now (primary) */}
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="rounded-xl bg-accent px-4 py-3 font-semibold text-white transition hover:bg-accent-hover"
+          className="flex flex-1 items-center justify-center rounded-xl bg-accent px-3 text-sm font-semibold whitespace-nowrap text-on-accent transition hover:bg-accent-hover sm:text-base"
         >
           Order Now
         </button>
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <div className="relative z-10 w-full max-w-md animate-in rounded-t-2xl border border-border bg-surface p-6 sm:rounded-2xl">
             <div className="flex items-start gap-4">
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border">
-                <SafeImage src={imageUrl(product.main_image)} alt={product.title} className="h-full w-full object-cover" />
+                <SafeImage
+                  src={imageUrl(product.main_image)}
+                  alt={product.title}
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div className="min-w-0">
                 <h3 className="truncate font-semibold">{product.title}</h3>
                 <p className="text-xs text-muted">SKU: {product.sku}</p>
                 <p className="mt-1 text-sm font-medium text-accent">{unit.formatted}</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="ml-auto text-muted hover:text-foreground">✕</button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close"
+                className="ml-auto text-muted hover:text-foreground"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="mt-5 flex items-center justify-between">
               <span className="text-sm text-muted">Quantity</span>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-9 w-9 rounded-full border border-border text-lg hover:bg-surface-2">−</button>
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="h-9 w-9 rounded-full border border-border text-lg hover:bg-surface-2"
+                >
+                  −
+                </button>
                 <span className="w-8 text-center font-semibold">{qty}</span>
-                <button type="button" onClick={() => setQty((q) => q + 1)} className="h-9 w-9 rounded-full border border-border text-lg hover:bg-surface-2">+</button>
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => q + 1)}
+                  className="h-9 w-9 rounded-full border border-border text-lg hover:bg-surface-2"
+                >
+                  +
+                </button>
               </div>
             </div>
 
@@ -89,12 +128,12 @@ export function ProductActions({ product }: { product: Product }) {
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <a
-                href={whatsappOrder(product, qty, productUrl)}
+                href={whatsappOrder(product, qty, productUrl, whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl bg-accent px-4 py-3 text-center font-semibold text-white transition hover:bg-accent-hover"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-center font-semibold text-white transition hover:bg-[#1ebe5b]"
               >
-                Order on WhatsApp
+                <WhatsAppIcon /> Order on WhatsApp
               </a>
               <Link
                 href={`/checkout/${product.slug}?qty=${qty}`}

@@ -19,6 +19,12 @@ Routine git (status, add, commit, push to existing upstream, pull, fetch, log, d
 
 Commit message footer: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
 
+**Workflow strategy (owner approved 2026-06-18):**
+- **Feature branch per phase/module** (e.g. `feat/phase-0-foundations`); merge to `master` when Definition of Done met (tests green), then push.
+- **Conventional Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
+- Push at each logical checkpoint; **tag** milestones (`v0.1.0`…).
+- Never force-push / rewrite history on `master` without explicit confirmation.
+
 ---
 
 ## SECURITY — strict (inherits global rules)

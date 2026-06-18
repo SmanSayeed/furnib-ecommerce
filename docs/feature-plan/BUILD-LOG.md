@@ -39,8 +39,17 @@
 
 **Phase 1 backend COMPLETE.** Pending for later: admin **Inertia React UI** pages (pair with Phase 2 storefront). Phase 1 ready to merge + tag v0.1.0.
 
+### Phase 2 — Storefront ✅ COMPLETE (branch `feat/phase-2-storefront`, browser-verified)
+Next.js 16 storefront consuming the catalog API, dark mobile-first theme:
+- API client + types (`lib/`), `revalidate: 60`; infinite scroll proxied via a same-origin Next route handler (no CORS needed).
+- Home: hero + CTAs, Featured Collections (live categories, 2-col/1-col), info section, footer.
+- Floating WhatsApp (bottom-right) + menu drawer (bottom-left, lists categories).
+- Category page: 75vh header image, title/details, products 1-per-row, IntersectionObserver infinite scroll, "Explore Collections" grid at end.
+- Product: image slider (arrows+thumbnails, safe-image fallback), Price (struck-through discount) / Inquiry (WhatsApp deep link) / Order Now → modal (qty stepper, Order on WhatsApp + Order on Web→checkout stub). Product detail route with SEO metadata + YouTube embed.
+- **Verified live in browser** (home, category w/ 5 products, order modal, product page, mobile drawer). tsc + eslint clean.
+- Pending: admin Inertia React UI; web checkout is a stub until Phase 3.
+
 ### What remains (big picture)
-- Phase 2: Next.js storefront UI (home, category infinite-scroll, product slider, floating WhatsApp/menu) + admin React pages.
 - Phase 3: orders + web checkout + invoice PDF.
 - Phase 4: SSLCommerz, OTP auth, SMS, SteadFast, SMTP (interfaces ready; need owner's API keys).
 - Phase 5: GTM/GA4/Pixel/Clarity + Meta CAPI, SEO/sitemap/JSON-LD, feeds.

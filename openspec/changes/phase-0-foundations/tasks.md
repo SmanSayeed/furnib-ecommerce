@@ -34,14 +34,14 @@
 
 ## 6. Encrypted settings (app-settings)
 
-- [ ] 6.1 RED: tests — read-with-default, typed round-trip, secret stored as ciphertext, secret masked in client payload
-- [ ] 6.2 GREEN: `settings` table (group, key, value, is_secret) + `SettingsService` with typed casts + encrypted cast for secrets
-- [ ] 6.3 GREEN: client-facing masker dropping/masking secret-flagged values
+- [x] 6.1 RED: tests — read-with-default, bool/int/array round-trip, secret stored as ciphertext, secret masked in group payload
+- [x] 6.2 GREEN: `settings` table (group, key, value, type, is_secret) + `SettingsService` with typed casts + Crypt for secrets
+- [x] 6.3 GREEN: `toArray()` masks secret-flagged values unless includeSecrets
 
 ## 7. Storage abstraction (media-storage)
 
-- [ ] 7.1 RED: tests — default resolves server disk, switches to R2 via setting, store→URL→delete round-trip, R2 creds never in responses, missing R2 creds throws
-- [ ] 7.2 GREEN: `StorageRepository` interface + `ServerDiskStorage` + `CloudflareR2Storage` (S3 driver) + settings-driven resolver + test fake
+- [x] 7.1 RED: tests — default server disk, switch to R2 via setting, missing R2 creds throws, store→URL→delete round-trip
+- [x] 7.2 GREEN: `StorageRepository` + `DiskStorage` base + `ServerDiskStorage`/`CloudflareR2Storage` + `StorageManager` resolver; r2 disk in filesystems config; bound in RepositoryServiceProvider
 
 ## 8. API foundation (api-foundation)
 

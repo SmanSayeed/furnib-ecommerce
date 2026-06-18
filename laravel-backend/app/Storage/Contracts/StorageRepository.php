@@ -15,6 +15,11 @@ interface StorageRepository
 {
     public function store(UploadedFile|string $file, string $directory = ''): string;
 
+    /**
+     * Write raw contents at an explicit path; returns the stored path.
+     */
+    public function put(string $path, string $contents): string;
+
     public function url(string $path): string;
 
     public function delete(string $path): bool;

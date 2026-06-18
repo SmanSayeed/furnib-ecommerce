@@ -6,6 +6,7 @@ namespace App\Repositories\Contracts;
 
 use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 interface ProductRepositoryInterface extends RepositoryInterface
 {
@@ -16,4 +17,21 @@ interface ProductRepositoryInterface extends RepositoryInterface
 
     /** @return LengthAwarePaginator<int, Product> */
     public function paginatePublishedForCategory(int $categoryId, int $perPage = 12): LengthAwarePaginator;
+
+    /**
+     * @param  array<string,mixed>  $filters
+     * @return LengthAwarePaginator<int, Product>
+     */
+    public function adminPaginate(array $filters, int $perPage = 20): LengthAwarePaginator;
+
+    /**
+     * @param  array<string,mixed>  $filters
+     * @return Collection<int, Product>
+     */
+    public function allMatching(array $filters): Collection;
+
+    /** @return LengthAwarePaginator<int, Product> */
+    public function trashedPaginate(int $perPage = 20): LengthAwarePaginator;
+
+    public function findWithTrashed(int $id): ?Product;
 }

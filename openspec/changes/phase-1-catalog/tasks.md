@@ -10,12 +10,12 @@
 - [x] 2.1 RED: tests — money paisa, unique SKU, stock logic, social-thumbnail fallback, max-6 images
 - [x] 2.2 GREEN: `products` + `product_images` migrations, `Product`/`ProductImage` models (Money cast, softDeletes, relations)
 - [x] 2.3 GREEN: `ProductRepository` + `ProductService` (auto slug/sku, stock accessor, max-6 images rule)
-- [ ] 2.4 admin CRUD endpoints gated by `catalog.manage` — PENDING (storefront API done; admin write endpoints next)
+- [x] 2.4 admin CRUD endpoints (store/update/destroy) gated by `catalog.manage` — done (JSON; Inertia React UI pairs with Phase 2 frontend)
 
 ## 3. Image optimization (image-optimization)
 
-- [ ] 3.1 RED: tests — upload converted to WebP + stored via StorageRepository; large image downscaled
-- [ ] 3.2 GREEN: `ImageOptimizer` service (intervention/image) writing through StorageRepository
+- [x] 3.1 RED: tests — upload converted to WebP + stored via StorageRepository; large image downscaled
+- [x] 3.2 GREEN: `ImageOptimizer` service (intervention/image v4: decodePath + WebpEncoder) writing through StorageRepository.put()
 
 ## 4. Catalog read API (catalog-api)
 
@@ -24,10 +24,11 @@
 
 ## 5. Admin listing & lifecycle (product-admin-listing)
 
-- [ ] 5.1 RED: tests — search by SKU, filter by status, soft delete/restore, hard delete, CSV export
-- [ ] 5.2 GREEN: listing query (search/filter/sort/paginate), recycle-bin endpoints, CSV export action
+- [x] 5.1 RED: tests — search by SKU, filter by status, soft delete/restore, hard delete, CSV export, authz
+- [x] 5.2 GREEN: `adminPaginate` (search/filter/sort/paginate), trashed + restore + forceDelete endpoints, `ExportProductsCsv` (league/csv)
 
 ## 6. Verify & ship
 
-- [ ] 6.1 Pest green, Larastan clean, Pint clean
+- [x] 6.1 Pest green (108), Larastan 0, Pint clean
 - [ ] 6.2 Seed sample categories/products for local; merge to master; tag v0.1.0
+      NOTE: admin Inertia React UI (pages) deferred to pair with Phase 2 storefront frontend.

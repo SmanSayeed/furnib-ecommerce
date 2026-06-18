@@ -70,7 +70,7 @@ final class SettingsService
             is_bool($value) => [$value ? '1' : '0', 'boolean'],
             is_int($value) => [(string) $value, 'integer'],
             is_float($value) => [(string) $value, 'double'],
-            is_array($value) => [json_encode($value), 'array'],
+            is_array($value) => [(string) json_encode($value), 'array'],
             default => [(string) $value, 'string'],
         };
     }

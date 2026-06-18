@@ -32,8 +32,8 @@ class OwnerSeeder extends Seeder
         $owner = User::firstOrNew(['email' => $email]);
         $owner->name = $owner->name ?: 'Owner';
         $owner->password = Hash::make($password);
-        $owner->email_verified_at = $owner->email_verified_at ?? now();
         $owner->forceFill([
+            'email_verified_at' => $owner->email_verified_at ?? now(),
             'must_change_password' => true,
             'two_factor_required' => true,
         ])->save();

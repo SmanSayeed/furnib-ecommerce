@@ -13,7 +13,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 interface RepositoryInterface
 {
-    /** @param array<int,string> $columns */
+    /**
+     * @param  array<int,string>  $columns
+     * @return Collection<int, Model>
+     */
     public function all(array $columns = ['*']): Collection;
 
     public function find(int|string $id): ?Model;

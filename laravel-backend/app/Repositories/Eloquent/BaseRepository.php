@@ -12,7 +12,10 @@ abstract class BaseRepository implements RepositoryInterface
 {
     public function __construct(protected Model $model) {}
 
-    /** @param array<int,string> $columns */
+    /**
+     * @param  array<int,string>  $columns
+     * @return Collection<int, Model>
+     */
     public function all(array $columns = ['*']): Collection
     {
         return $this->model->newQuery()->get($columns);

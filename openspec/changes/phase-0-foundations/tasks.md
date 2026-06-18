@@ -28,9 +28,9 @@
 
 ## 5. Audit logging (audit-logging)
 
-- [ ] 5.1 RED: tests — sensitive update logs actor+subject, system action attributed, IP captured, non-`audit.view` gets 403
-- [ ] 5.2 GREEN: activitylog setup, `LogsActivity` trait usage, middleware/observer attaching request IP + system-actor fallback
-- [ ] 5.3 GREEN: audit-log read endpoint/policy gated by `audit.view`, no edit/delete path
+- [x] 5.1 RED: tests — update logs actor+subject+IP, system action has null causer, non-`audit.view` 403, owner 200
+- [x] 5.2 GREEN: `Auditable` trait (wraps LogsActivity, excludes secrets); Activity::saving hook attaches request IP; applied to User
+- [x] 5.3 GREEN: `AuditLogController@index` read-only, route gated by `permission:audit.view` (no edit/delete path)
 
 ## 6. Encrypted settings (app-settings)
 
@@ -45,9 +45,9 @@
 
 ## 8. API foundation (api-foundation)
 
-- [ ] 8.1 RED: tests — `GET /api/v1/health` 200, protected endpoint 401 without token / authorized with Sanctum token, validation→422 envelope, 500 hides internals, OTP route throttled→429
-- [ ] 8.2 GREEN: `routes/api.php` `/api/v1` group, Sanctum guard, base JSON Resource, exception handler renderer for the uniform envelope
-- [ ] 8.3 GREEN: rate limiters (auth/order/otp) registered and applied
+- [x] 8.1 RED: tests — health 200, 401 without token / 200 with Sanctum token, validation→422 envelope, 500 hides internals, OTP→429
+- [x] 8.2 GREEN: `routes/api.php` `/api/v1` group (registered in bootstrap), Sanctum (`HasApiTokens`), `ApiExceptionRenderer` uniform envelope
+- [x] 8.3 GREEN: rate limiters (otp/auth/orders) registered; otp applied to placeholder endpoint
 
 ## 9. Verify & ship
 

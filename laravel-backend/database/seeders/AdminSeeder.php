@@ -28,8 +28,10 @@ class AdminSeeder extends Seeder
         $admin = User::firstOrNew(['email' => $email]);
         $admin->name = $admin->name ?: 'Administrator';
         $admin->password = Hash::make($password);
-        $admin->email_verified_at = $admin->email_verified_at ?? now();
-        $admin->forceFill(['must_change_password' => true])->save();
+        $admin->forceFill([
+            'email_verified_at' => $admin->email_verified_at ?? now(),
+            'must_change_password' => true,
+        ])->save();
 
         if (! $admin->hasRole('admin')) {
             $admin->assignRole('admin');

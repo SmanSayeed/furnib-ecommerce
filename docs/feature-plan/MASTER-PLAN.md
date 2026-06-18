@@ -167,6 +167,18 @@ Context7 MCP is used during implementation to pull **current** Laravel 13 / Next
 ### Still open
 - Invoice/receipt template branding assets (logo, address — Lovinna Enterprise details available in footer spec).
 - PDPA/privacy note for IP + visitor tracking (disclose in privacy policy).
+
+### Licensing / business model (decided 2026-06-18)
+- Product is owned by Saadman (not a client project). Client gets a **free trial**, pays after a few months; non-payment → owner wants ability to lock.
+- **Hosting**: client hosts it. **Decision: skip license code for now**, build it later as **Phase 7 (License module)** — signed heartbeat + reversible *Suspended* state + grace period; **disable, never destroy; data preserved**.
+- **Non-code protections to rely on until paid** (most important given client-hosting + no license code): (a) do **not** hand over source repo or full server/deploy access during the free period — owner deploys & holds keys; (b) **written contract**: ownership stays with owner, licensed-not-sold until paid in full, non-payment = right to suspend.
+- Architecture leaves room for Phase 7: a `license` settings group + a global guard middleware stub, so remote-suspend can be added without rework. **No destructive folder-deletion anywhere — ever.**
+
+## 9. Phase 7 — License module (FUTURE, not now)
+- License key + daily signed heartbeat to owner's licensing endpoint (JWT signed with owner private key).
+- Grace period (7–14 days) if licensing server unreachable.
+- `status: active | suspended` → suspended renders a clean "License suspended — contact provider" page on storefront + admin; **orders/customers data untouched**, instantly reversible on payment.
+- Offline fallback: signed time-limited license file, expiry anchored to server-observed time (clock-rollback resistant).
 ```
 ```
 

@@ -1,0 +1,56 @@
+## 1. Dependencies & tooling
+
+- [x] 1.1 Add Composer deps: spatie/laravel-permission, spatie/laravel-data, spatie/laravel-activitylog, laravel/sanctum, intervention/image, barryvdh/laravel-dompdf, league/csv (pinned ^versions)
+- [x] 1.2 Publish + configure: Sanctum config/migrations, spatie-permission config/migrations, activitylog config/migrations (migrated to furnib-ecommerce)
+- [x] 1.3 Confirm baseline green — enabled RefreshDatabase in Pest.php; 39 tests pass
+
+## 2. Architecture base (SOLID)
+
+- [x] 2.1 Create `app/Repositories` (RepositoryInterface + BaseRepository), `app/Support`; Services/DTOs/Actions created as needed per module
+- [x] 2.2 Add a `RepositoryServiceProvider` binding interfaces → implementations (UserRepository); registered in bootstrap/providers.php
+- [x] 2.3 Architecture smoke test: binding resolves + findByEmail works
+
+## 3. Money handling (money-handling)
+
+- [x] 3.1 RED: unit tests for `Money` (round-trip, add/subtract, negative+non-numeric rejected, format) and `MoneyCast` (set/get/null)
+- [x] 3.2 GREEN: implemented `Support/Money` value object + `Casts/MoneyCast`
+- [x] 3.3 REFACTOR: Pint/Larastan pass (run in batch); integer-paisa convention documented in MODULES/MASTER-PLAN
+
+## 4. RBAC + owner security (access-control)
+
+- [x] 4.1 RED: feature tests — roles seeded idempotently, gate denies `editor` on `orders.manage`, owner has all, manager matrix
+- [x] 4.2 GREEN: config/rbac.php matrix + `PermissionRoleSeeder` (cache reset before role sync); HasRoles on User
+- [x] 4.3 RED: tests — owner seeded from config/env, missing email aborts, no duplicate on re-run
+- [x] 4.4 GREEN: `OwnerSeeder` + `AdminSeeder` from env (hashed; argon2id in prod, bcrypt locally — Windows lacks argon2)
+- [x] 4.5 RED: middleware tests — forces password change, then 2FA enrolment, then allows access
+- [x] 4.6 GREEN: `must_change_password` + `two_factor_required` columns + `EnsureAccountSecured` middleware (alias `account.secured`)
+- [x] 4.7 Guard test: app code has no shell/filesystem-destruction capability (Symfony Finder scan)
+
+## 5. Audit logging (audit-logging)
+
+- [x] 5.1 RED: tests — update logs actor+subject+IP, system action has null causer, non-`audit.view` 403, owner 200
+- [x] 5.2 GREEN: `Auditable` trait (wraps LogsActivity, excludes secrets); Activity::saving hook attaches request IP; applied to User
+- [x] 5.3 GREEN: `AuditLogController@index` read-only, route gated by `permission:audit.view` (no edit/delete path)
+
+## 6. Encrypted settings (app-settings)
+
+- [x] 6.1 RED: tests — read-with-default, bool/int/array round-trip, secret stored as ciphertext, secret masked in group payload
+- [x] 6.2 GREEN: `settings` table (group, key, value, type, is_secret) + `SettingsService` with typed casts + Crypt for secrets
+- [x] 6.3 GREEN: `toArray()` masks secret-flagged values unless includeSecrets
+
+## 7. Storage abstraction (media-storage)
+
+- [x] 7.1 RED: tests — default server disk, switch to R2 via setting, missing R2 creds throws, store→URL→delete round-trip
+- [x] 7.2 GREEN: `StorageRepository` + `DiskStorage` base + `ServerDiskStorage`/`CloudflareR2Storage` + `StorageManager` resolver; r2 disk in filesystems config; bound in RepositoryServiceProvider
+
+## 8. API foundation (api-foundation)
+
+- [x] 8.1 RED: tests — health 200, 401 without token / 200 with Sanctum token, validation→422 envelope, 500 hides internals, OTP→429
+- [x] 8.2 GREEN: `routes/api.php` `/api/v1` group (registered in bootstrap), Sanctum (`HasApiTokens`), `ApiExceptionRenderer` uniform envelope
+- [x] 8.3 GREEN: rate limiters (otp/auth/orders) registered; otp applied to placeholder endpoint
+
+## 9. Verify & ship
+
+- [ ] 9.1 Run full suite: Pest green, Larastan max clean, Pint clean
+- [ ] 9.2 Seed against `furnib-ecommerce` MySQL DB; manually verify owner first-login flow
+- [ ] 9.3 `/opsx:archive` the change; commit on `feat/phase-0-foundations`, merge `master`, push; tag not yet (pre-Phase-1)

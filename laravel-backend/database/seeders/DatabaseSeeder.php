@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +14,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(PermissionRoleSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Bootstrap accounts only when their credentials are configured,
+        // so `db:seed` does not hard-fail in environments without them.
+        if (filled(config('rbac.owner_email')) && filled(config('rbac.owner_bootstrap_password'))) {
+            $this->call(OwnerSeeder::class);
+        }
+
+        if (filled(config('rbac.admin_bootstrap_password'))) {
+            $this->call(AdminSeeder::class);
+        }
     }
 }

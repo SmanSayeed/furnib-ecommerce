@@ -7,10 +7,10 @@
 
 ## 2. Product module (product-management)
 
-- [ ] 2.1 RED: tests — money paisa, unique SKU/slug, stock logic, social-thumbnail fallback
-- [ ] 2.2 GREEN: `products` + `product_images` migrations, `Product`/`ProductImage` models (Money cast, softDeletes, relations)
-- [ ] 2.3 GREEN: `ProductRepository` + `ProductService`; stock availability accessor; max-6 images rule
-- [ ] 2.4 GREEN: admin CRUD endpoints gated by `catalog.manage`
+- [x] 2.1 RED: tests — money paisa, unique SKU, stock logic, social-thumbnail fallback, max-6 images
+- [x] 2.2 GREEN: `products` + `product_images` migrations, `Product`/`ProductImage` models (Money cast, softDeletes, relations)
+- [x] 2.3 GREEN: `ProductRepository` + `ProductService` (auto slug/sku, stock accessor, max-6 images rule)
+- [ ] 2.4 admin CRUD endpoints gated by `catalog.manage` — PENDING (storefront API done; admin write endpoints next)
 
 ## 3. Image optimization (image-optimization)
 
@@ -19,8 +19,8 @@
 
 ## 4. Catalog read API (catalog-api)
 
-- [ ] 4.1 RED: tests — categories list (active only), category+products by slug (paginated), product by slug; drafts/inactive 404
-- [ ] 4.2 GREEN: `Api\CategoryController`/`Api\ProductController` + JSON Resources under `/api/v1`
+- [x] 4.1 RED: tests — categories list (active only), category+products by slug (paginated), product by slug; drafts/inactive 404
+- [x] 4.2 GREEN: `Api\CategoryController` (list + show-with-products) / `Api\ProductController` (show) + Category/Product Resources under `/api/v1`
 
 ## 5. Admin listing & lifecycle (product-admin-listing)
 

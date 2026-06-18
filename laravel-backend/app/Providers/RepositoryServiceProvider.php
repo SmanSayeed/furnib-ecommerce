@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Repositories\Contracts\CategoryRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Eloquent\CategoryRepository;
+use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Storage\Contracts\StorageRepository;
 use App\Storage\StorageManager;
@@ -22,6 +24,7 @@ class RepositoryServiceProvider extends ServiceProvider
     public array $bindings = [
         UserRepositoryInterface::class => UserRepository::class,
         CategoryRepositoryInterface::class => CategoryRepository::class,
+        ProductRepositoryInterface::class => ProductRepository::class,
     ];
 
     public function register(): void

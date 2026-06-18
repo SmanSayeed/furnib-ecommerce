@@ -30,7 +30,8 @@
 - ✅ OpenSpec change proposed (5 capability specs + tasks), validated.
 - ✅ 1. Category module — migration, model (SEO/softDeletes/scopes), factory, repository, service (auto unique slug), admin CRUD (RBAC-gated) + storefront list/show API + resource, audited. **90 tests, Larastan 0, Pint clean.**
   - Fixed a latent bug: `shouldRenderJsonWhen` now also honours `expectsJson()`, so admin JSON endpoints return 422 envelopes instead of 302 redirects on validation errors.
-- ⏳ 2. Product module (model/migration/images/pricing/stock + admin CRUD).
-- ⏳ 3. Image optimization (WebP via intervention/image + StorageRepository).
-- ⏳ 4. Catalog read API — category+products detail, product detail (needs Product).
-- ⏳ 5. Admin product listing — search/filter/sort, recycle bin, CSV export.
+- ✅ 2. Product module (data layer) — products + product_images migrations, Product/ProductImage models (Money cast paisa, soft deletes, relations, stock logic, social-thumbnail fallback), factory, ProductRepository + ProductService (auto slug/sku, max-6 images rule). Admin write CRUD endpoints PENDING.
+- ✅ 4. Catalog read API — `/api/v1/categories` (active list), `/api/v1/categories/{slug}` (with paginated published products), `/api/v1/products/{slug}` (404 on draft). Category/Product resources. **99 tests, Larastan 0, Pint clean.**
+- ⏳ 3. Image optimization (WebP via intervention/image + StorageRepository) — next.
+- ⏳ 2.4 Admin product write CRUD — next.
+- ⏳ 5. Admin product listing — search/filter/sort, recycle bin, CSV export — next.

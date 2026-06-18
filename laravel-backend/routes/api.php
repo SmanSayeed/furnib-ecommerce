@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,7 @@ Route::prefix('v1')->group(function () {
     // Storefront catalog (read-only)
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/{slug}', [CategoryController::class, 'show']);
+    Route::get('products/{slug}', [ProductController::class, 'show']);
 
     Route::middleware('auth:sanctum')->get('me', fn (Request $request) => response()->json([
         'id' => $request->user()->id,

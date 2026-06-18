@@ -1,9 +1,9 @@
 ## 1. Category module (category-management)
 
-- [ ] 1.1 RED: migration/model/factory + repository tests; CRUD + slug uniqueness + status/order
-- [ ] 1.2 GREEN: `categories` migration, `Category` model (SEO, softDeletes), factory
-- [ ] 1.3 GREEN: `CategoryRepository` + `CategoryService` (auto-slug, ordering, active scope), audited
-- [ ] 1.4 GREEN: admin CRUD endpoints gated by `catalog.manage`; validation FormRequests
+- [x] 1.1 RED: management + API tests (auto-slug, duplicate rejected, authz 403, audit, active-only list, 404)
+- [x] 1.2 GREEN: `categories` migration, `Category` model (SEO, softDeletes, scopes), factory
+- [x] 1.3 GREEN: `CategoryRepository` + `CategoryService` (auto-slug, ordering, active scope), audited
+- [x] 1.4 GREEN: admin CRUD (StoreategoryRequest/UpdateCategoryRequest, gated `catalog.manage`) + storefront list/show API + CategoryResource. Fixed latent JSON-exception bug (shouldRenderJsonWhen now honours expectsJson).
 
 ## 2. Product module (product-management)
 

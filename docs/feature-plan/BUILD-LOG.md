@@ -24,4 +24,13 @@
 - ✅ 7. Storage abstraction — StorageRepository (server default, R2 switchable), loud-fail on missing R2 creds.
 - ✅ 8. API foundation — `/api/v1`, Sanctum, uniform error envelope (`ApiExceptionRenderer`), rate limiters (otp/auth/orders).
 
-**Phase 0 done.** Next: merge to master, then Phase 1 — Catalog (categories + products + image pipeline + admin list/recycle-bin/CSV + storefront read API).
+**Phase 0 done & merged to master.**
+
+### Phase 1 — Catalog  (in progress on `feat/phase-1-catalog`)
+- ✅ OpenSpec change proposed (5 capability specs + tasks), validated.
+- ✅ 1. Category module — migration, model (SEO/softDeletes/scopes), factory, repository, service (auto unique slug), admin CRUD (RBAC-gated) + storefront list/show API + resource, audited. **90 tests, Larastan 0, Pint clean.**
+  - Fixed a latent bug: `shouldRenderJsonWhen` now also honours `expectsJson()`, so admin JSON endpoints return 422 envelopes instead of 302 redirects on validation errors.
+- ⏳ 2. Product module (model/migration/images/pricing/stock + admin CRUD).
+- ⏳ 3. Image optimization (WebP via intervention/image + StorageRepository).
+- ⏳ 4. Catalog read API — category+products detail, product detail (needs Product).
+- ⏳ 5. Admin product listing — search/filter/sort, recycle bin, CSV export.

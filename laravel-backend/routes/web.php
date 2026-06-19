@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -87,6 +88,12 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:orders.view')->name('orders.invoice');
     Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])
         ->middleware('permission:orders.manage')->name('orders.status');
+
+    // Courier consignment (SteadFast) — booking + tracking.
+    Route::middleware('permission:orders.manage')->group(function () {
+        Route::post('orders/{order}/ship', [ShipmentController::class, 'store'])->name('orders.ship');
+        Route::post('orders/{order}/track', [ShipmentController::class, 'track'])->name('orders.track');
+    });
 });
 
 // Admin shipping — Inertia UI.

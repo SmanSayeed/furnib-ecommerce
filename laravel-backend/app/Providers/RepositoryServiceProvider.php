@@ -12,6 +12,8 @@ use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Storage\Contracts\StorageRepository;
 use App\Storage\StorageManager;
+use App\Support\Courier\CourierGateway;
+use App\Support\Courier\SteadFastCourier;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Payments\SslCommerzGateway;
 use App\Support\Sms\LogSmsGateway;
@@ -31,6 +33,7 @@ class RepositoryServiceProvider extends ServiceProvider
         ProductRepositoryInterface::class => ProductRepository::class,
         SmsGateway::class => LogSmsGateway::class,
         PaymentGateway::class => SslCommerzGateway::class,
+        CourierGateway::class => SteadFastCourier::class,
     ];
 
     public function register(): void

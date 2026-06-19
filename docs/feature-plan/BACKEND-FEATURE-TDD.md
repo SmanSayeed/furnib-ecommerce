@@ -121,25 +121,34 @@ All of 3.1–3.6 green · Larastan max · Pint · API resources stable · `opens
 
 # PHASE 4 — Payments / Customer Auth / SMS / Courier (backend) `feat/phase-4-integrations`
 
-> All integrations behind `Support/*` interfaces; **faked in tests**; secrets in encrypted settings — never in client bundle.
+> **STATUS: backend COMPLETE ✅ (4.1–4.5).** All integrations sit behind
+> `Support/*` interfaces, faked in tests, with creds in encrypted settings
+> (never in client bundle). Full suite **222 passed / 2 skipped**, Pint +
+> Larastan clean. SMS (LogSmsGateway + Fake), OTP auth (Sanctum, hashed codes,
+> lockout, per-mobile cooldown), SSLCommerz (server-side `val_id` validation,
+> idempotent, amount reconciliation, encrypted payload), SteadFast courier
+> (idempotent consignment, COD = remaining), SMTP (dynamic encrypted settings,
+> queued order mail + SMS, non-fatal). **Remaining for Phase 4 = frontend only**
+> (customer OTP login UI, pay buttons, admin courier/SMTP screens), deferred per
+> backend-first.
 
-## 4.1 Customer OTP auth (S10/M28) — ⬜
+## 4.1 Customer OTP auth (S10/M28) — ✅
 **Artifacts:** `otp_codes` migration (mobile, code **hashed**, expires_at, attempts); `OtpService` (issue, verify, rate-limit, expiry); `Api\Auth\OtpController` (`request`, `verify`) issuing **Sanctum** tokens; throttle.
 **RED tests:** [U] OTP hashed (never stored/returned plaintext); [U] expiry + max-attempts lockout; [F] request → issues (faked SMS); [F] verify correct → token; wrong/expired → 422; [F] rate-limit → 429; [F] auto-register customer on first verify.
 
-## 4.2 SSLCommerz (M8) — ⬜
+## 4.2 SSLCommerz (M8) — ✅
 **Artifacts:** `payments` migration (order_id, gateway, amount, type full|partial|shipping, tran_id, val_id, status, raw_payload **encrypted**); `Support/Payments/SslCommerzGateway` interface + impl (dynamic creds from encrypted settings); `Api\Payment\SslController` (init, ipn, success/fail/cancel); idempotent `RecordPayment` action.
 **RED tests:** [I] init builds session (faked); [F] **`val_id` verified server-side** — forged/redirect-only success **rejected**; [F] **idempotent**: duplicate IPN/return for same tran_id records once; [F] partial vs full vs shipping amounts; [U] amount reconciliation vs order; [F] secret creds never serialized to JSON/response.
 
-## 4.3 SMS gateway (M9) — ⬜
+## 4.3 SMS gateway (M9) — ✅
 **Artifacts:** `Support/Sms/SmsGateway` interface (+ null/log driver now, BD adapter later); order-confirmation + OTP send; dynamic creds.
 **RED tests:** [I] order confirmed → SMS dispatched (fake) with order_no; [U] provider-agnostic contract; [F] failure is non-fatal (order still succeeds, logged).
 
-## 4.4 SteadFast courier (M10) — ⬜
+## 4.4 SteadFast courier (M10) — ✅
 **Artifacts:** `shipments` migration; `Support/Courier/SteadFast` interface+impl (dynamic creds); create consignment from order, fetch tracking.
 **RED tests:** [I] create consignment stores consignment_id/tracking_code (faked); [F] authz orders.manage; [F] tracking status fetch maps to model.
 
-## 4.5 SMTP (M11) — ⬜
+## 4.5 SMTP (M11) — ✅
 **Artifacts:** dynamic SMTP settings (encrypted), test-send action, transactional order mail (when email present).
 **RED tests:** [F] settings save (secret encrypted at rest, masked in response); [I] test-send uses configured transport (Mail::fake); [F] order mail queued when email present, skipped otherwise.
 

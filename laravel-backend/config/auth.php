@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Customer;
 use App\Models\User;
 
 return [
@@ -43,13 +42,6 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-
-        // Storefront customers authenticate with Sanctum bearer tokens issued
-        // after OTP verification. Kept separate from the admin 'web' guard.
-        'customer' => [
-            'driver' => 'sanctum',
-            'provider' => 'customers',
-        ],
     ],
 
     /*
@@ -73,11 +65,6 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
-        ],
-
-        'customers' => [
-            'driver' => 'eloquent',
-            'model' => Customer::class,
         ],
 
         // 'users' => [

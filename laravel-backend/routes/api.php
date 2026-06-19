@@ -5,9 +5,11 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShippingZoneController;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,9 +40,21 @@ Route::prefix('v1')->group(function () {
     Route::middleware('throttle:otp')->post('auth/otp/request', [OtpController::class, 'request']);
     Route::middleware('throttle:auth')->post('auth/otp/verify', [OtpController::class, 'verify']);
 
+    // SSLCommerz payments. `init` starts a session; the rest are gateway
+    // callbacks re-validated server-side before any money is recorded.
+    Route::prefix('payment/ssl')->group(function () {
+        Route::middleware('throttle:orders')->post('init', [SslController::class, 'init']);
+        Route::post('success', [SslController::class, 'success'])->name('api.payment.ssl.success');
+        Route::post('fail', [SslController::class, 'fail'])->name('api.payment.ssl.fail');
+        Route::post('cancel', [SslController::class, 'cancel'])->name('api.payment.ssl.cancel');
+        Route::post('ipn', [SslController::class, 'ipn'])->name('api.payment.ssl.ipn');
+    });
+
     // Authenticated customer (Sanctum token scoped to the 'customer' ability).
-    Route::middleware(['auth:customer', 'abilities:customer'])->get('auth/me', function (Request $request) {
-        $customer = $request->user('customer');
+    // The bearer token's tokenable is a Customer; fetch it explicitly so the
+    // type is concrete (the default guard model is User).
+    Route::middleware(['auth:sanctum', 'abilities:customer'])->get('auth/me', function (Request $request) {
+        $customer = Customer::query()->whereKey($request->user()?->getKey())->firstOrFail();
 
         return response()->json([
             'id' => $customer->id,

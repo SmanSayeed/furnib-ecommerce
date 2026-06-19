@@ -12,6 +12,8 @@ use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Storage\Contracts\StorageRepository;
 use App\Storage\StorageManager;
+use App\Support\Payments\PaymentGateway;
+use App\Support\Payments\SslCommerzGateway;
 use App\Support\Sms\LogSmsGateway;
 use App\Support\Sms\SmsGateway;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +30,7 @@ class RepositoryServiceProvider extends ServiceProvider
         CategoryRepositoryInterface::class => CategoryRepository::class,
         ProductRepositoryInterface::class => ProductRepository::class,
         SmsGateway::class => LogSmsGateway::class,
+        PaymentGateway::class => SslCommerzGateway::class,
     ];
 
     public function register(): void

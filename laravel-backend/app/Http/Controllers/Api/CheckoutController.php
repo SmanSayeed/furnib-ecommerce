@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Orders\PlaceOrder;
+use App\Actions\Orders\SendOrderConfirmation;
 use App\DTOs\PlaceOrderData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreOrderRequest;
@@ -14,7 +15,10 @@ use Illuminate\Http\JsonResponse;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private readonly PlaceOrder $placeOrder) {}
+    public function __construct(
+        private readonly PlaceOrder $placeOrder,
+        private readonly SendOrderConfirmation $sendConfirmation,
+    ) {}
 
     public function store(StoreOrderRequest $request): JsonResponse
     {
@@ -43,6 +47,8 @@ class CheckoutController extends Controller
         } catch (DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+
+        $this->sendConfirmation->handle($order);
 
         return (new OrderResource($order))->response()->setStatusCode(201);
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SiteSettingController;
+use App\Http\Controllers\Settings\SmtpSettingController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,11 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::get('settings/site', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
     Route::post('settings/site', [SiteSettingController::class, 'update'])->name('site-settings.update');
+
+    // SMTP transport settings + deliverability test.
+    Route::get('settings/smtp', [SmtpSettingController::class, 'edit'])->name('smtp-settings.edit');
+    Route::post('settings/smtp', [SmtpSettingController::class, 'update'])->name('smtp-settings.update');
+    Route::post('settings/smtp/test', [SmtpSettingController::class, 'test'])->name('smtp-settings.test');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\Mail\MailConfigurator;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Activitylog\Models\Activity;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +32,25 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureRateLimiters();
         $this->configureAuditTrail();
+        $this->configureMail();
+    }
+
+    /**
+     * Apply the dynamic SMTP settings (from encrypted DB settings) to the mail
+     * transport. Skipped in tests (which use the array mailer). Wrapped so a
+     * missing settings table during install/migrate is non-fatal.
+     */
+    protected function configureMail(): void
+    {
+        if ($this->app->runningUnitTests()) {
+            return;
+        }
+
+        try {
+            $this->app->make(MailConfigurator::class)->apply();
+        } catch (Throwable) {
+            // Settings table not ready yet (e.g. before migrations) — ignore.
+        }
     }
 
     /**

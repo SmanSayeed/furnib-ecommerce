@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\ProductController;
@@ -33,8 +34,19 @@ Route::prefix('v1')->group(function () {
         'email' => $request->user()->email,
     ]));
 
-    // Placeholder throttled endpoint; real OTP logic arrives in Phase 4.
-    Route::middleware('throttle:otp')->post('otp/request', fn () => response()->json([
-        'sent' => true,
-    ]));
+    // Customer mobile OTP auth (storefront).
+    Route::middleware('throttle:otp')->post('auth/otp/request', [OtpController::class, 'request']);
+    Route::middleware('throttle:auth')->post('auth/otp/verify', [OtpController::class, 'verify']);
+
+    // Authenticated customer (Sanctum token scoped to the 'customer' ability).
+    Route::middleware(['auth:customer', 'abilities:customer'])->get('auth/me', function (Request $request) {
+        $customer = $request->user('customer');
+
+        return response()->json([
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'mobile' => $customer->mobile,
+            'email' => $customer->email,
+        ]);
+    });
 });

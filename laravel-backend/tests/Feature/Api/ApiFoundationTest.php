@@ -52,10 +52,14 @@ it('hides internal details on server errors when debug is off', function () {
         ->and($response->json('error.message'))->toBe('Server error.');
 });
 
-it('throttles the otp endpoint after the limit', function () {
-    foreach (range(1, 5) as $ignored) {
-        $this->postJson('/api/v1/otp/request')->assertOk();
+it('throttles the otp endpoint after the per-IP limit', function () {
+    // Distinct mobiles each request so we hit the per-IP route throttle (5/min)
+    // rather than the per-mobile resend cooldown.
+    foreach (range(1, 5) as $i) {
+        $this->postJson('/api/v1/auth/otp/request', ['mobile' => '017100000'.str_pad((string) $i, 2, '0', STR_PAD_LEFT)])
+            ->assertOk();
     }
 
-    $this->postJson('/api/v1/otp/request')->assertStatus(429);
+    $this->postJson('/api/v1/auth/otp/request', ['mobile' => '01710000099'])
+        ->assertStatus(429);
 });

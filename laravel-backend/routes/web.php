@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Catalog\CategoryUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +72,20 @@ Route::middleware('auth')->prefix('admin/catalog')->name('admin.')->group(functi
         Route::delete('products/{product}', [ProductUiController::class, 'destroy'])->name('products.destroy');
         Route::post('products/{id}/restore', [ProductUiController::class, 'restore'])->name('products.restore');
         Route::delete('products/{id}/force', [ProductUiController::class, 'forceDelete'])->name('products.force');
+    });
+});
+
+// Admin shipping — Inertia UI.
+Route::middleware('auth')->prefix('admin/shipping')->name('admin.')->group(function () {
+    Route::get('zones', [ShippingZoneController::class, 'index'])
+        ->middleware('permission:orders.view')->name('shipping-zones.index');
+
+    Route::middleware('permission:orders.manage')->group(function () {
+        Route::get('zones/create', [ShippingZoneController::class, 'create'])->name('shipping-zones.create');
+        Route::post('zones', [ShippingZoneController::class, 'store'])->name('shipping-zones.store');
+        Route::get('zones/{shippingZone}/edit', [ShippingZoneController::class, 'edit'])->name('shipping-zones.edit');
+        Route::put('zones/{shippingZone}', [ShippingZoneController::class, 'update'])->name('shipping-zones.update');
+        Route::delete('zones/{shippingZone}', [ShippingZoneController::class, 'destroy'])->name('shipping-zones.destroy');
     });
 });
 

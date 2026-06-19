@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\MarketingSettingController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SiteSettingController;
@@ -23,6 +24,12 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::get('settings/smtp', [SmtpSettingController::class, 'edit'])->name('smtp-settings.edit');
     Route::post('settings/smtp', [SmtpSettingController::class, 'update'])->name('smtp-settings.update');
     Route::post('settings/smtp/test', [SmtpSettingController::class, 'test'])->name('smtp-settings.test');
+});
+
+// Marketing / analytics settings — marketer & admin.
+Route::middleware(['auth', 'permission:marketing.manage'])->group(function () {
+    Route::get('settings/marketing', [MarketingSettingController::class, 'edit'])->name('marketing-settings.edit');
+    Route::post('settings/marketing', [MarketingSettingController::class, 'update'])->name('marketing-settings.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

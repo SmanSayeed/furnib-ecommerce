@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Payments;
 
+use App\Actions\Marketing\SendPurchaseEvent;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Support\Money;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class RecordPayment
 {
+    public function __construct(private readonly SendPurchaseEvent $purchaseEvent) {}
+
     /**
      * @param  array<string, mixed>  $validated  Normalized result from PaymentGateway::validatePayment().
      */
@@ -59,6 +62,7 @@ final class RecordPayment
     private function reconcileOrder(Payment $payment): void
     {
         $order = Order::query()->whereKey($payment->order_id)->lockForUpdate()->firstOrFail();
+        $wasPaid = $order->payment_status === 'paid';
 
         $paidMinor = (int) $order->payments()->where('status', Payment::STATUS_SUCCESS)->sum('amount');
         $totalMinor = $order->total->toMinor();
@@ -74,5 +78,10 @@ final class RecordPayment
             'payment_status' => $paymentStatus,
             'status' => $order->status === 'pending' ? 'confirmed' : $order->status,
         ]);
+
+        // Fire the server-side Purchase event once, when the order first becomes paid.
+        if ($paymentStatus === 'paid' && ! $wasPaid) {
+            $this->purchaseEvent->handle($order);
+        }
     }
 }

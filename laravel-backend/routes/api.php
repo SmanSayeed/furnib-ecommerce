@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShippingZoneController;
+use App\Http\Controllers\Api\TrackingController;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,9 @@ Route::prefix('v1')->group(function () {
 
     // Public analytics IDs (no secrets).
     Route::get('marketing', [MarketingController::class, 'index']);
+
+    // Storefront pageview beacon.
+    Route::middleware('throttle:tracking')->post('track', [TrackingController::class, 'store']);
 
     // Storefront catalog (read-only)
     Route::get('categories', [CategoryController::class, 'index']);

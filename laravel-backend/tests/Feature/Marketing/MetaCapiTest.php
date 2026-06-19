@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\Order;
+use App\Services\Settings\SettingsService;
+use App\Support\Capi\ConversionApi;
+use App\Support\Capi\FakeConversionApi;
+use App\Support\Capi\PurchasePayload;
+use App\Support\Payments\FakePaymentGateway;
+use App\Support\Payments\PaymentGateway;
+
+beforeEach(function () {
+    cache()->flush();
+    $this->gateway = new FakePaymentGateway;
+    $this->capi = new FakeConversionApi;
+    $this->app->instance(PaymentGateway::class, $this->gateway);
+    $this->app->instance(ConversionApi::class, $this->capi);
+});
+
+function paidOrderViaGateway($test, Order $order): void
+{
+    $tranId = $test->postJson('/api/v1/payment/ssl/init', [
+        'order_no' => $order->order_no,
+        'type' => 'full',
+    ])->json('tran_id');
+
+    $test->gateway->fakeValidation([
+        'status' => 'VALID',
+        'tran_id' => $tranId,
+        'amount' => $order->total->toDisplay(),
+        'val_id' => 'v-ok',
+    ]);
+
+    $test->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v-ok'])->assertOk();
+}
+
+it('sends a server-side Purchase event when an order becomes paid', function () {
+    $order = Order::factory()->create(['total' => 5000, 'advance_paid' => 0, 'payment_status' => 'unpaid']);
+
+    paidOrderViaGateway($this, $order);
+
+    expect($this->capi->purchases)->toHaveCount(1)
+        ->and($this->capi->purchases[0]['order_no'])->toBe($order->order_no)
+        ->and($this->capi->purchases[0]['event_id'])->toBe('purchase.'.$order->order_no);
+});
+
+it('does not double-fire the Purchase event on a duplicate callback', function () {
+    $order = Order::factory()->create(['total' => 5000, 'advance_paid' => 0, 'payment_status' => 'unpaid']);
+
+    $tranId = $this->postJson('/api/v1/payment/ssl/init', ['order_no' => $order->order_no, 'type' => 'full'])->json('tran_id');
+    $this->gateway->fakeValidation(['status' => 'VALID', 'tran_id' => $tranId, 'amount' => $order->total->toDisplay(), 'val_id' => 'v']);
+
+    $this->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
+    $this->postJson('/api/v1/payment/ssl/ipn', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
+
+    expect($this->capi->purchases)->toHaveCount(1);
+});
+
+it('maps the order onto a Purchase payload with a shared dedup event id', function () {
+    $order = Order::factory()->create(['total' => 5000]);
+    $eventId = PurchasePayload::eventId($order);
+
+    $payload = PurchasePayload::for($order, $eventId);
+
+    expect($payload['event_name'])->toBe('Purchase')
+        ->and($payload['event_id'])->toBe('purchase.'.$order->order_no)
+        ->and($payload['custom_data']['currency'])->toBe('BDT')
+        ->and($payload['custom_data']['value'])->toBe('5000.00')
+        ->and($payload['custom_data']['order_id'])->toBe($order->order_no);
+});
+
+it('never leaks the CAPI token through the payment response', function () {
+    app(SettingsService::class)->set('marketing', 'fb_capi_token', 'EAAB-secret-capi', isSecret: true);
+    $order = Order::factory()->create(['total' => 5000, 'advance_paid' => 0, 'payment_status' => 'unpaid']);
+
+    $tranId = $this->postJson('/api/v1/payment/ssl/init', ['order_no' => $order->order_no, 'type' => 'full'])->json('tran_id');
+    $this->gateway->fakeValidation(['status' => 'VALID', 'tran_id' => $tranId, 'amount' => $order->total->toDisplay(), 'val_id' => 'v']);
+
+    $response = $this->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
+
+    expect($response->getContent())->not->toContain('EAAB-secret-capi');
+});

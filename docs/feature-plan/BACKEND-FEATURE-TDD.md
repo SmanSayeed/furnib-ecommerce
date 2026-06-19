@@ -156,23 +156,32 @@ All of 3.1–3.6 green · Larastan max · Pint · API resources stable · `opens
 
 # PHASE 5 — Marketing / SEO / Analytics (backend) `feat/phase-5-marketing`
 
-## 5.1 Public analytics IDs (M14) — ⬜
+> **STATUS: backend COMPLETE ✅ (5.1–5.5).** marketing settings (public IDs vs
+> secret CAPI token), Meta CAPI server-side Purchase on paid order (deduped
+> event_id, token server-only), visitor tracking beacon (no PII, UTM parse),
+> SEO (sitemap.xml + robots.txt + Product/Breadcrumb JSON-LD + OG fallback),
+> product feed CSV (published + stock-aware). Built on the `feat/phase-4-integrations`
+> branch alongside Phase 4. Full suite green, Pint + Larastan clean. **Remaining
+> for Phase 5 = frontend only** (embed analytics IDs/Pixel, JSON-LD tags in the
+> storefront head), deferred per backend-first.
+
+## 5.1 Public analytics IDs (M14) — ✅
 **Artifacts:** settings group `marketing` (GTM, GA4, Pixel, Clarity = **public IDs**; CAPI token = **secret**). Public `GET /api/v1/marketing` returns **public IDs only**.
 **RED tests:** [F] endpoint returns public IDs; [F] **CAPI token never present** in any public response/bundle; [F] settings.manage to edit.
 
-## 5.2 Meta CAPI server-side (M14) — ⬜
+## 5.2 Meta CAPI server-side (M14) — ✅
 **Artifacts:** `Support/Capi/ConversionApi` interface+impl (token server-side); event dedup (event_id shared with pixel); ViewContent/InitiateCheckout/Purchase.
 **RED tests:** [I] Purchase sent server-side on paid order (faked) with dedup id; [U] payload mapping; [F] token never leaves server.
 
-## 5.3 Visitor tracking (M16) — ⬜
+## 5.3 Visitor tracking (M16) — ✅
 **Artifacts:** `visitors` migration (session, ip, ua, path, referrer, utm, ts); capture middleware/endpoint; link visitor→order by IP where possible.
 **RED tests:** [F] visit recorded; [F] privacy: no PII beyond disclosed; [U] UTM parse.
 
-## 5.4 SEO (M13) — ⬜
+## 5.4 SEO (M13) — ✅
 **Artifacts:** global SEO defaults + `seo_meta` polymorphic overrides; sitemap.xml + robots.txt generators; JSON-LD (Product, Breadcrumb) data builders; dynamic OG thumbnail resolver (home→banner, product/category→own image).
 **RED tests:** [F] sitemap lists published products/categories only; [F] robots.txt content; [U] JSON-LD shape (Product/Breadcrumb); [U] OG fallback chain.
 
-## 5.5 Product feed (M15) — ⬜
+## 5.5 Product feed (M15) — ✅
 **Artifacts:** scheduled CSV/feed export (league/csv) for Meta/Google; feed endpoint (price, availability, image, SKU, link).
 **RED tests:** [F] feed includes published+in-stock mapping; availability reflects stock logic; [U] row schema; [F] only published exposed.
 

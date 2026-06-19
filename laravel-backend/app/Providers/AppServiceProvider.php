@@ -61,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(5)->by((string) $request->ip()));
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(10)->by((string) $request->ip()));
         RateLimiter::for('orders', fn (Request $request) => Limit::perMinute(20)->by((string) $request->ip()));
+        RateLimiter::for('tracking', fn (Request $request) => Limit::perMinute(60)->by((string) $request->ip()));
     }
 
     /**

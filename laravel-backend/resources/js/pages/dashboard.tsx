@@ -9,6 +9,10 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+import {  DataTable } from '@/components/admin/data-table';
+import type {Column} from '@/components/admin/data-table';
+import { PageHeader } from '@/components/admin/page-header';
+import { StatCard } from '@/components/admin/stat-card';
 import { dashboard } from '@/routes';
 
 const BRAND = '#e85d1f';
@@ -36,26 +40,6 @@ type Props = {
     recentProducts: RecentProduct[];
 };
 
-function Kpi({
-    label,
-    value,
-    icon: Icon,
-}: {
-    label: string;
-    value: number;
-    icon: React.ComponentType<{ className?: string }>;
-}) {
-    return (
-        <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{label}</span>
-                <Icon className="size-4 text-muted-foreground" />
-            </div>
-            <div className="mt-2 text-2xl font-semibold">{value.toLocaleString()}</div>
-        </div>
-    );
-}
-
 function StatusPill({ status }: { status: string }) {
     const published = status === 'published';
 
@@ -73,15 +57,73 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export default function Dashboard({ stats, byCategory, recentProducts }: Props) {
+    const recentColumns: Column<RecentProduct>[] = [
+        {
+            key: 'title',
+            header: 'Product',
+            cell: (p) => (
+                <div className="min-w-0">
+                    <div className="truncate font-medium">{p.title}</div>
+                    <div className="text-xs text-muted-foreground">{p.sku}</div>
+                </div>
+            ),
+        },
+        {
+            key: 'category',
+            header: 'Category',
+            cell: (p) => <span className="text-muted-foreground">{p.category ?? '—'}</span>,
+        },
+        { key: 'status', header: 'Status', cell: (p) => <StatusPill status={p.status} /> },
+        { key: 'stock', header: 'Stock', cell: (p) => p.stock },
+        {
+            key: 'price',
+            header: 'Price',
+            align: 'right',
+            cell: (p) => <span className="font-medium">{p.price}</span>,
+        },
+    ];
+
+    const recentMobile = (p: RecentProduct) => (
+        <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+                <div className="truncate font-medium">{p.title}</div>
+                <div className="text-xs text-muted-foreground">{p.sku}</div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{p.category ?? '—'}</span>
+                    <span>·</span>
+                    <span>Stock {p.stock}</span>
+                </div>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+                <span className="font-medium">{p.price}</span>
+                <StatusPill status={p.status} />
+            </div>
+        </div>
+    );
+
     return (
         <>
             <Head title="Dashboard" />
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4">
+                <PageHeader title="Dashboard" description="Your store at a glance." />
+
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <Kpi label="Products" value={stats.products} icon={Package} />
-                    <Kpi label="Published" value={stats.published} icon={ShoppingCart} />
-                    <Kpi label="Categories" value={stats.categories} icon={FolderTree} />
-                    <Kpi label="Low stock (≤5)" value={stats.lowStock} icon={Boxes} />
+                    <StatCard label="Products" value={stats.products.toLocaleString()} icon={Package} />
+                    <StatCard
+                        label="Published"
+                        value={stats.published.toLocaleString()}
+                        icon={ShoppingCart}
+                    />
+                    <StatCard
+                        label="Categories"
+                        value={stats.categories.toLocaleString()}
+                        icon={FolderTree}
+                    />
+                    <StatCard
+                        label="Low stock (≤5)"
+                        value={stats.lowStock.toLocaleString()}
+                        icon={Boxes}
+                    />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-3">
@@ -119,63 +161,19 @@ export default function Dashboard({ stats, byCategory, recentProducts }: Props) 
                     </div>
                 </div>
 
-                <div className="rounded-xl border bg-card">
-                    <div className="border-b p-4">
-                        <h2 className="text-sm font-medium text-muted-foreground">Recent products</h2>
-                    </div>
-
+                <div>
+                    <h2 className="mb-2 text-sm font-medium text-muted-foreground">Recent products</h2>
                     {recentProducts.length === 0 ? (
-                        <p className="p-10 text-center text-sm text-muted-foreground">
+                        <div className="rounded-xl border bg-card p-10 text-center text-sm text-muted-foreground">
                             No products yet.
-                        </p>
+                        </div>
                     ) : (
-                        <>
-                            <table className="hidden w-full text-sm md:table">
-                                <thead>
-                                    <tr className="border-b text-left text-xs text-muted-foreground">
-                                        <th className="px-4 py-2 font-normal">Product</th>
-                                        <th className="px-4 py-2 font-normal">Category</th>
-                                        <th className="px-4 py-2 font-normal">Status</th>
-                                        <th className="px-4 py-2 font-normal">Stock</th>
-                                        <th className="px-4 py-2 text-right font-normal">Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {recentProducts.map((p) => (
-                                        <tr key={p.id} className="border-b last:border-0">
-                                            <td className="px-4 py-3">
-                                                <div className="font-medium">{p.title}</div>
-                                                <div className="text-xs text-muted-foreground">{p.sku}</div>
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground">{p.category ?? '—'}</td>
-                                            <td className="px-4 py-3"><StatusPill status={p.status} /></td>
-                                            <td className="px-4 py-3">{p.stock}</td>
-                                            <td className="px-4 py-3 text-right font-medium">{p.price}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-
-                            <div className="divide-y md:hidden">
-                                {recentProducts.map((p) => (
-                                    <div key={p.id} className="flex items-start justify-between gap-3 p-4">
-                                        <div className="min-w-0">
-                                            <div className="truncate font-medium">{p.title}</div>
-                                            <div className="text-xs text-muted-foreground">{p.sku}</div>
-                                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                                <span>{p.category ?? '—'}</span>
-                                                <span>·</span>
-                                                <span>Stock {p.stock}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            <span className="font-medium">{p.price}</span>
-                                            <StatusPill status={p.status} />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
+                        <DataTable
+                            columns={recentColumns}
+                            rows={recentProducts}
+                            rowKey={(p) => p.id}
+                            renderMobileCard={recentMobile}
+                        />
                     )}
                 </div>
             </div>

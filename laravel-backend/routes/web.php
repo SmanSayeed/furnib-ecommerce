@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Catalog\CategoryUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShipmentController;
@@ -103,6 +104,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::post('orders/{order}/ship', [ShipmentController::class, 'store'])->name('orders.ship');
         Route::post('orders/{order}/track', [ShipmentController::class, 'track'])->name('orders.track');
     });
+
+    // Owner-only reversible Maintenance Lock.
+    Route::put('maintenance', [MaintenanceController::class, 'update'])
+        ->middleware('permission:maintenance.manage')->name('maintenance.update');
 });
 
 // Admin shipping — Inertia UI.

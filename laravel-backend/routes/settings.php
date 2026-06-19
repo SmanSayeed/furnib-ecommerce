@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\IntegrationSettingController;
 use App\Http\Controllers\Settings\MarketingSettingController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -24,6 +25,10 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::get('settings/smtp', [SmtpSettingController::class, 'edit'])->name('smtp-settings.edit');
     Route::post('settings/smtp', [SmtpSettingController::class, 'update'])->name('smtp-settings.update');
     Route::post('settings/smtp/test', [SmtpSettingController::class, 'test'])->name('smtp-settings.test');
+
+    // Payment / courier gateway credentials (encrypted secrets).
+    Route::post('settings/sslcommerz', [IntegrationSettingController::class, 'updateSslcommerz'])->name('sslcommerz-settings.update');
+    Route::post('settings/steadfast', [IntegrationSettingController::class, 'updateSteadfast'])->name('steadfast-settings.update');
 });
 
 // Marketing / analytics settings — marketer & admin.

@@ -189,14 +189,24 @@ All of 3.1–3.6 green · Larastan max · Pint · API resources stable · `opens
 
 # PHASE 6 — Settings surfaces & hardening (backend) `feat/phase-6-hardening`
 
-## 6.1 Gateway/settings editors (M12) — ⬜ (mostly admin UI; backend = encrypted setting save/test endpoints per gateway)
+> **STATUS: backend COMPLETE ✅ (6.1–6.3).** Encrypted cred save endpoints
+> (SMTP/marketing/SSLCommerz/SteadFast, secrets masked); owner-only reversible
+> Maintenance Lock (public flag, audit-logged, guard test proving no
+> filesystem-deletion); security pass (SecurityHeaders middleware, CORS locked
+> to storefront origin, secret-sweep test across all public endpoints). Built on
+> `feat/phase-4-integrations`. Full suite **256 passed / 2 skipped**, Pint +
+> Larastan clean. **ENTIRE BACKEND (Phases 3–6) is now done** — remaining work is
+> frontend (admin Inertia surfaces + Next.js storefront) plus a future strict CSP
+> with Vite nonces.
+
+## 6.1 Gateway/settings editors (M12) — ✅ (backend: encrypted cred save endpoints)
 **RED tests:** [F] each gateway settings save → secrets encrypted at rest + masked on read; [F] settings.manage gate; [F] test-send/verify endpoints behind auth.
 
-## 6.2 Owner Maintenance Lock (M19) — ⬜
+## 6.2 Owner Maintenance Lock (M19) — ✅
 **Artifacts:** `license`/`maintenance` settings group; owner-only actions: enable maintenance (storefront returns maintenance page via API flag), global session revocation, key rotation — **reversible, never deletes files**; audit-logged.
 **RED tests:** [F] owner-only (others 403); [F] enabling sets storefront flag; [F] reversible (disable restores); [F] every action audit-logged; [U] **no filesystem-deletion call exists** (guard test / static assertion).
 
-## 6.3 Security pass — ⬜
+## 6.3 Security pass — ✅
 **Artifacts:** rate limits on public/order/OTP/payment; security headers (CSP/HSTS) middleware; CORS locked to storefront origin; `composer/npm audit`; Larastan max; load/perf check; backup strategy doc.
 **RED tests:** [F] CORS rejects non-storefront origin; [F] security headers present; [F] throttled endpoints return 429; [F] no `NEXT_PUBLIC_*` secret + no secret in any API resource (sweep test).
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
@@ -26,6 +27,9 @@ Route::prefix('v1')->group(function () {
 
     // Public analytics IDs (no secrets).
     Route::get('marketing', [MarketingController::class, 'index']);
+
+    // Public maintenance flag.
+    Route::get('maintenance', [MaintenanceController::class, 'index']);
 
     // Storefront pageview beacon.
     Route::middleware('throttle:tracking')->post('track', [TrackingController::class, 'store']);

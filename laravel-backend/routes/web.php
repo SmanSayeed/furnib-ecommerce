@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Catalog\CategoryUiController;
+use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\DashboardController;
@@ -54,6 +55,22 @@ Route::middleware('auth')->prefix('admin/catalog')->name('admin.')->group(functi
         Route::get('categories/{category}/edit', [CategoryUiController::class, 'edit'])->name('categories.edit');
         Route::put('categories/{category}', [CategoryUiController::class, 'update'])->name('categories.update');
         Route::delete('categories/{category}', [CategoryUiController::class, 'destroy'])->name('categories.destroy');
+    });
+
+    // Products — specific routes before the {product} wildcard.
+    Route::get('products', [ProductUiController::class, 'index'])
+        ->middleware('permission:catalog.view')->name('products.index');
+    Route::get('products/trashed', [ProductUiController::class, 'trashed'])
+        ->middleware('permission:catalog.view')->name('products.trashed');
+
+    Route::middleware('permission:catalog.manage')->group(function () {
+        Route::get('products/create', [ProductUiController::class, 'create'])->name('products.create');
+        Route::post('products', [ProductUiController::class, 'store'])->name('products.store');
+        Route::get('products/{product}/edit', [ProductUiController::class, 'edit'])->name('products.edit');
+        Route::put('products/{product}', [ProductUiController::class, 'update'])->name('products.update');
+        Route::delete('products/{product}', [ProductUiController::class, 'destroy'])->name('products.destroy');
+        Route::post('products/{id}/restore', [ProductUiController::class, 'restore'])->name('products.restore');
+        Route::delete('products/{id}/force', [ProductUiController::class, 'forceDelete'])->name('products.force');
     });
 });
 

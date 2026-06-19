@@ -41,7 +41,7 @@ const navGroups: AdminNavGroup[] = [
         label: 'Catalog',
         permission: 'catalog.view',
         items: [
-            { title: 'Products', icon: Package, soon: true },
+            { title: 'Products', href: '/admin/catalog/products', icon: Package },
             { title: 'Categories', href: '/admin/catalog/categories', icon: FolderTree },
             { title: 'Inventory', icon: Boxes, soon: true },
         ],

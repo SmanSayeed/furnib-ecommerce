@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Catalog\CategoryUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\DashboardController;
@@ -73,6 +75,18 @@ Route::middleware('auth')->prefix('admin/catalog')->name('admin.')->group(functi
         Route::post('products/{id}/restore', [ProductUiController::class, 'restore'])->name('products.restore');
         Route::delete('products/{id}/force', [ProductUiController::class, 'forceDelete'])->name('products.force');
     });
+});
+
+// Admin orders — Inertia UI.
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('orders', [OrderController::class, 'index'])
+        ->middleware('permission:orders.view')->name('orders.index');
+    Route::get('orders/{order}', [OrderController::class, 'show'])
+        ->middleware('permission:orders.view')->name('orders.show');
+    Route::get('orders/{order}/invoice', [InvoiceController::class, 'show'])
+        ->middleware('permission:orders.view')->name('orders.invoice');
+    Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])
+        ->middleware('permission:orders.manage')->name('orders.status');
 });
 
 // Admin shipping — Inertia UI.

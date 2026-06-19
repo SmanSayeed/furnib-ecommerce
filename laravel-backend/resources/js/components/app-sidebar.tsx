@@ -50,7 +50,7 @@ const navGroups: AdminNavGroup[] = [
         label: 'Sales',
         permission: 'orders.view',
         items: [
-            { title: 'Orders', icon: ShoppingCart, soon: true },
+            { title: 'Orders', href: '/admin/orders', icon: ShoppingCart },
             { title: 'Invoices', icon: FileText, soon: true },
             { title: 'Inquiries', icon: MessageCircle, soon: true },
         ],

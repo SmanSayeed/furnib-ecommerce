@@ -24,6 +24,14 @@ Legend: ✅ done · 🔜 next · ⬜ not started.
 
 # PHASE 3 — Orders & Web Checkout (backend) `feat/phase-3-orders`
 
+> **STATUS: backend COMPLETE ✅ (3.1–3.6).** customers/orders/order_items/shipping_zones
+> migrations applied; MobileNumber, OrderNumber, AdvancePayment, PlaceOrder,
+> CustomerService, Checkout API (+ public shipping-zones), Invoice PDF (dompdf),
+> admin Orders (list/show/status transitions, audit-logged) — all green
+> (full suite 182 passed / 2 skipped, Pint + Larastan clean). **Remaining for
+> Phase 3 = storefront FRONTEND only** (S7 checkout, S8 success/celebration),
+> which is the frontend stage and intentionally deferred per backend-first.
+
 Locked data model (MASTER-PLAN §3): `shipping_zones`, `customers`, `orders`,
 `order_items`. (`payments`, `shipments`, `otp_codes` are Phase 4.)
 Order status enum: `pending|confirmed|processing|shipped|delivered|cancelled|returned`.
@@ -70,7 +78,7 @@ Payment status enum: `unpaid|partial|paid`.
 - [F] unknown product id / empty items → throws (no partial write — assert DB rolled back).
 - [F] shipping_cost copied from selected zone; total reflects it.
 - [F] order_no is unique on concurrent-ish creation (loop create N, all distinct).
-- **Decision to confirm with owner:** does a web order **decrement stock**? (catalog/inquiry model historically didn't.) Default plan: **no auto-decrement**; record only. Mark `// TODO(owner)` if undecided.
+- **Decision (owner, 2026-06-19): YES — a web order decrements stock**, transaction-safe, rejecting out-of-stock items. Implemented in `PlaceOrder`.
 **DoD:** transaction-safe, audit on create, Money integer-only, Larastan max.
 
 ## 3.4 Checkout API (S7 backend) — ⬜

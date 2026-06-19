@@ -1,4 +1,4 @@
-import type { Auth } from '@/types/auth';
+import type { Auth, Branding } from '@/types/auth';
 
 declare module 'react' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -11,6 +11,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            branding: Branding;
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;

@@ -15,6 +15,13 @@ export type Auth = {
     permissions: string[];
 };
 
+export type Branding = {
+    site_name: string;
+    tagline: string | null;
+    logo_light: string | null;
+    logo_dark: string | null;
+};
+
 /* @chisel-passkeys */
 export type Passkey = {
     id: number;

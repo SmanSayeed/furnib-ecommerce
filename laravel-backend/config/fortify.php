@@ -161,7 +161,11 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Public self-registration is intentionally DISABLED — this is a staff-only
+        // admin panel. Accounts are provisioned by an owner/admin (see UserController
+        // / seeders), never created by anonymous visitors. Removing this feature also
+        // unregisters the GET/POST /register routes entirely.
+        // Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

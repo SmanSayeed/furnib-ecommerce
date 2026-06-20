@@ -45,6 +45,33 @@ export type Product = {
   seo: Seo;
 };
 
+export type ShippingZone = {
+  id: number;
+  name: string;
+  cost: Money;
+};
+
+export type OrderItemLine = {
+  title: string;
+  sku: string;
+  price: Money;
+  qty: number;
+  line_total: Money;
+};
+
+export type PlacedOrder = {
+  order_no: string;
+  status: string;
+  payment_status: string;
+  subtotal: Money;
+  shipping_cost: Money;
+  total: Money;
+  advance_paid: Money;
+  address: string;
+  invoice_url: string;
+  items: OrderItemLine[];
+};
+
 export type PageMeta = {
   current_page: number;
   last_page: number;

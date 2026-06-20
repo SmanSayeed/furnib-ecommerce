@@ -6,8 +6,10 @@ namespace App\Http\Resources;
 
 use App\Models\Order;
 use App\Support\Money;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 
 /**
  * @mixin Order
@@ -28,6 +30,11 @@ class OrderResource extends JsonResource
             'total' => $this->money($this->total),
             'advance_paid' => $this->money($this->advance_paid),
             'address' => $this->address,
+            'invoice_url' => URL::temporarySignedRoute(
+                'invoice.public',
+                CarbonImmutable::now()->addDay(),
+                ['order' => $this->id],
+            ),
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => [
                 'title' => $item->title,
                 'sku' => $item->sku,

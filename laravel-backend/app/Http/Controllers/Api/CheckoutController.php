@@ -50,6 +50,6 @@ class CheckoutController extends Controller
 
         $this->sendConfirmation->handle($order);
 
-        return (new OrderResource($order))->response()->setStatusCode(201);
+        return (new OrderResource($order->loadMissing('items')))->response()->setStatusCode(201);
     }
 }

@@ -1,29 +1,25 @@
-import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CheckoutForm } from "@/components/CheckoutForm";
+import { getProduct, getShippingZones } from "@/lib/api";
 
-export default async function CheckoutStub({
+export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ qty?: string }>;
 }) {
   const { slug } = await params;
+  const { qty } = await searchParams;
 
-  return (
-    <div className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-2xl">
-        🛒
-      </div>
-      <h1 className="mt-6 text-2xl font-bold">Web Checkout</h1>
-      <p className="mt-3 text-sm text-muted">
-        The full web checkout — shipping zones, BD mobile + OTP, payment via
-        SSLCommerz, and invoice — arrives in <strong>Phase 3</strong>.
-      </p>
-      <p className="mt-1 text-xs text-muted">Product: {slug}</p>
-      <Link
-        href="/"
-        className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-hover"
-      >
-        Back to home
-      </Link>
-    </div>
-  );
+  const [product, zones] = await Promise.all([getProduct(slug), getShippingZones()]);
+
+  if (!product) {
+    notFound();
+  }
+
+  const parsedQty = Number(qty);
+  const initialQty = Number.isFinite(parsedQty) && parsedQty > 0 ? Math.floor(parsedQty) : 1;
+
+  return <CheckoutForm product={product} zones={zones} initialQty={initialQty} />;
 }

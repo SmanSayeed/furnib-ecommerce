@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
+use App\Http\Controllers\InvoiceDownloadController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,10 @@ Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 // Public product feed (Meta/Google Merchant).
 Route::get('feed/products.csv', [FeedController::class, 'products'])->name('feed.products');
+
+// Customer invoice download — signed URL only (handed out on the success page).
+Route::get('invoice/{order}', [InvoiceDownloadController::class, 'show'])
+    ->middleware('signed')->name('invoice.public');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

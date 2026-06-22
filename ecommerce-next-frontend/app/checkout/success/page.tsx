@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { trackPurchase } from "@/lib/track";
 import type { PlacedOrder } from "@/lib/types";
 
 const SERVER_SNAPSHOT = "__server__";
@@ -29,6 +30,24 @@ export default function SuccessPage() {
       return null;
     }
   }, [raw, loaded]);
+
+  // Browser-side Purchase, sharing event_id `purchase.<order_no>` with the
+  // server CAPI copy (fired at COD placement / online-payment success) so Meta
+  // de-duplicates and counts the conversion exactly once.
+  const purchaseTracked = useRef<string | null>(null);
+  useEffect(() => {
+    if (!order || purchaseTracked.current === order.order_no) return;
+    purchaseTracked.current = order.order_no;
+    trackPurchase({
+      orderNo: order.order_no,
+      value: order.total.display,
+      items: order.items.map((i) => ({
+        sku: i.sku,
+        qty: i.qty,
+        price: i.price.display,
+      })),
+    });
+  }, [order]);
 
   async function pay(type: "full" | "partial") {
     if (!order) return;

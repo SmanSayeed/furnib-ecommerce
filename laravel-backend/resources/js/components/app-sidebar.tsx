@@ -78,7 +78,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'marketing.manage',
         items: [
             { title: 'Coupons', icon: TicketPercent, soon: true },
-            { title: 'Pixels & SEO', icon: Megaphone, soon: true },
+            { title: 'Tracking & Pixels', href: '/settings/marketing', icon: Megaphone },
         ],
     },
     {

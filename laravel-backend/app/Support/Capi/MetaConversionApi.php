@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Support\Capi;
 
-use App\Models\Order;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Http;
 
@@ -20,7 +19,7 @@ final class MetaConversionApi implements ConversionApi
 
     public function __construct(private readonly SettingsService $settings) {}
 
-    public function purchase(Order $order, string $eventId): bool
+    public function send(CapiEvent $event): bool
     {
         $pixelId = $this->settings->get('marketing', 'fb_pixel_id');
         $token = $this->settings->get('marketing', 'fb_capi_token');
@@ -29,10 +28,22 @@ final class MetaConversionApi implements ConversionApi
             return false;
         }
 
-        $response = Http::asJson()->post(self::GRAPH.'/'.$pixelId.'/events', [
+        // Token travels in the request BODY (never the URL) so it cannot leak
+        // into access logs or referrers.
+        $payload = [
             'access_token' => (string) $token,
-            'data' => [PurchasePayload::for($order, $eventId)],
-        ]);
+            'data' => [$event->toArray()],
+        ];
+
+        // Optional test-event code (Events Manager → Test Events) for QA.
+        $testCode = $this->settings->get('marketing', 'fb_test_event_code');
+        if (filled($testCode)) {
+            $payload['test_event_code'] = (string) $testCode;
+        }
+
+        $response = Http::asJson()
+            ->timeout(5)
+            ->post(self::GRAPH.'/'.$pixelId.'/events', $payload);
 
         return $response->successful();
     }

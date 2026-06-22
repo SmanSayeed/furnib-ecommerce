@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 use App\Models\Order;
 use App\Services\Settings\SettingsService;
+use App\Support\Capi\CapiEvents;
+use App\Support\Capi\CapiUserData;
 use App\Support\Capi\ConversionApi;
 use App\Support\Capi\FakeConversionApi;
-use App\Support\Capi\PurchasePayload;
 use App\Support\Payments\FakePaymentGateway;
 use App\Support\Payments\PaymentGateway;
 
@@ -40,9 +41,10 @@ it('sends a server-side Purchase event when an order becomes paid', function () 
 
     paidOrderViaGateway($this, $order);
 
-    expect($this->capi->purchases)->toHaveCount(1)
-        ->and($this->capi->purchases[0]['order_no'])->toBe($order->order_no)
-        ->and($this->capi->purchases[0]['event_id'])->toBe('purchase.'.$order->order_no);
+    $purchases = $this->capi->ofType('Purchase');
+    expect($purchases)->toHaveCount(1)
+        ->and($purchases[0]->eventId)->toBe('purchase.'.$order->order_no)
+        ->and($purchases[0]->customData['order_id'])->toBe($order->order_no);
 });
 
 it('does not double-fire the Purchase event on a duplicate callback', function () {
@@ -54,20 +56,23 @@ it('does not double-fire the Purchase event on a duplicate callback', function (
     $this->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
     $this->postJson('/api/v1/payment/ssl/ipn', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
 
-    expect($this->capi->purchases)->toHaveCount(1);
+    expect($this->capi->ofType('Purchase'))->toHaveCount(1);
 });
 
 it('maps the order onto a Purchase payload with a shared dedup event id', function () {
     $order = Order::factory()->create(['total' => 5000]);
-    $eventId = PurchasePayload::eventId($order);
 
-    $payload = PurchasePayload::for($order, $eventId);
+    $event = CapiEvents::purchase($order, new CapiUserData(email: 'Buyer@Example.com '));
+    $payload = $event->toArray();
 
     expect($payload['event_name'])->toBe('Purchase')
         ->and($payload['event_id'])->toBe('purchase.'.$order->order_no)
         ->and($payload['custom_data']['currency'])->toBe('BDT')
         ->and($payload['custom_data']['value'])->toBe('5000.00')
-        ->and($payload['custom_data']['order_id'])->toBe($order->order_no);
+        ->and($payload['custom_data']['order_id'])->toBe($order->order_no)
+        // PII is SHA-256 hashed + normalized (lowercased/trimmed) before sending.
+        ->and($payload['user_data']['em'])->toBe(hash('sha256', 'buyer@example.com'))
+        ->and($payload)->not->toHaveKey('access_token');
 });
 
 it('never leaks the CAPI token through the payment response', function () {

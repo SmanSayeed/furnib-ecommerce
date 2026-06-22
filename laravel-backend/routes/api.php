@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Auth\OtpController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\CollectController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\Payment\SslController;
@@ -33,6 +34,9 @@ Route::prefix('v1')->group(function () {
 
     // Storefront pageview beacon.
     Route::middleware('throttle:tracking')->post('track', [TrackingController::class, 'store']);
+
+    // Server-side tagging beacon (browser → Meta Conversions API).
+    Route::middleware('throttle:tracking')->post('collect', [CollectController::class, 'store']);
 
     // Storefront catalog (read-only)
     Route::get('categories', [CategoryController::class, 'index']);

@@ -17,12 +17,21 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-real-ip") ??
     "";
 
+  // Forward Meta first-party cookies so the server-side Purchase (CAPI) can
+  // match the browser Pixel — improves Event Match Quality for COD orders.
+  const fbp = request.cookies.get("_fbp")?.value;
+  const fbc = request.cookies.get("_fbc")?.value;
+  const referer = request.headers.get("referer") ?? "";
+
   const res = await fetch(`${config.apiBaseUrl}/orders`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
       "X-Forwarded-For": forwardedFor,
+      ...(referer ? { Referer: referer } : {}),
+      ...(fbp ? { "X-Fbp": fbp } : {}),
+      ...(fbc ? { "X-Fbc": fbc } : {}),
     },
     body: JSON.stringify(body),
     cache: "no-store",

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Marketing\SendPurchaseEvent;
 use App\Actions\Orders\PlaceOrder;
 use App\Actions\Orders\SendOrderConfirmation;
 use App\DTOs\PlaceOrderData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
+use App\Support\Capi\CapiUserData;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 
@@ -18,6 +20,7 @@ class CheckoutController extends Controller
     public function __construct(
         private readonly PlaceOrder $placeOrder,
         private readonly SendOrderConfirmation $sendConfirmation,
+        private readonly SendPurchaseEvent $sendPurchaseEvent,
     ) {}
 
     public function store(StoreOrderRequest $request): JsonResponse
@@ -49,6 +52,29 @@ class CheckoutController extends Controller
         }
 
         $this->sendConfirmation->handle($order);
+
+        // Fire the Purchase to Meta at placement so COD orders (which never hit
+        // the payment gateway) are still tracked. Shares the deterministic
+        // event_id with the browser Pixel + any later online-payment fire, so
+        // Meta de-duplicates and counts the order exactly once.
+        $cookie = static fn (string $name, string $header): ?string => match (true) {
+            is_string($v = $request->cookie($name)) => $v,
+            is_string($h = $request->header($header)) => $h,
+            default => null,
+        };
+
+        $this->sendPurchaseEvent->handle(
+            $order,
+            new CapiUserData(
+                email: $validated['customer']['email'] ?? null,
+                phone: $validated['customer']['mobile'],
+                ip: $request->ip(),
+                userAgent: (string) $request->userAgent(),
+                fbp: $cookie('_fbp', 'X-Fbp'),
+                fbc: $cookie('_fbc', 'X-Fbc'),
+            ),
+            $request->header('referer') ?? config('app.frontend_url'),
+        );
 
         return (new OrderResource($order->loadMissing('items')))->response()->setStatusCode(201);
     }

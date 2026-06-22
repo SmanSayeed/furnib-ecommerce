@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { config } from "@/lib/config";
 import { imageUrl } from "@/lib/image";
+import { trackLead } from "@/lib/track";
 import type { Product } from "@/lib/types";
 import { whatsappInquiry } from "@/lib/whatsapp";
 import { SafeImage } from "./SafeImage";
@@ -15,12 +16,14 @@ export function ProductActions({
   whatsapp,
 }: {
   product: Product;
-  categorySlug: string;
+  categorySlug?: string;
   whatsapp?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState(1);
-  const productUrl = `${config.siteUrl}/category/${categorySlug}`;
+  const productUrl = categorySlug
+    ? `${config.siteUrl}/category/${categorySlug}`
+    : `${config.siteUrl}/product/${product.slug}`;
 
   // Lock background scroll while the order modal is open.
   useEffect(() => {
@@ -61,6 +64,7 @@ export function ProductActions({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Inquiry on WhatsApp"
+          onClick={() => trackLead({ sku: product.sku, value: unit.display })}
           className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5b] sm:gap-2 sm:px-4 sm:text-base"
         >
           <WhatsAppIcon size={18} />

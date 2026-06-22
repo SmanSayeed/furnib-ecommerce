@@ -27,6 +27,9 @@ class MarketingSettingsUpdateRequest extends FormRequest
             'ga4_id' => ['nullable', 'string', 'max:64'],
             'fb_pixel_id' => ['nullable', 'string', 'max:64'],
             'clarity_id' => ['nullable', 'string', 'max:64'],
+            // QA-only: Events Manager → Test Events code. Server-side only (never
+            // exposed to the storefront), not a secret.
+            'fb_test_event_code' => ['nullable', 'string', 'max:64'],
             'fb_capi_token' => ['nullable', 'string', 'max:512'],
         ];
     }

@@ -12,13 +12,13 @@ it('emits a CSV header row with the expected schema', function () {
     expect($response->headers->get('Content-Type'))->toContain('text/csv');
 
     $firstLine = strtok($response->getContent(), "\n");
-    expect($firstLine)->toContain('id,title,description,availability,condition,price,link,image_link,brand');
+    expect($firstLine)->toContain('id,title,description,availability,condition,price,sale_price,link,image_link,additional_image_link,brand');
 });
 
 it('includes published products and reflects stock availability', function () {
     Product::factory()->create([
         'title' => 'Teak Sofa', 'sku' => 'SOFA-1', 'slug' => 'teak-sofa',
-        'price' => 25000, 'product_status' => 'published',
+        'price' => 25000, 'discount_price' => 19999, 'product_status' => 'published',
         'stock_status' => true, 'stock_amount' => 5,
     ]);
     Product::factory()->create([
@@ -30,8 +30,9 @@ it('includes published products and reflects stock availability', function () {
 
     expect($csv)->toContain('SOFA-1')
         ->toContain('Teak Sofa')
-        ->toContain('25000.00 BDT')
-        ->toContain('/products/teak-sofa')
+        ->toContain('25000.00 BDT')      // regular price
+        ->toContain('19999.00 BDT')      // sale_price (discount)
+        ->toContain('/product/teak-sofa') // real landing page, not /products/ (404)
         ->toContain('in stock')
         ->toContain('out of stock');
 });

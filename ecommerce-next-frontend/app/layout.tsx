@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@/components/analytics/Analytics";
+import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 import { CategoryDrawer } from "@/components/CategoryDrawer";
 import { FloatingActions } from "@/components/FloatingActions";
 import { Footer } from "@/components/Footer";
@@ -9,6 +11,7 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { getCategories, getSettings } from "@/lib/api";
 import { config } from "@/lib/config";
+import { getMarketing } from "@/lib/marketing";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,10 +42,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [categories, settings] = await Promise.all([
+  const [categories, settings, marketing] = await Promise.all([
     getCategories(),
     getSettings(),
+    getMarketing(),
   ]);
+  const analyticsEnabled = Boolean(marketing.gtm_id);
 
   return (
     <html
@@ -51,6 +56,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <Analytics marketing={marketing} />
         <ThemeProvider>
           <Header
             logoLight={settings?.logo_light}
@@ -61,6 +67,7 @@ export default async function RootLayout({
           <CategoryDrawer categories={categories} />
           <MobileTabBar whatsapp={settings?.whatsapp} />
           <FloatingActions whatsapp={settings?.whatsapp} />
+          <ConsentBanner enabled={analyticsEnabled} />
         </ThemeProvider>
       </body>
     </html>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { imageUrl } from "@/lib/image";
+import { trackInitiateCheckout } from "@/lib/track";
 import type { Product, ShippingZone } from "@/lib/types";
 import { SafeImage } from "./SafeImage";
 
@@ -36,6 +37,18 @@ export function CheckoutForm({
     () => zones.find((z) => z.id === zoneId) ?? null,
     [zones, zoneId],
   );
+
+  // Fire InitiateCheckout once when the checkout screen is first shown.
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current) return;
+    checkoutTracked.current = true;
+    trackInitiateCheckout({
+      sku: product.sku,
+      qty,
+      value: (unit.minor * qty) / 100,
+    });
+  }, [product.sku, qty, unit.minor]);
 
   const subtotalMinor = unit.minor * qty;
   const shippingMinor = selectedZone?.cost.minor ?? 0;

@@ -22,6 +22,9 @@ class MarketingSettingController extends Controller
     /** Public (client-safe) ID fields. */
     private const PUBLIC_KEYS = ['gtm_id', 'ga4_id', 'fb_pixel_id', 'clarity_id'];
 
+    /** Server-side-only, non-secret fields (not exposed to the storefront). */
+    private const SERVER_KEYS = ['fb_test_event_code'];
+
     public function __construct(private readonly SettingsService $settings) {}
 
     public function edit(): Response
@@ -38,7 +41,7 @@ class MarketingSettingController extends Controller
     {
         $validated = $request->validated();
 
-        foreach (self::PUBLIC_KEYS as $key) {
+        foreach ([...self::PUBLIC_KEYS, ...self::SERVER_KEYS] as $key) {
             $this->settings->set(self::GROUP, $key, $validated[$key] ?? null);
         }
 

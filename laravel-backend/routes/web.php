@@ -16,7 +16,9 @@ use App\Http\Controllers\InvoiceDownloadController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+// Backend is the admin panel only; send the root straight to the admin login.
+// Authenticated users hitting /login are bounced to the dashboard by Fortify's guest middleware.
+Route::redirect('/', '/login')->name('home');
 
 // Public SEO endpoints.
 Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');

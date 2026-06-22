@@ -64,7 +64,11 @@ export default async function RootLayout({
           />
           <main className="flex-1 px-3 pb-16 md:px-12 md:pb-0">{children}</main>
           <Footer />
-          <CategoryDrawer categories={categories} />
+          <CategoryDrawer
+            categories={categories}
+            logoLight={settings?.logo_light}
+            logoDark={settings?.logo_dark}
+          />
           <MobileTabBar whatsapp={settings?.whatsapp} />
           <FloatingActions whatsapp={settings?.whatsapp} />
           <ConsentBanner enabled={analyticsEnabled} />

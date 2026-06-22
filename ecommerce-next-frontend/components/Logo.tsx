@@ -10,10 +10,12 @@ export function Logo({
   className = "h-8 w-auto",
   lightUrl,
   darkUrl,
+  onClick,
 }: {
   className?: string;
   lightUrl?: string | null;
   darkUrl?: string | null;
+  onClick?: () => void;
 }) {
   const light = lightUrl || "/logo/furnib-light.png";
   const dark = darkUrl || "/logo/furnib-dark.png";
@@ -21,6 +23,7 @@ export function Logo({
   return (
     <Link
       href="/"
+      onClick={onClick}
       aria-label={`${config.siteName} home`}
       className="inline-flex items-center"
     >

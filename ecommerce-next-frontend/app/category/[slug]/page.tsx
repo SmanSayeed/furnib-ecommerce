@@ -40,7 +40,7 @@ export default async function CategoryPage({
 
   return (
     <div>
-      <section className="relative h-[38vh] w-full overflow-hidden border-b border-border sm:h-[50vh]">
+      <section className="relative mt-3 h-[23vh] w-full overflow-hidden rounded-md border border-border sm:h-[50vh]">
         <SafeImage
           src={imageUrl(category.header_image ?? category.thumbnail_image)}
           alt={category.title}

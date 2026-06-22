@@ -23,7 +23,7 @@ export function ProductRow({
   ];
 
   return (
-    <article className="animate-in w-full overflow-hidden border-b border-border pb-3 sm:rounded-2xl sm:border sm:bg-surface/30 sm:pb-0">
+    <article className="animate-in w-full overflow-hidden rounded-md border border-border bg-surface/30 pb-3 sm:pb-0">
       <ImageSlider slides={slides} title={product.title} />
       <div className="mt-2 px-3 sm:mt-3 sm:px-3 sm:pb-3">
         <ProductActions

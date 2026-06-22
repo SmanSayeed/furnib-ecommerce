@@ -10,7 +10,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
         <Link
           key={c.id}
           href={`/category/${c.slug}`}
-          className="group overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-accent/50"
+          className="group overflow-hidden rounded-md border border-border bg-surface transition hover:border-accent/50"
         >
           <div className="aspect-[16/10] overflow-hidden">
             <SafeImage

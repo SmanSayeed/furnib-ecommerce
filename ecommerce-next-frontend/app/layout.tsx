@@ -62,7 +62,7 @@ export default async function RootLayout({
             logoLight={settings?.logo_light}
             logoDark={settings?.logo_dark}
           />
-          <main className="flex-1 px-1 pb-16 md:px-4 md:pb-0">{children}</main>
+          <main className="flex-1 px-3 pb-16 md:px-12 md:pb-0">{children}</main>
           <Footer />
           <CategoryDrawer categories={categories} />
           <MobileTabBar whatsapp={settings?.whatsapp} />

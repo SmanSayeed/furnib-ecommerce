@@ -59,20 +59,22 @@ export function InfiniteProducts({
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      {products.map((p) => (
-        <ProductRow
-          key={p.id}
-          product={p}
-          categorySlug={slug}
-          whatsapp={whatsapp}
-        />
-      ))}
+    <>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {products.map((p) => (
+          <ProductRow
+            key={p.id}
+            product={p}
+            categorySlug={slug}
+            whatsapp={whatsapp}
+          />
+        ))}
+      </div>
       {page < lastPage && (
         <div ref={sentinel} className="py-6 text-center text-sm text-muted">
           {loading ? "Loading…" : "Scroll for more"}
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -18,7 +18,7 @@ export function BannerCarousel({ banners }: { banners: string[] }) {
 
   return (
     <section className="relative w-full overflow-hidden border-b border-border">
-      <div className="relative aspect-[16/10] w-full sm:aspect-[3/1]">
+      <div className="relative aspect-[16/7] w-full sm:aspect-[9/2]">
         {banners.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img

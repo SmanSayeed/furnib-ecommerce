@@ -40,7 +40,7 @@ export default async function CategoryPage({
 
   return (
     <div>
-      <section className="relative h-[55vh] w-full overflow-hidden border-b border-border sm:h-[75vh]">
+      <section className="relative h-[38vh] w-full overflow-hidden border-b border-border sm:h-[50vh]">
         <SafeImage
           src={imageUrl(category.header_image ?? category.thumbnail_image)}
           alt={category.title}
@@ -59,7 +59,7 @@ export default async function CategoryPage({
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-2xl px-0 py-5 sm:px-4 sm:py-8">
+      <div className="mx-auto w-full max-w-6xl px-0 py-5 sm:py-8">
         <InfiniteProducts
           slug={slug}
           initial={products}

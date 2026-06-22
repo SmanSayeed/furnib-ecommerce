@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { config } from "@/lib/config";
 import { imageUrl } from "@/lib/image";
 import type { Product } from "@/lib/types";
-import { whatsappInquiry, whatsappOrder } from "@/lib/whatsapp";
+import { whatsappInquiry } from "@/lib/whatsapp";
 import { SafeImage } from "./SafeImage";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 
@@ -21,6 +21,16 @@ export function ProductActions({
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState(1);
   const productUrl = `${config.siteUrl}/category/${categorySlug}`;
+
+  // Lock background scroll while the order modal is open.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
   const unit = product.discount_price ?? product.price;
   const total = (unit.minor * qty) / 100;
 
@@ -126,18 +136,10 @@ export function ProductActions({
               </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <a
-                href={whatsappOrder(product, qty, productUrl, whatsapp)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-center font-semibold text-white transition hover:bg-[#1ebe5b]"
-              >
-                <WhatsAppIcon /> Order on WhatsApp
-              </a>
+            <div className="mt-5">
               <Link
                 href={`/checkout/${product.slug}?qty=${qty}`}
-                className="rounded-xl border border-border bg-surface px-4 py-3 text-center font-semibold transition hover:bg-surface-2"
+                className="block rounded-xl bg-accent px-4 py-3 text-center font-semibold text-on-accent transition hover:bg-accent-hover"
               >
                 Order on Web
               </Link>

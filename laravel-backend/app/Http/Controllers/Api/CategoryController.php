@@ -29,7 +29,7 @@ final class CategoryController
 
         abort_if($category === null, 404);
 
-        $products = $this->products->paginatePublishedForCategory($category->id);
+        $products = $this->products->paginatePublishedForCategory($category->id, 20);
 
         return response()->json([
             'data' => new CategoryResource($category),

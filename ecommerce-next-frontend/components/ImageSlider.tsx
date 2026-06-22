@@ -16,7 +16,7 @@ export function ImageSlider({ slides, title }: { slides: Slide[]; title: string 
   return (
     <div>
       {/* Big preview — contain so the full product image is visible (no crop) */}
-      <div className="relative aspect-square w-full overflow-hidden bg-white sm:aspect-[4/3]">
+      <div className="relative aspect-square w-full overflow-hidden rounded-card bg-white sm:aspect-[4/3]">
         <SafeImage
           src={items[index].url}
           alt={items[index].alt}

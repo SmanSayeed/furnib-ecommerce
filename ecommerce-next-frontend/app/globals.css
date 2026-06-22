@@ -46,6 +46,8 @@
   --color-accent-hover: var(--accent-hover);
   --color-on-accent: var(--on-accent);
   --font-sans: var(--font-geist-sans);
+  /* Shared corner radius for banners, cards and the product slider preview. */
+  --radius-card: 10px;
 }
 
 body {

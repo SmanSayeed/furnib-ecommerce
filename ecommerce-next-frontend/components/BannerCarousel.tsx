@@ -17,7 +17,7 @@ export function BannerCarousel({ banners }: { banners: string[] }) {
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
 
   return (
-    <section className="relative mt-3 w-full overflow-hidden rounded-md border border-border">
+    <section className="relative mt-3 w-full overflow-hidden rounded-card border border-border">
       <div className="relative aspect-[16/7] w-full sm:aspect-[9/2]">
         {banners.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element

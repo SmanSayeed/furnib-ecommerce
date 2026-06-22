@@ -3,7 +3,7 @@ import { CategoryGrid } from "./CategoryGrid";
 
 export function FeaturedCollections({ categories }: { categories: Category[] }) {
   return (
-    <section id="collections" className="mx-auto max-w-5xl px-6 py-16">
+    <section id="collections" className="mx-auto w-full max-w-6xl px-0 py-10 sm:py-12">
       <div className="text-center">
         <h2 className="text-3xl font-bold sm:text-4xl">Featured Collections</h2>
         <p className="mt-2 text-sm text-muted">

@@ -444,14 +444,19 @@ setMainPreview(URL.createObjectURL(file));
                                 <select
                                     id="partial_amount_type"
                                     value={data.partial_amount_type}
-                                    onChange={(e) =>
-                                        setData('partial_amount_type', e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        const next = e.target.value;
+                                        setData('partial_amount_type', next);
+                                        if (next === 'shipping') {
+                                            setData('partial_amount', '');
+                                        }
+                                    }}
                                     className={SELECT_CLASS}
                                 >
                                     <option value="">—</option>
                                     <option value="percentage">Percentage</option>
                                     <option value="amount">Fixed amount</option>
+                                    <option value="shipping">Shipping charge</option>
                                 </select>
                             </div>
                             <div className="grid gap-2">
@@ -460,9 +465,20 @@ setMainPreview(URL.createObjectURL(file));
                                     id="partial_amount"
                                     type="number"
                                     min={0}
-                                    value={data.partial_amount}
+                                    value={
+                                        data.partial_amount_type === 'shipping'
+                                            ? ''
+                                            : data.partial_amount
+                                    }
+                                    disabled={data.partial_amount_type === 'shipping'}
                                     onChange={(e) => setData('partial_amount', e.target.value)}
                                 />
+                                {data.partial_amount_type === 'shipping' && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Advance = the customer&apos;s selected delivery
+                                        charge at checkout (Inside / Outside Dhaka).
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}

@@ -11,6 +11,9 @@ namespace App\Support;
  *  - full                            → the whole line total
  *  - partial / percentage            → lineTotal × (partial_amount %)
  *  - partial / amount                → fixed partial_amount (paisa), capped at lineTotal
+ *  - partial / shipping              → 0 here; resolved at ORDER level (= the
+ *                                       selected delivery zone's cost) in PlaceOrder,
+ *                                       since shipping is per-order, not per-line.
  *
  * All amounts are integer minor units (paisa).
  */
@@ -44,6 +47,8 @@ final class AdvancePayment
             return Money::fromMinor(min($fixed, $lineTotal->toMinor()));
         }
 
+        // 'shipping' (and any unknown type) contributes nothing per-line; the
+        // shipping-charge advance is added once at order level in PlaceOrder.
         return Money::fromMinor(0);
     }
 }

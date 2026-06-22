@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Money $subtotal
  * @property Money $shipping_cost
  * @property Money $total
+ * @property Money $advance_amount
  * @property Money $advance_paid
  * @property int|null $shipping_zone_id
  * @property string $address
@@ -56,7 +57,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_no', 'customer_id', 'status', 'payment_status',
-        'subtotal', 'shipping_cost', 'total', 'advance_paid',
+        'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes',
     ];
 
@@ -66,6 +67,7 @@ class Order extends Model
             'subtotal' => MoneyCast::class,
             'shipping_cost' => MoneyCast::class,
             'total' => MoneyCast::class,
+            'advance_amount' => MoneyCast::class,
             'advance_paid' => MoneyCast::class,
         ];
     }

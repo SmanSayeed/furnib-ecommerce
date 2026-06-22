@@ -51,6 +51,57 @@ it('persists an order with snapshotted items and computes totals', function () {
     expect(OrderNumber::matchesFormat($order->order_no))->toBeTrue();
 });
 
+it('sets advance_amount to the selected delivery charge for a shipping-advance product', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'partial',
+        'partial_amount_type' => 'shipping', 'partial_amount' => null,
+    ]);
+    $zone = ShippingZone::factory()->create(['cost' => 80]);
+
+    $order = $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 2]],
+        ['shipping_zone_id' => $zone->id],
+    ));
+
+    expect($order->advance_amount->toMinor())->toBe(8000)   // = the zone's cost (80.00)
+        ->and($order->shipping_cost->toMinor())->toBe(8000)
+        ->and($order->total->toMinor())->toBe(208000);
+});
+
+it('computes a percentage advance_amount from the subtotal', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'partial',
+        'partial_amount_type' => 'percentage', 'partial_amount' => 30,
+    ]);
+
+    $order = $this->action->handle(placeOrderData([['product_id' => $product->id, 'qty' => 2]]));
+
+    expect($order->advance_amount->toMinor())->toBe(60000); // 30% of 2000.00
+});
+
+it('requires a delivery area when the product takes its advance as shipping', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'partial',
+        'partial_amount_type' => 'shipping', 'partial_amount' => null,
+    ]);
+
+    $this->action->handle(placeOrderData([['product_id' => $product->id, 'qty' => 1]]));
+})->throws(DomainException::class);
+
+it('leaves advance_amount at zero for a non-advance product', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => false,
+    ]);
+
+    $order = $this->action->handle(placeOrderData([['product_id' => $product->id, 'qty' => 1]]));
+
+    expect($order->advance_amount->toMinor())->toBe(0);
+});
+
 it('keeps the price snapshot even if the product price later changes', function () {
     $product = Product::factory()->create(['price' => 1000, 'stock_amount' => 5, 'stock_status' => true]);
 

@@ -31,3 +31,9 @@ it('uses a fixed partial amount, capped at the line total', function () {
     $capped = AdvancePayment::forLine(Money::fromMinor(100000), true, 'partial', 'amount', 250000);
     expect($capped->toMinor())->toBe(100000); // never exceeds the line total
 });
+
+it('contributes nothing per-line for the shipping rule (resolved at order level)', function () {
+    $advance = AdvancePayment::forLine(Money::fromMinor(100000), true, 'partial', 'shipping', null);
+
+    expect($advance->toMinor())->toBe(0);
+});

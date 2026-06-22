@@ -38,6 +38,12 @@ class ProductResource extends JsonResource
             'price' => $this->money($this->price),
             'discount_price' => $this->discount_price instanceof Money ? $this->money($this->discount_price) : null,
             'in_stock' => $this->isInStock(),
+            'advance' => [
+                'required' => (bool) $this->is_advance_payment,
+                'type' => $this->advance_payment_type,        // full | partial | null
+                'partial_type' => $this->partial_amount_type, // percentage | amount | shipping | null
+                'partial_amount' => $this->partial_amount,    // paisa (percentage uses it as %)
+            ],
             'is_featured' => $this->is_featured,
             'is_new' => $this->is_new,
             'social_thumbnail' => $this->mediaUrl($this->resolvedSocialThumbnail()),

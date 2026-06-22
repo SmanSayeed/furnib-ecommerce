@@ -19,7 +19,7 @@ final class PaymentAmount
     {
         return match ($type) {
             Payment::TYPE_FULL => $order->total,
-            Payment::TYPE_PARTIAL => $order->advance_paid,
+            Payment::TYPE_PARTIAL => $order->advance_amount,
             Payment::TYPE_SHIPPING => $order->shipping_cost,
             default => throw new InvalidArgumentException("Unknown payment type [{$type}]."),
         };

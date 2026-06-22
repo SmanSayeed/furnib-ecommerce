@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingZone;
 use App\Services\Orders\CustomerService;
+use App\Support\AdvancePayment;
 use App\Support\Money;
 use App\Support\OrderNumber;
 use DomainException;
@@ -45,6 +46,8 @@ final class PlaceOrder
                 ->keyBy('id');
 
             $subtotalMinor = 0;
+            $advanceMinor = 0;
+            $needsShippingAdvance = false;
             $lines = [];
 
             foreach ($data->items as $item) {
@@ -69,6 +72,22 @@ final class PlaceOrder
                 $lineMinor = $priceMinor * $qty;
                 $subtotalMinor += $lineMinor;
 
+                // Per-line advance (full / percentage / fixed-amount). The
+                // shipping-charge rule is order-level, added once below.
+                $advanceMinor += AdvancePayment::forLine(
+                    Money::fromMinor($lineMinor),
+                    (bool) $product->is_advance_payment,
+                    $product->advance_payment_type,
+                    $product->partial_amount_type,
+                    $product->partial_amount,
+                )->toMinor();
+
+                if ($product->is_advance_payment
+                    && $product->advance_payment_type === 'partial'
+                    && $product->partial_amount_type === 'shipping') {
+                    $needsShippingAdvance = true;
+                }
+
                 $lines[] = [
                     'product_id' => $product->id,
                     'title' => $product->title,
@@ -88,6 +107,19 @@ final class PlaceOrder
                 $shippingMinor = $zone->cost->toMinor();
             }
 
+            // Shipping-charge advance: the customer must prepay the delivery fee
+            // of the zone they selected. A zone is therefore required.
+            if ($needsShippingAdvance) {
+                if ($zone === null) {
+                    throw new DomainException('Please select a delivery area for this order.');
+                }
+                $advanceMinor += $shippingMinor;
+            }
+
+            $totalMinor = $subtotalMinor + $shippingMinor;
+            // Advance can never exceed the order total.
+            $advanceMinor = min($advanceMinor, $totalMinor);
+
             $order = Order::query()->create([
                 'order_no' => OrderNumber::generate(),
                 'customer_id' => $customer->id,
@@ -95,7 +127,8 @@ final class PlaceOrder
                 'payment_status' => 'unpaid',
                 'subtotal' => Money::fromMinor($subtotalMinor),
                 'shipping_cost' => Money::fromMinor($shippingMinor),
-                'total' => Money::fromMinor($subtotalMinor + $shippingMinor),
+                'total' => Money::fromMinor($totalMinor),
+                'advance_amount' => Money::fromMinor($advanceMinor),
                 'advance_paid' => Money::fromMinor(0),
                 'shipping_zone_id' => $zone?->id,
                 'address' => $data->address,

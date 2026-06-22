@@ -75,7 +75,8 @@ export default function SuccessPage() {
     );
   }
 
-  const hasAdvance = order.advance_paid.minor > 0 && order.advance_paid.minor < order.total.minor;
+  const hasAdvance =
+    order.advance_amount.minor > 0 && order.advance_amount.minor < order.total.minor;
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-8 sm:py-12">
@@ -125,7 +126,7 @@ export default function SuccessPage() {
           {hasAdvance && (
             <div className="flex justify-between pt-1 text-xs text-muted">
               <span>Advance required</span>
-              <span>{order.advance_paid.formatted}</span>
+              <span>{order.advance_amount.formatted}</span>
             </div>
           )}
         </div>
@@ -157,7 +158,7 @@ export default function SuccessPage() {
             disabled={paying !== null}
             className="w-full rounded-xl border border-accent px-6 py-3.5 font-semibold text-accent transition hover:bg-accent/5 disabled:opacity-60"
           >
-            {paying === "partial" ? "Starting payment…" : `Pay advance — ${order.advance_paid.formatted}`}
+            {paying === "partial" ? "Starting payment…" : `Pay advance — ${order.advance_amount.formatted}`}
           </button>
         )}
 

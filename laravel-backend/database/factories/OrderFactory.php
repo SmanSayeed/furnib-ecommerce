@@ -29,6 +29,7 @@ class OrderFactory extends Factory
             'subtotal' => $subtotal,
             'shipping_cost' => $shipping,
             'total' => $subtotal + $shipping,
+            'advance_amount' => 0,
             'advance_paid' => 0,
             'shipping_zone_id' => null,
             'address' => fake()->address(),

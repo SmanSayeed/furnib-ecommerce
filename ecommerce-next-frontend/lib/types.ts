@@ -27,6 +27,13 @@ export type ProductImage = {
   position: number;
 };
 
+export type ProductAdvance = {
+  required: boolean;
+  type: "full" | "partial" | null;
+  partial_type: "percentage" | "amount" | "shipping" | null;
+  partial_amount: number | null;
+};
+
 export type Product = {
   id: number;
   title: string;
@@ -39,6 +46,7 @@ export type Product = {
   price: Money;
   discount_price: Money | null;
   in_stock: boolean;
+  advance?: ProductAdvance;
   is_featured: boolean;
   is_new: boolean;
   social_thumbnail: string | null;
@@ -66,6 +74,7 @@ export type PlacedOrder = {
   subtotal: Money;
   shipping_cost: Money;
   total: Money;
+  advance_amount: Money;
   advance_paid: Money;
   address: string;
   invoice_url: string;

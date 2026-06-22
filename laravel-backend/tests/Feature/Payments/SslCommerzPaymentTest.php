@@ -129,7 +129,7 @@ it('is idempotent — a duplicate IPN/return records the money only once', funct
 });
 
 it('records a partial (advance) payment and leaves the order partially paid', function () {
-    $order = payableOrder(['advance_paid' => 3000]); // 3000.00 taka required advance
+    $order = payableOrder(['advance_amount' => 3000]); // 3000.00 taka required advance
     $tranId = initPayment($this, $order, 'partial');
 
     $this->gateway->fakeValidation([
@@ -165,7 +165,7 @@ it('records a shipping-only payment', function () {
 });
 
 it('resolves the correct charge amount per payment type', function () {
-    $order = payableOrder(['advance_paid' => 3000]);
+    $order = payableOrder(['advance_amount' => 3000]);
 
     expect(PaymentAmount::for($order, Payment::TYPE_FULL)->toMinor())->toBe(1010000)
         ->and(PaymentAmount::for($order, Payment::TYPE_PARTIAL)->toMinor())->toBe(300000)

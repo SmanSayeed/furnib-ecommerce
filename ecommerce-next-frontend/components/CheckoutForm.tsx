@@ -41,6 +41,24 @@ export function CheckoutForm({
   const shippingMinor = selectedZone?.cost.minor ?? 0;
   const totalMinor = subtotalMinor + shippingMinor;
 
+  // Live advance preview — mirrors the server's AdvancePayment rule so the
+  // customer sees exactly what they'll be asked to prepay now.
+  const adv = product.advance;
+  let advanceMinor = 0;
+  if (adv?.required && adv.type) {
+    if (adv.type === "full") {
+      advanceMinor = subtotalMinor;
+    } else if (adv.partial_type === "percentage") {
+      advanceMinor = Math.floor((subtotalMinor * (adv.partial_amount ?? 0)) / 100);
+    } else if (adv.partial_type === "amount") {
+      advanceMinor = Math.min(adv.partial_amount ?? 0, subtotalMinor);
+    } else if (adv.partial_type === "shipping") {
+      advanceMinor = shippingMinor;
+    }
+    advanceMinor = Math.min(advanceMinor, totalMinor);
+  }
+  const showAdvance = advanceMinor > 0 && advanceMinor < totalMinor;
+
   async function placeOrder(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -243,6 +261,15 @@ export function CheckoutForm({
           <span>Total</span>
           <span className="text-accent">{taka(totalMinor)}</span>
         </div>
+        {showAdvance && (
+          <div className="flex justify-between border-t border-border pt-2 text-sm">
+            <span className="font-medium">
+              Advance payable now
+              {adv?.partial_type === "shipping" ? " (delivery charge)" : ""}
+            </span>
+            <span className="font-semibold text-accent">{taka(advanceMinor)}</span>
+          </div>
+        )}
       </div>
 
       <button

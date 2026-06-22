@@ -28,6 +28,7 @@ class OrderResource extends JsonResource
             'subtotal' => $this->money($this->subtotal),
             'shipping_cost' => $this->money($this->shipping_cost),
             'total' => $this->money($this->total),
+            'advance_amount' => $this->money($this->advance_amount),
             'advance_paid' => $this->money($this->advance_paid),
             'address' => $this->address,
             'invoice_url' => URL::temporarySignedRoute(

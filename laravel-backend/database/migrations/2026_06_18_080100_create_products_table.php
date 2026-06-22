@@ -24,7 +24,7 @@ return new class extends Migration
             $table->unsignedBigInteger('discount_price')->nullable();
             $table->boolean('is_advance_payment')->default(false);
             $table->enum('advance_payment_type', ['full', 'partial'])->nullable();
-            $table->enum('partial_amount_type', ['percentage', 'amount'])->nullable();
+            $table->enum('partial_amount_type', ['percentage', 'amount', 'shipping'])->nullable();
             $table->unsignedBigInteger('partial_amount')->nullable();
             $table->boolean('is_featured')->default(false);
             $table->boolean('is_new')->default(false);

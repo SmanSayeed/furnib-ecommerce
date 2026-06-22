@@ -45,7 +45,7 @@ class ProductFormRequest extends FormRequest
             'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
             'is_advance_payment' => ['boolean'],
             'advance_payment_type' => ['nullable', Rule::in(['full', 'partial'])],
-            'partial_amount_type' => ['nullable', Rule::in(['percentage', 'amount'])],
+            'partial_amount_type' => ['nullable', Rule::in(['percentage', 'amount', 'shipping'])],
             'partial_amount' => ['nullable', 'integer', 'min:0'],
             'is_featured' => ['boolean'],
             'is_new' => ['boolean'],

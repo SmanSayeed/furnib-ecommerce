@@ -56,14 +56,19 @@ export function CategoryDrawer({
           </button>
         </div>
 
-        <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted">
+        {/* Primary — kept separate from the category list */}
+        <nav className="mt-5 flex flex-col gap-1.5">
+          <Link href="/" onClick={() => setOpen(false)} className={linkClass}>
+            Home
+          </Link>
+        </nav>
+
+        {/* Categories */}
+        <p className="mt-6 border-t border-border pt-6 text-xs font-semibold uppercase tracking-wider text-muted">
           Collections
         </p>
 
         <nav className="mt-3 flex flex-col gap-1.5">
-          <Link href="/" onClick={() => setOpen(false)} className={linkClass}>
-            Home
-          </Link>
           {categories.map((c) => (
             <Link
               key={c.id}

@@ -191,10 +191,16 @@ Backend TDD with a faked CAPI (no real network); storefront tsc/eslint-clean.
 1. **Create accounts** → GTM container (`GTM-XXXX`), Meta Pixel + a **CAPI System-User token**, (optional) GA4 `G-XXXX`, Clarity.
 2. **Paste them** in Admin → **Marketing → Tracking & Pixels**. Token is write-only/encrypted; the rest are public IDs.
 3. **In the GTM GUI** (this is the only place tags live — no redeploy needed afterwards):
-   - **Variables** (Data Layer Variable): `event_id`, `ecommerce`, `content_ids`, `content_type`, `ga4_event`.
-   - **Triggers** (Custom Event, exact match): `ViewContent`, `InitiateCheckout`, `Lead`, `Purchase`.
-   - **Meta Pixel** base tag on All Pages + event tags on each trigger; set each tag's **Event ID = {{event_id}}** → this is what de-dupes against our server CAPI. Map value/currency/content_ids from the dataLayer.
-   - **GA4** config tag (your `G-XXXX`) + event tags keyed off `{{ga4_event}}` with the `ecommerce` object.
+   - **Variables** (Data Layer Variable): `event_id`, `ecommerce`, `content_ids`, `content_type`, `meta_event`.
+   - **Triggers** (Custom Event, exact match) — the storefront pushes GA4-canonical
+     event names: `view_item`, `begin_checkout`, `generate_lead`, `purchase`.
+   - **GA4**: a Google Tag (config) on All Pages + GA4 Event tags on each trigger; the
+     `ecommerce` object is already GA4-spec (the previous one is cleared before each push),
+     so "Use Data Layer ecommerce" works out of the box. Event name = the trigger name.
+   - **Meta Pixel** base tag on All Pages + event tags on the same triggers; map the Meta
+     event name from `{{meta_event}}` (view_item→ViewContent, begin_checkout→InitiateCheckout,
+     generate_lead→Lead, purchase→Purchase) and set each tag's **Event ID = {{event_id}}** →
+     this is what de-dupes against our server CAPI. Map value/currency/content_ids from the dataLayer.
    - (Optional) **Clarity** tag on All Pages.
 4. **Test** with Meta **Test Events** (paste the code into the Test event code field for QA) + GA4 **DebugView**. Confirm each event shows **once** (server + browser deduped).
 5. **Catalog ads (Phase 3):** Commerce Manager → add a **data feed** = `https://<api-domain>/feed/products.csv` (scheduled refresh). Same feed → Google Merchant Center. `content_ids` (sku) already match.

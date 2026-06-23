@@ -64,7 +64,7 @@ export function ProductActions({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Inquiry on WhatsApp"
-          onClick={() => trackLead({ sku: product.sku, value: unit.display })}
+          onClick={() => trackLead({ sku: product.sku, name: product.title, price: unit.display })}
           className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5b] sm:gap-2 sm:px-4 sm:text-base"
         >
           <WhatsAppIcon size={18} />

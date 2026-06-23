@@ -41,8 +41,10 @@ export default function SuccessPage() {
     trackPurchase({
       orderNo: order.order_no,
       value: order.total.display,
+      shipping: order.shipping_cost.display,
       items: order.items.map((i) => ({
         sku: i.sku,
+        name: i.title,
         qty: i.qty,
         price: i.price.display,
       })),

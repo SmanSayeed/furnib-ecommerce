@@ -45,10 +45,11 @@ export function CheckoutForm({
     checkoutTracked.current = true;
     trackInitiateCheckout({
       sku: product.sku,
+      name: product.title,
+      price: unit.minor / 100,
       qty,
-      value: (unit.minor * qty) / 100,
     });
-  }, [product.sku, qty, unit.minor]);
+  }, [product.sku, product.title, qty, unit.minor]);
 
   const subtotalMinor = unit.minor * qty;
   const shippingMinor = selectedZone?.cost.minor ?? 0;

@@ -66,7 +66,7 @@ export default async function ProductPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-3 py-5 sm:py-8">
-      <ProductView sku={product.sku} value={unit.display} />
+      <ProductView sku={product.sku} name={product.title} price={unit.display} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

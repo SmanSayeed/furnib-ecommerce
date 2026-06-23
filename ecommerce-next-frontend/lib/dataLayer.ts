@@ -15,4 +15,15 @@ export function pushEvent(event: string, params: Record<string, unknown> = {}): 
   window.dataLayer.push({ event, ...params });
 }
 
+/**
+ * GA4 requires clearing the previous `ecommerce` object before each ecommerce
+ * event, otherwise items from the last event merge into the next one.
+ * @see https://developers.google.com/analytics/devguides/collection/ga4/ecommerce
+ */
+export function clearEcommerce(): void {
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer ?? [];
+  window.dataLayer.push({ ecommerce: null });
+}
+
 export {};

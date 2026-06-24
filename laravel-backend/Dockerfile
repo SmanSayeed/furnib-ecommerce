@@ -13,8 +13,8 @@ FROM php:8.3-cli-bookworm AS build
 # plus Node 22 (for Vite) and Composer.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git unzip ca-certificates curl gnupg \
-        libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+        libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libwebp-dev libavif-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql gd zip bcmath exif \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
@@ -56,8 +56,8 @@ FROM php:8.3-fpm-bookworm AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx supervisor \
-        libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+        libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libwebp-dev libavif-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql gd zip bcmath exif opcache \
     && rm -rf /var/lib/apt/lists/*
 

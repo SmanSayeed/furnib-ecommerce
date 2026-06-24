@@ -1,0 +1,35 @@
+# Rebuilt inside the image
+vendor
+node_modules
+public/build
+public/hot
+public/storage
+
+# Secrets & local state — NEVER bake these into the image
+.env
+.env.*
+!.env.example
+
+# Local/runtime junk
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/public/*
+
+# VCS / tooling / docs
+.git
+.github
+.gitignore
+.gitattributes
+.editorconfig
+tests
+phpunit.xml
+*.md
+.DS_Store
+Screenshot_*.png
+
+# Don't recurse Docker artifacts into the context
+Dockerfile*
+.dockerignore
+docker-compose*

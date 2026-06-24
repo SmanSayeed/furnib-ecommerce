@@ -6,3 +6,7 @@
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+
+# Stray local spreadsheets
+farnid.xlsx
+*.xlsx

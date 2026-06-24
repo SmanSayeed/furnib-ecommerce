@@ -6,6 +6,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SiteSettingController;
 use App\Http\Controllers\Settings\SmtpSettingController;
+use App\Http\Controllers\Settings\StorageSettingController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,10 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     // Payment / courier gateway credentials (encrypted secrets).
     Route::post('settings/sslcommerz', [IntegrationSettingController::class, 'updateSslcommerz'])->name('sslcommerz-settings.update');
     Route::post('settings/steadfast', [IntegrationSettingController::class, 'updateSteadfast'])->name('steadfast-settings.update');
+
+    // Media storage: driver toggle + Cloudflare R2 connection (encrypted keys).
+    Route::get('settings/storage', [StorageSettingController::class, 'edit'])->name('storage-settings.edit');
+    Route::post('settings/storage', [StorageSettingController::class, 'update'])->name('storage-settings.update');
 });
 
 // Marketing / analytics settings — marketer & admin.

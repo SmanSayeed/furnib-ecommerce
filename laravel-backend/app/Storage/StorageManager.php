@@ -31,12 +31,14 @@ final class StorageManager
 
     private function makeR2(): CloudflareR2Storage
     {
-        $config = config('filesystems.disks.r2', []);
+        // Constructing it merges admin settings over the env-backed disk config.
+        $r2 = new CloudflareR2Storage($this->settings);
+        $config = $r2->config();
 
         if (blank($config['key'] ?? null) || blank($config['secret'] ?? null) || blank($config['bucket'] ?? null)) {
             throw new RuntimeException('R2 storage is selected but its credentials are not configured.');
         }
 
-        return new CloudflareR2Storage;
+        return $r2;
     }
 }

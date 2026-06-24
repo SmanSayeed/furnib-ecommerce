@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import {
     Boxes,
     CreditCard,
+    Database,
     FileText,
     FolderTree,
     LayoutGrid,
@@ -86,6 +87,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'settings.manage',
         items: [
             { title: 'Site & branding', href: '/settings/site', icon: Store },
+            { title: 'Storage (R2)', href: '/settings/storage', icon: Database },
             { title: 'Staff & roles', icon: UsersRound, soon: true },
             { title: 'Integrations', icon: CreditCard, soon: true },
         ],

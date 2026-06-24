@@ -25,7 +25,31 @@ Companion: env-var tables + image details are in [`DEPLOYMENT.md`](./DEPLOYMENT.
 
 ---
 
-## Phase 0 — Recon (no changes made)
+## Phase 0 — FINDINGS (locked 2026-06-24)
+
+Recon confirmed; decisions below are final unless noted.
+
+- **Edge:** `easypanel-traefik` (Traefik 3.6.7) owns host `:80/:443`. We never bind them.
+- **Orchestrator:** Docker **Swarm** (overlay nets `easypanel`, `easypanel-solfa`).
+  EasyPanel builds our Dockerfiles and runs them as swarm services. No Dockerfile changes needed.
+- **solfa backend** runs **nginx + php8-fpm + supervisor** from a Git App — identical to our
+  backend image pattern (proven on this host).
+- **Internal DNS host = `<project>_<service>`.** So name furnib services WITHOUT a prefix:
+  | Service (name it exactly) | Internal host | EasyPanel temp domain |
+  |---|---|---|
+  | `db`  (MySQL 8)   | `furnib_db`       | — (no public port) |
+  | `backend` (App)   | `furnib_backend`  | `furnib-backend.<...>.easypanel.host` |
+  | `frontend` (App)  | `furnib_frontend` | `furnib-frontend.<...>.easypanel.host` |
+- **DB engine:** **MySQL 8** (matches the app's dev DB; avoids MariaDB edge cases). DB private, no host port.
+- **GitHub:** a PAT with `repo` scope is already saved in EasyPanel → Settings → Github,
+  so private repos accessible to that account can be pulled.
+- **Headroom:** 23 GB RAM / 750 GB disk / 8 cores free — ample.
+- **Domain:** `furnib.com` on Cloudflare (A record exists). Storefront → `furnib.com` (+ `www`),
+  admin/API → `admin.furnib.com`.
+
+---
+
+## Phase 0b — Recon commands (already run; kept for reference)
 
 Goal: learn the running topology so the deployment can't collide with others.
 All commands below are **read-only**.

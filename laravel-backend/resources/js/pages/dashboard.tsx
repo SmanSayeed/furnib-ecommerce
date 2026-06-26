@@ -1,9 +1,12 @@
-import { Head } from '@inertiajs/react';
-import { Boxes, FolderTree, Package, ShoppingCart } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Banknote, Boxes, FolderTree, Package, ShoppingCart, TrendingUp, UserPlus } from 'lucide-react';
 import {
     Bar,
     BarChart,
     CartesianGrid,
+    ComposedChart,
+    Legend,
+    Line,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -11,6 +14,8 @@ import {
 } from 'recharts';
 import {  DataTable } from '@/components/admin/data-table';
 import type {Column} from '@/components/admin/data-table';
+import { DateRangeFilter } from '@/components/admin/date-range-filter';
+import type { DatePreset } from '@/components/admin/date-range-filter';
 import { PageHeader } from '@/components/admin/page-header';
 import { StatCard } from '@/components/admin/stat-card';
 import { dashboard } from '@/routes';
@@ -24,6 +29,18 @@ type Stats = {
     lowStock: number;
 };
 
+type OrderStats = {
+    orders: number;
+    revenue: string;
+    advance_collected: string;
+    new_customers: number;
+    aov: string;
+};
+
+type SeriesPoint = { date: string; orders: number; revenue: number };
+
+type Window = { range: DatePreset; from: string; to: string };
+
 type RecentProduct = {
     id: number;
     title: string;
@@ -36,6 +53,9 @@ type RecentProduct = {
 
 type Props = {
     stats: Stats;
+    orderStats: OrderStats;
+    series: SeriesPoint[];
+    window: Window;
     byCategory: { name: string; products: number }[];
     recentProducts: RecentProduct[];
 };
@@ -56,7 +76,38 @@ function StatusPill({ status }: { status: string }) {
     );
 }
 
-export default function Dashboard({ stats, byCategory, recentProducts }: Props) {
+export default function Dashboard({
+    stats,
+    orderStats,
+    series,
+    window,
+    byCategory,
+    recentProducts,
+}: Props) {
+    const applyWindow = (v: Window) => {
+        const params: Record<string, string> = {};
+
+        if (v.range && v.range !== 'this_month') {
+            params.range = v.range;
+
+            if (v.range === 'custom') {
+                if (v.from) {
+                    params.from = v.from;
+                }
+
+                if (v.to) {
+                    params.to = v.to;
+                }
+            }
+        }
+
+        router.get('/dashboard', params, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
     const recentColumns: Column<RecentProduct>[] = [
         {
             key: 'title',
@@ -105,7 +156,47 @@ export default function Dashboard({ stats, byCategory, recentProducts }: Props) 
         <>
             <Head title="Dashboard" />
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4">
-                <PageHeader title="Dashboard" description="Your store at a glance." />
+                <PageHeader
+                    title="Dashboard"
+                    description="Your store at a glance."
+                    actions={
+                        <DateRangeFilter
+                            value={{ range: window.range, from: window.from, to: window.to }}
+                            onChange={applyWindow}
+                        />
+                    }
+                />
+
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <StatCard label="Orders" value={orderStats.orders.toLocaleString()} icon={ShoppingCart} />
+                    <StatCard label="Revenue (paid)" value={orderStats.revenue} icon={Banknote} />
+                    <StatCard label="Avg order value" value={orderStats.aov} icon={TrendingUp} />
+                    <StatCard label="New customers" value={orderStats.new_customers.toLocaleString()} icon={UserPlus} />
+                </div>
+
+                <div className="rounded-xl border bg-card p-4">
+                    <h2 className="text-sm font-medium text-muted-foreground">Orders &amp; revenue</h2>
+                    {series.length === 0 ? (
+                        <p className="py-10 text-center text-sm text-muted-foreground">
+                            No orders in this window.
+                        </p>
+                    ) : (
+                        <div className="mt-4 h-[280px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
+                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="currentColor" className="text-muted-foreground" />
+                                    <YAxis yAxisId="left" allowDecimals={false} tick={{ fontSize: 11 }} stroke="currentColor" className="text-muted-foreground" />
+                                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} stroke="currentColor" className="text-muted-foreground" />
+                                    <Tooltip cursor={{ fill: 'rgba(232,93,31,0.08)' }} />
+                                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill={BRAND} radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                    <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (৳)" stroke="#2563eb" strokeWidth={2} dot={false} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+                </div>
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                     <StatCard label="Products" value={stats.products.toLocaleString()} icon={Package} />
@@ -126,39 +217,27 @@ export default function Dashboard({ stats, byCategory, recentProducts }: Props) 
                     />
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-3">
-                    <div className="rounded-xl border bg-card p-4 lg:col-span-2">
-                        <h2 className="text-sm font-medium text-muted-foreground">
-                            Products by category
-                        </h2>
-                        {byCategory.length === 0 ? (
-                            <p className="py-10 text-center text-sm text-muted-foreground">
-                                No categories yet.
-                            </p>
-                        ) : (
-                            <div className="mt-4 h-[260px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={byCategory} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
-                                        <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted-foreground" />
-                                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted-foreground" />
-                                        <Tooltip cursor={{ fill: 'rgba(232,93,31,0.08)' }} />
-                                        <Bar dataKey="products" fill={BRAND} radius={[4, 4, 0, 0]} maxBarSize={64} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex flex-col rounded-xl border bg-card p-4">
-                        <h2 className="text-sm font-medium text-muted-foreground">Orders & revenue</h2>
-                        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
-                            <ShoppingCart className="size-8 text-muted-foreground/50" />
-                            <p className="text-sm text-muted-foreground">
-                                Live order & revenue analytics arrive with the Orders module (Phase 3).
-                            </p>
+                <div className="rounded-xl border bg-card p-4">
+                    <h2 className="text-sm font-medium text-muted-foreground">
+                        Products by category
+                    </h2>
+                    {byCategory.length === 0 ? (
+                        <p className="py-10 text-center text-sm text-muted-foreground">
+                            No categories yet.
+                        </p>
+                    ) : (
+                        <div className="mt-4 h-[260px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={byCategory} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" vertical={false} />
+                                    <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted-foreground" />
+                                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted-foreground" />
+                                    <Tooltip cursor={{ fill: 'rgba(232,93,31,0.08)' }} />
+                                    <Bar dataKey="products" fill={BRAND} radius={[4, 4, 0, 0]} maxBarSize={64} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <div>

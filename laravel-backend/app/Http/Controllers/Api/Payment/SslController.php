@@ -15,6 +15,7 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * SSLCommerz checkout endpoints. `init` opens a hosted session; the gateway
@@ -56,7 +57,21 @@ class SslController extends Controller
             'status' => Payment::STATUS_PENDING,
         ]);
 
-        $gatewayUrl = $this->gateway->initSession($order, $amount, $payment->tran_id);
+        // The gateway throws when credentials are not configured or the remote
+        // session can't be opened. Fail the pending payment and return a clean,
+        // friendly error instead of a 500 — COD is always available.
+        try {
+            $gatewayUrl = $this->gateway->initSession($order, $amount, $payment->tran_id);
+        } catch (RuntimeException $e) {
+            $payment->update(['status' => Payment::STATUS_FAILED]);
+            report($e);
+
+            return $this->error(
+                503,
+                'payment_unavailable',
+                'Online payment is currently unavailable. You can pay cash on delivery.',
+            );
+        }
 
         return response()->json([
             'gateway_url' => $gatewayUrl,

@@ -23,6 +23,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind EasyPanel's Traefik reverse proxy. Trust the private Docker
+        // networks so X-Forwarded-Proto/Host yield the real https://admin.furnib.com
+        // scheme + host (needed for correct signed-URL validation).
+        $middleware->trustProxies(at: [
+            '10.0.0.0/8',
+            '172.16.0.0/12',
+            '192.168.0.0/16',
+        ]);
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

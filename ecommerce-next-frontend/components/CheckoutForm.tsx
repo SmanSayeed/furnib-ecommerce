@@ -26,7 +26,6 @@ export function CheckoutForm({
   const [qty, setQty] = useState(Math.max(1, initialQty));
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [zoneId, setZoneId] = useState<number | null>(zones[0]?.id ?? null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +36,13 @@ export function CheckoutForm({
     () => zones.find((z) => z.id === zoneId) ?? null,
     [zones, zoneId],
   );
+
+  // A product whose advance is the delivery charge needs a zone; if none exist
+  // yet, block submission with a clear message instead of a cryptic server error.
+  const needsShippingZone =
+    (product.advance?.required ?? false) &&
+    product.advance?.partial_type === "shipping";
+  const blockedNoZone = needsShippingZone && zones.length === 0;
 
   // Fire InitiateCheckout once when the checkout screen is first shown.
   const checkoutTracked = useRef(false);
@@ -85,7 +91,7 @@ export function CheckoutForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: [{ product_id: product.id, qty }],
-          customer: { name, mobile, ...(email ? { email } : {}) },
+          customer: { name, mobile },
           shipping_zone_id: zoneId,
           address,
         }),
@@ -199,22 +205,6 @@ export function CheckoutForm({
         </div>
 
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Email <span className="text-muted">(optional)</span>
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
-            placeholder="you@example.com"
-            autoComplete="email"
-          />
-          {fieldError("customer.email")}
-        </div>
-
-        <div>
           <label htmlFor="address" className="mb-1 block text-sm font-medium">
             Delivery address
           </label>
@@ -259,6 +249,13 @@ export function CheckoutForm({
             {fieldError("shipping_zone_id")}
           </div>
         )}
+
+        {blockedNoZone && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+            Delivery areas aren’t set up yet for this product. Please contact us on
+            WhatsApp to place your order.
+          </div>
+        )}
       </div>
 
       {/* Summary */}
@@ -288,7 +285,7 @@ export function CheckoutForm({
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || blockedNoZone}
         className="mt-5 w-full rounded-xl bg-accent px-6 py-3.5 text-center font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Placing order…" : "Place order"}

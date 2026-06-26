@@ -142,6 +142,9 @@ export default function Site({ branding }: { branding: Branding }) {
                                     <Label htmlFor="logo_light">
                                         Logo — light theme (PNG/JPG/WebP)
                                     </Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Transparent PNG, recommended ~240×64 px, max 2 MB.
+                                    </p>
                                     <FilePreview url={branding.logo_light_url} />
                                     <Input
                                         id="logo_light"
@@ -155,6 +158,9 @@ export default function Site({ branding }: { branding: Branding }) {
                                     <Label htmlFor="logo_dark">
                                         Logo — dark theme (PNG/JPG/WebP)
                                     </Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Transparent PNG, recommended ~240×64 px, max 2 MB.
+                                    </p>
                                     <FilePreview url={branding.logo_dark_url} dark />
                                     <Input
                                         id="logo_dark"
@@ -168,6 +174,10 @@ export default function Site({ branding }: { branding: Branding }) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="favicon">Favicon (PNG/ICO)</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Square 512×512 px PNG/ICO, max 512 KB. Also used as the
+                                    brand avatar on storefront product cards.
+                                </p>
                                 <FilePreview url={branding.favicon_url} />
                                 <Input
                                     id="favicon"
@@ -181,6 +191,9 @@ export default function Site({ branding }: { branding: Branding }) {
                             <div className="space-y-4 rounded-lg border border-border p-4">
                                 <p className="text-sm font-medium">
                                     Home page banners (PNG/JPG/WebP/AVIF)
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Wide banners — recommended 1600×600 px, max 3 MB each.
                                 </p>
                                 <div className="grid gap-2">
                                     <Label htmlFor="banner_1">Banner 1</Label>

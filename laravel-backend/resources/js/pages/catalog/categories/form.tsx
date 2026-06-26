@@ -23,16 +23,21 @@ function ImageField({
     name,
     label,
     current,
+    description,
 }: {
     name: string;
     label: string;
     current: string | null;
+    description?: string;
 }) {
     const [preview, setPreview] = useState<string | null>(current);
 
     return (
         <div className="grid gap-2">
             <Label htmlFor={name}>{label}</Label>
+            {description && (
+                <p className="text-xs text-muted-foreground">{description}</p>
+            )}
             {preview && (
                 <img
                     src={preview}
@@ -142,8 +147,18 @@ export default function CategoryForm({ category }: { category: Category | null }
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <ImageField name="header_image" label="Header image" current={category?.header_url ?? null} />
-                                <ImageField name="thumbnail_image" label="Thumbnail image" current={category?.thumbnail_url ?? null} />
+                                <ImageField
+                                    name="header_image"
+                                    label="Header image"
+                                    current={category?.header_url ?? null}
+                                    description="Wide hero banner — recommended 1600×600 px. PNG/JPG/WebP/AVIF, max 3 MB."
+                                />
+                                <ImageField
+                                    name="thumbnail_image"
+                                    label="Thumbnail image"
+                                    current={category?.thumbnail_url ?? null}
+                                    description="Square card image — recommended 600×600 px. Max 2 MB."
+                                />
                             </div>
                             <InputError message={errors.header_image} />
                             <InputError message={errors.thumbnail_image} />

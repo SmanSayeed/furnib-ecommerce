@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Activitylog\Models\Activity;
@@ -29,10 +30,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureUrls();
         $this->configureDefaults();
         $this->configureRateLimiters();
         $this->configureAuditTrail();
         $this->configureMail();
+    }
+
+    /**
+     * Force URL generation to the configured public origin + HTTPS. Needed
+     * because the storefront fetches the API over the internal Docker host
+     * (furnib_backend); without this, signed/absolute URLs (e.g. the invoice
+     * download link) would leak that internal host instead of admin.furnib.com.
+     */
+    protected function configureUrls(): void
+    {
+        $appUrl = (string) config('app.url');
+
+        if (str_starts_with($appUrl, 'https://')) {
+            URL::forceScheme('https');
+            URL::forceRootUrl($appUrl);
+        }
     }
 
     /**

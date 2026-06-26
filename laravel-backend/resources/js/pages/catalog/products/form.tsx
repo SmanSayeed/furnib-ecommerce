@@ -264,6 +264,9 @@ return { type: 'existing', id: item.id };
 
                     <div className="grid gap-2">
                         <Label htmlFor="main_image">Main image</Label>
+                        <p className="text-xs text-muted-foreground">
+                            Recommended 1200×900 px (4:3 landscape). PNG/JPG/WebP/AVIF, max 4 MB. Shown cropped-to-fill, so keep the product centred.
+                        </p>
                         {mainPreview && (
                             <img
                                 src={mainPreview}
@@ -290,7 +293,8 @@ setMainPreview(URL.createObjectURL(file));
                     <div className="grid gap-2">
                         <Label>Gallery ({gallery.length}/{MAX_GALLERY})</Label>
                         <p className="text-xs text-muted-foreground">
-                            Drag (desktop) or use the arrows to reorder. The first image leads the
+                            Each 1200×900 px (4:3), max 4 MB, up to {MAX_GALLERY} images. Drag
+                            (desktop) or use the arrows to reorder — the first image leads the
                             product slider.
                         </p>
                         {gallery.length > 0 && (

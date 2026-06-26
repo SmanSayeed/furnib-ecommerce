@@ -39,7 +39,7 @@ export function ProductRow({
   const initial = brandName.trim().charAt(0).toUpperCase() || "F";
 
   return (
-    <article className="animate-in w-full overflow-hidden rounded-card border border-border bg-surface/30">
+    <article className="animate-in flex h-full w-full flex-col overflow-hidden rounded-card border border-border bg-surface/30">
       {/* Header — brand avatar + product title (Facebook post header) */}
       <div className="flex items-center gap-2.5 px-3 pt-3 sm:px-4">
         <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border bg-surface-2">
@@ -82,8 +82,9 @@ export function ProductRow({
         />
       </div>
 
-      {/* Action bar — price + Inquiry (left), Order (right) */}
-      <div className="mt-3 border-t border-border px-3 py-3 sm:px-4">
+      {/* Action bar — price + Inquiry (left), Order (right). mt-auto pins it to
+          the bottom so every card in a row aligns to the same height. */}
+      <div className="mt-auto border-t border-border px-3 py-3 sm:px-4">
         <ProductActions
           product={product}
           categorySlug={categorySlug}

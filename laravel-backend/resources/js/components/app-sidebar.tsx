@@ -58,8 +58,8 @@ const navGroups: AdminNavGroup[] = [
     },
     {
         label: 'Customers',
-        permission: 'users.manage',
-        items: [{ title: 'Customers', icon: Users, soon: true }],
+        permission: 'orders.view',
+        items: [{ title: 'Customers', href: '/admin/customers', icon: Users }],
     },
     {
         label: 'Payments',

@@ -17,6 +17,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $name
  * @property string $mobile
  * @property string|null $email
+ * @property-read int $orders_count Populated by withCount('orders') on the admin list.
+ * @property-read int|null $total_spent_minor Populated by withSum on the admin list (paisa).
  */
 class Customer extends Model
 {

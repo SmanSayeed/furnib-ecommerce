@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Catalog\CategoryUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\OrderController;
@@ -105,6 +106,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:orders.view')->name('orders.invoice');
     Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])
         ->middleware('permission:orders.manage')->name('orders.status');
+
+    // Customer directory (read-only) — reuses the orders.view permission.
+    Route::get('customers', [CustomerController::class, 'index'])
+        ->middleware('permission:orders.view')->name('customers.index');
 
     // Courier consignment (SteadFast) — booking + tracking.
     Route::middleware('permission:orders.manage')->group(function () {

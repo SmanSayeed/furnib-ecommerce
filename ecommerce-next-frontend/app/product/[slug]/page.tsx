@@ -40,6 +40,12 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const unit = product.discount_price ?? product.price;
+  const discountPct =
+    product.discount_price && product.price.display > 0
+      ? Math.round(
+          (1 - product.discount_price.display / product.price.display) * 100,
+        )
+      : 0;
   const slides: Slide[] = [
     ...(product.main_image ? [{ url: imageUrl(product.main_image), alt: product.title }] : []),
     ...(product.images ?? []).map((g) => ({ url: imageUrl(g.path), alt: g.alt ?? product.title })),
@@ -73,7 +79,7 @@ export default async function ProductPage({
       />
 
       <article className="overflow-hidden rounded-2xl border border-border bg-surface/30">
-        <ImageSlider slides={slides} title={product.title} />
+        <ImageSlider slides={slides} title={product.title} discountPct={discountPct} />
         <div className="space-y-4 p-4 sm:p-6">
           <h1 className="text-xl font-extrabold sm:text-2xl">{product.title}</h1>
           <p className="text-xs text-muted">SKU: {product.sku}</p>

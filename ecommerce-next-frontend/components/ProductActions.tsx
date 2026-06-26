@@ -39,45 +39,47 @@ export function ProductActions({
 
   return (
     <>
-      <div className="flex items-stretch gap-2">
-        {/* Price (currency icon only, no label) */}
-        <div className="flex min-w-0 flex-1 flex-col justify-center rounded-xl border border-border bg-surface px-3 py-2 leading-tight">
-          {product.discount_price ? (
-            <>
-              <span className="truncate text-base font-extrabold text-accent sm:text-lg">
-                {product.discount_price.formatted}
-              </span>
-              <span className="truncate text-xs text-muted line-through">
+      <div className="flex items-center justify-between gap-2">
+        {/* Left cluster: price + Inquiry */}
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 flex-col leading-tight">
+            {product.discount_price ? (
+              <>
+                <span className="truncate text-base font-extrabold text-accent sm:text-lg">
+                  {product.discount_price.formatted}
+                </span>
+                <span className="truncate text-xs text-muted line-through">
+                  {product.price.formatted}
+                </span>
+              </>
+            ) : (
+              <span className="truncate text-base font-extrabold sm:text-lg">
                 {product.price.formatted}
               </span>
-            </>
-          ) : (
-            <span className="truncate text-base font-extrabold sm:text-lg">
-              {product.price.formatted}
-            </span>
-          )}
+            )}
+          </div>
+
+          {/* Inquiry (WhatsApp) — icon-only on mobile, labelled from sm */}
+          <a
+            href={whatsappInquiry(product, productUrl, whatsapp)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Inquiry on WhatsApp"
+            onClick={() => trackLead({ sku: product.sku, name: product.title, price: unit.display })}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#25D366]/15 px-3 py-1.5 text-sm font-semibold text-[#25D366] transition hover:bg-[#25D366]/25"
+          >
+            <WhatsAppIcon size={16} />
+            <span className="hidden sm:inline">Inquiry</span>
+          </a>
         </div>
 
-        {/* Inquiry (WhatsApp green) */}
-        <a
-          href={whatsappInquiry(product, productUrl, whatsapp)}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Inquiry on WhatsApp"
-          onClick={() => trackLead({ sku: product.sku, name: product.title, price: unit.display })}
-          className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5b] sm:gap-2 sm:px-4 sm:text-base"
-        >
-          <WhatsAppIcon size={18} />
-          <span>Inquiry</span>
-        </a>
-
-        {/* Order Now (primary) */}
+        {/* Right: small highlighted Order pill */}
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex flex-1 items-center justify-center rounded-xl bg-accent px-3 text-sm font-semibold whitespace-nowrap text-on-accent transition hover:bg-accent-hover sm:text-base"
+          className="shrink-0 rounded-full bg-accent px-5 py-2 text-sm font-semibold whitespace-nowrap text-on-accent transition hover:bg-accent-hover"
         >
-          Order Now
+          Order
         </button>
       </div>
 

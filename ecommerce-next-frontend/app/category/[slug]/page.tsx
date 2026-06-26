@@ -65,6 +65,10 @@ export default async function CategoryPage({
           initial={products}
           meta={meta}
           whatsapp={settings?.whatsapp}
+          brand={{
+            name: settings?.site_name ?? "Furnib.com",
+            avatar: imageUrl(settings?.favicon),
+          }}
         />
       </div>
 

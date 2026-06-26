@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageMeta, Product } from "@/lib/types";
-import { ProductRow } from "./ProductRow";
+import { type Brand, ProductRow } from "./ProductRow";
 
 export function InfiniteProducts({
   slug,
   initial,
   meta,
   whatsapp,
+  brand,
 }: {
   slug: string;
   initial: Product[];
   meta: PageMeta;
   whatsapp?: string | null;
+  brand?: Brand;
 }) {
   const [products, setProducts] = useState<Product[]>(initial);
   const [page, setPage] = useState(meta.current_page);
@@ -67,6 +69,7 @@ export function InfiniteProducts({
             product={p}
             categorySlug={slug}
             whatsapp={whatsapp}
+            brand={brand}
           />
         ))}
       </div>

@@ -1,4 +1,7 @@
+import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react';
 import type { ReactNode } from 'react';
+
+export type SortDir = 'asc' | 'desc';
 
 export type Column<T> = {
     /** Unique key; also used to read `row[key]` when no `cell` is given. */
@@ -11,6 +14,12 @@ export type Column<T> = {
     className?: string;
     /** Hide the label in the auto mobile-card layout (e.g. for an actions column). */
     hideLabelOnMobile?: boolean;
+    /**
+     * Server-side sort key. When set together with the table's `onSort`, this
+     * column header becomes a sort toggle. Must match the backend sort
+     * whitelist (e.g. `total`, `created_at`).
+     */
+    sortKey?: string;
 };
 
 type Props<T> = {
@@ -24,11 +33,30 @@ type Props<T> = {
      */
     renderMobileCard?: (row: T) => ReactNode;
     className?: string;
+    /** Active sort column key (matches a column's `sortKey`). */
+    sort?: string;
+    /** Active sort direction. */
+    dir?: SortDir;
+    /** Called with a column's `sortKey` when its header is clicked. */
+    onSort?: (sortKey: string) => void;
 };
+
+function SortIcon({ active, dir }: { active: boolean; dir?: SortDir }) {
+    if (!active) {
+        return <ChevronsUpDown className="size-3.5 opacity-50" />;
+    }
+
+    return dir === 'asc' ? (
+        <ChevronUp className="size-3.5" />
+    ) : (
+        <ChevronDown className="size-3.5" />
+    );
+}
 
 /**
  * Responsive data table: a real `<table>` on md+ screens, automatically
  * collapsing to stacked cards on mobile so rows never overflow horizontally.
+ * Columns with a `sortKey` render a clickable, server-driven sort header.
  */
 export function DataTable<T>({
     columns,
@@ -36,6 +64,9 @@ export function DataTable<T>({
     rowKey,
     renderMobileCard,
     className,
+    sort,
+    dir,
+    onSort,
 }: Props<T>) {
     const value = (col: Column<T>, row: T): ReactNode =>
         col.cell ? col.cell(row) : ((row as Record<string, unknown>)[col.key] as ReactNode);
@@ -45,14 +76,36 @@ export function DataTable<T>({
             <table className="hidden w-full text-sm md:table">
                 <thead>
                     <tr className="border-b text-left text-xs text-muted-foreground">
-                        {columns.map((c) => (
-                            <th
-                                key={c.key}
-                                className={`px-4 py-2 font-normal ${c.align === 'right' ? 'text-right' : ''} ${c.className ?? ''}`}
-                            >
-                                {c.header}
-                            </th>
-                        ))}
+                        {columns.map((c) => {
+                            const sortable = Boolean(c.sortKey && onSort);
+
+                            return (
+                                <th
+                                    key={c.key}
+                                    aria-sort={
+                                        sortable && sort === c.sortKey
+                                            ? dir === 'asc'
+                                                ? 'ascending'
+                                                : 'descending'
+                                            : undefined
+                                    }
+                                    className={`px-4 py-2 font-normal ${c.align === 'right' ? 'text-right' : ''} ${c.className ?? ''}`}
+                                >
+                                    {sortable ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => onSort?.(c.sortKey as string)}
+                                            className={`inline-flex items-center gap-1 transition-colors hover:text-foreground ${c.align === 'right' ? 'flex-row-reverse' : ''}`}
+                                        >
+                                            {c.header}
+                                            <SortIcon active={sort === c.sortKey} dir={dir} />
+                                        </button>
+                                    ) : (
+                                        c.header
+                                    )}
+                                </th>
+                            );
+                        })}
                     </tr>
                 </thead>
                 <tbody>

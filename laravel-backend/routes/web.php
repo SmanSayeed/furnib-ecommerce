@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\InvoiceListController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
@@ -110,6 +111,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Customer directory (read-only) — reuses the orders.view permission.
     Route::get('customers', [CustomerController::class, 'index'])
         ->middleware('permission:orders.view')->name('customers.index');
+
+    // Invoice list — order projection; row PDF reuses orders/{order}/invoice.
+    Route::get('invoices', [InvoiceListController::class, 'index'])
+        ->middleware('permission:orders.view')->name('invoices.index');
 
     // Courier consignment (SteadFast) — booking + tracking.
     Route::middleware('permission:orders.manage')->group(function () {

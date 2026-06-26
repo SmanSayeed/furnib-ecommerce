@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
-use Illuminate\Database\Eloquent\Builder;
+use App\Repositories\Eloquent\OrderRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -16,26 +16,12 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly OrderRepository $orders) {}
+
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'status', 'from', 'to']);
-
-        $paginator = Order::query()
-            ->with('customer')
-            ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->where('status', $filters['status']))
-            ->when(filled($filters['search'] ?? null), function (Builder $q) use ($filters): void {
-                $search = (string) $filters['search'];
-                $q->where(function (Builder $inner) use ($search): void {
-                    $inner->where('order_no', 'like', "%{$search}%")
-                        ->orWhereHas('customer', fn (Builder $c) => $c
-                            ->where('name', 'like', "%{$search}%")
-                            ->orWhere('mobile', 'like', "%{$search}%"));
-                });
-            })
-            ->when(filled($filters['from'] ?? null), fn (Builder $q) => $q->whereDate('created_at', '>=', $filters['from']))
-            ->when(filled($filters['to'] ?? null), fn (Builder $q) => $q->whereDate('created_at', '<=', $filters['to']))
-            ->latest()
-            ->paginate(20);
+        $listQuery = $this->orders->queryFrom($request);
+        $paginator = $this->orders->adminList($listQuery);
 
         return Inertia::render('orders/index', [
             'orders' => collect($paginator->items())->map(fn (Order $o): array => [
@@ -54,12 +40,17 @@ class OrderController extends Controller
                 'total' => $paginator->total(),
             ],
             'filters' => [
-                'search' => $filters['search'] ?? '',
-                'status' => $filters['status'] ?? '',
-                'from' => $filters['from'] ?? '',
-                'to' => $filters['to'] ?? '',
+                'search' => $listQuery->search ?? '',
+                'status' => $listQuery->filters['status'] ?? '',
+                'payment_status' => $listQuery->filters['payment_status'] ?? '',
+                'sort' => $listQuery->sort,
+                'dir' => $listQuery->dir,
+                'range' => $listQuery->dateRange->preset,
+                'from' => (string) $request->query('from', ''),
+                'to' => (string) $request->query('to', ''),
             ],
             'statuses' => Order::STATUSES,
+            'paymentStatuses' => Order::PAYMENT_STATUSES,
         ]);
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Concerns\AppliesListFilters;
 use App\Concerns\Auditable;
 use App\Support\Money;
 use Database\Factories\OrderFactory;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
-    use Auditable, HasFactory, SoftDeletes;
+    use AppliesListFilters, Auditable, HasFactory, SoftDeletes;
 
     public const STATUSES = [
         'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned',

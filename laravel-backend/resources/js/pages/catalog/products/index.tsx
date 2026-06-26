@@ -2,7 +2,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Archive, ImageOff, Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import {  DataTable } from '@/components/admin/data-table';
-import type {Column} from '@/components/admin/data-table';
+import type {Column, SortDir} from '@/components/admin/data-table';
+import { DateRangeFilter } from '@/components/admin/date-range-filter';
+import type { DatePreset } from '@/components/admin/date-range-filter';
 import { EmptyState } from '@/components/admin/empty-state';
 import { FilterBar } from '@/components/admin/filter-bar';
 import { PageHeader } from '@/components/admin/page-header';
@@ -23,10 +25,21 @@ type ProductRow = {
 
 type Category = { id: number; title: string };
 
+type Filters = {
+    search: string;
+    status: string;
+    category_id: string;
+    sort: string;
+    dir: SortDir;
+    range: DatePreset;
+    from: string;
+    to: string;
+};
+
 type Props = {
     products: ProductRow[];
     meta: { current_page: number; last_page: number; total: number };
-    filters: { search: string; status: string; category_id: string };
+    filters: Filters;
     categories: Category[];
     trashedCount: number;
 };
@@ -81,25 +94,44 @@ export default function ProductsIndex({
 }: Props) {
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const apply = (next: Partial<Props['filters']> & { page?: number }) => {
+    const apply = (next: Partial<Filters> & { page?: number }) => {
         const params: Record<string, string | number> = {};
         const merged = { ...filters, ...next };
 
         if (merged.search) {
-params.search = merged.search;
-}
+            params.search = merged.search;
+        }
 
         if (merged.status) {
-params.status = merged.status;
-}
+            params.status = merged.status;
+        }
 
         if (merged.category_id) {
-params.category_id = merged.category_id;
-}
+            params.category_id = merged.category_id;
+        }
+
+        if (merged.sort !== 'position_order' || merged.dir !== 'asc') {
+            params.sort = merged.sort;
+            params.dir = merged.dir;
+        }
+
+        if (merged.range && merged.range !== 'all') {
+            params.range = merged.range;
+
+            if (merged.range === 'custom') {
+                if (merged.from) {
+                    params.from = merged.from;
+                }
+
+                if (merged.to) {
+                    params.to = merged.to;
+                }
+            }
+        }
 
         if (next.page && next.page > 1) {
-params.page = next.page;
-}
+            params.page = next.page;
+        }
 
         router.get('/admin/catalog/products', params, {
             preserveState: true,
@@ -110,10 +142,16 @@ params.page = next.page;
 
     const onSearch = (value: string) => {
         if (searchTimer.current) {
-clearTimeout(searchTimer.current);
-}
+            clearTimeout(searchTimer.current);
+        }
 
         searchTimer.current = setTimeout(() => apply({ search: value, page: 1 }), 400);
+    };
+
+    const onSort = (sortKey: string) => {
+        const dir: SortDir =
+            filters.sort === sortKey && filters.dir === 'desc' ? 'asc' : 'desc';
+        apply({ sort: sortKey, dir, page: 1 });
     };
 
     const remove = (row: ProductRow) =>
@@ -140,6 +178,7 @@ clearTimeout(searchTimer.current);
         {
             key: 'title',
             header: 'Product',
+            sortKey: 'title',
             cell: (row) => (
                 <div className="flex items-center gap-3">
                     <Thumb url={row.main_image_url} alt={row.title} />
@@ -157,10 +196,11 @@ clearTimeout(searchTimer.current);
                 <span className="text-muted-foreground">{row.category ?? '—'}</span>
             ),
         },
-        { key: 'price', header: 'Price', cell: (row) => <Price row={row} /> },
+        { key: 'price', header: 'Price', sortKey: 'price', cell: (row) => <Price row={row} /> },
         {
             key: 'stock_amount',
             header: 'Stock',
+            sortKey: 'stock_amount',
             cell: (row) => (
                 <span className={row.in_stock ? '' : 'text-destructive'}>
                     {row.in_stock ? row.stock_amount : 'Out'}
@@ -250,6 +290,10 @@ clearTimeout(searchTimer.current);
                         <option value="draft">Draft</option>
                         <option value="disabled">Disabled</option>
                     </select>
+                    <DateRangeFilter
+                        value={{ range: filters.range, from: filters.from, to: filters.to }}
+                        onChange={(v) => apply({ ...v, page: 1 })}
+                    />
                 </FilterBar>
 
                 {products.length === 0 ? (
@@ -272,6 +316,9 @@ clearTimeout(searchTimer.current);
                             rows={products}
                             rowKey={(row) => row.id}
                             renderMobileCard={mobileCard}
+                            sort={filters.sort}
+                            dir={filters.dir}
+                            onSort={onSort}
                         />
 
                         {meta.last_page > 1 && (

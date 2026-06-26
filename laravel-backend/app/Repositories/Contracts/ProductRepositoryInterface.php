@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Contracts;
 
 use App\Models\Product;
+use App\Support\Lists\ListQuery;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -23,6 +24,9 @@ interface ProductRepositoryInterface extends RepositoryInterface
      * @return LengthAwarePaginator<int, Product>
      */
     public function adminPaginate(array $filters, int $perPage = 20): LengthAwarePaginator;
+
+    /** @return LengthAwarePaginator<int, Product> */
+    public function adminList(ListQuery $query): LengthAwarePaginator;
 
     /**
      * @param  array<string,mixed>  $filters

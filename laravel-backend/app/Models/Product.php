@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Concerns\AppliesListFilters;
 use App\Concerns\Auditable;
 use App\Support\Money;
 use Database\Factories\ProductFactory;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use Auditable, HasFactory, SoftDeletes;
+    use AppliesListFilters, Auditable, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'category_id', 'title', 'slug', 'sku', 'details', 'product_video',

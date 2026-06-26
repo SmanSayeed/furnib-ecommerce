@@ -63,6 +63,19 @@ it('treats a blank search as no search', function () {
     expect($query->search)->toBeNull();
 });
 
+it('maps an associative filter param to its column', function () {
+    // products send ?status=... but the DB column is product_status
+    $request = Request::create('/admin/catalog/products', 'GET', ['status' => 'published']);
+
+    $query = ListQuery::fromRequest($request, [
+        'filters' => ['status' => 'product_status'],
+        'sorts' => ['created_at'],
+        'defaultSort' => 'created_at',
+    ]);
+
+    expect($query->filters)->toBe(['product_status' => 'published']);
+});
+
 it('builds a date range from the range preset', function () {
     $request = Request::create('/admin/orders', 'GET', ['range' => 'this_month']);
 

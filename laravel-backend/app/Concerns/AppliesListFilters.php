@@ -48,6 +48,8 @@ trait AppliesListFilters
 
         $list->dateRange->apply($query, $query->qualifyColumn('created_at'));
 
-        return $query->orderBy($query->qualifyColumn($list->sort), $list->dir);
+        $direction = $list->dir === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderBy($query->qualifyColumn($list->sort), $direction);
     }
 }

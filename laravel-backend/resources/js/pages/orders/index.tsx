@@ -2,7 +2,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Eye, ShoppingCart } from 'lucide-react';
 import { useRef } from 'react';
 import {  DataTable } from '@/components/admin/data-table';
-import type {Column} from '@/components/admin/data-table';
+import type {Column, SortDir} from '@/components/admin/data-table';
+import { DateRangeFilter } from '@/components/admin/date-range-filter';
+import type { DatePreset } from '@/components/admin/date-range-filter';
 import { EmptyState } from '@/components/admin/empty-state';
 import { FilterBar } from '@/components/admin/filter-bar';
 import { PageHeader } from '@/components/admin/page-header';
@@ -19,11 +21,23 @@ type OrderRow = {
     created_at: string | null;
 };
 
+type Filters = {
+    search: string;
+    status: string;
+    payment_status: string;
+    sort: string;
+    dir: SortDir;
+    range: DatePreset;
+    from: string;
+    to: string;
+};
+
 type Props = {
     orders: OrderRow[];
     meta: { current_page: number; last_page: number; total: number };
-    filters: { search: string; status: string; from: string; to: string };
+    filters: Filters;
     statuses: string[];
+    paymentStatuses: string[];
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -46,32 +60,47 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
-export default function OrdersIndex({ orders, meta, filters, statuses }: Props) {
+export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses }: Props) {
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const apply = (next: Partial<Props['filters']> & { page?: number }) => {
+    const apply = (next: Partial<Filters> & { page?: number }) => {
         const params: Record<string, string | number> = {};
         const merged = { ...filters, ...next };
 
         if (merged.search) {
-params.search = merged.search;
-}
+            params.search = merged.search;
+        }
 
         if (merged.status) {
-params.status = merged.status;
-}
+            params.status = merged.status;
+        }
 
-        if (merged.from) {
-params.from = merged.from;
-}
+        if (merged.payment_status) {
+            params.payment_status = merged.payment_status;
+        }
 
-        if (merged.to) {
-params.to = merged.to;
-}
+        if (merged.sort !== 'created_at' || merged.dir !== 'desc') {
+            params.sort = merged.sort;
+            params.dir = merged.dir;
+        }
+
+        if (merged.range && merged.range !== 'all') {
+            params.range = merged.range;
+
+            if (merged.range === 'custom') {
+                if (merged.from) {
+                    params.from = merged.from;
+                }
+
+                if (merged.to) {
+                    params.to = merged.to;
+                }
+            }
+        }
 
         if (next.page && next.page > 1) {
-params.page = next.page;
-}
+            params.page = next.page;
+        }
 
         router.get('/admin/orders', params, {
             preserveState: true,
@@ -82,10 +111,16 @@ params.page = next.page;
 
     const onSearch = (value: string) => {
         if (searchTimer.current) {
-clearTimeout(searchTimer.current);
-}
+            clearTimeout(searchTimer.current);
+        }
 
         searchTimer.current = setTimeout(() => apply({ search: value, page: 1 }), 400);
+    };
+
+    const onSort = (sortKey: string) => {
+        const dir: SortDir =
+            filters.sort === sortKey && filters.dir === 'desc' ? 'asc' : 'desc';
+        apply({ sort: sortKey, dir, page: 1 });
     };
 
     const ViewButton = ({ row }: { row: OrderRow }) => (
@@ -102,6 +137,7 @@ clearTimeout(searchTimer.current);
         {
             key: 'order_no',
             header: 'Order',
+            sortKey: 'created_at',
             cell: (row) => (
                 <div>
                     <div className="font-medium">{row.order_no}</div>
@@ -119,8 +155,8 @@ clearTimeout(searchTimer.current);
                 </div>
             ),
         },
-        { key: 'total', header: 'Total', cell: (row) => <span className="font-medium whitespace-nowrap">{row.total}</span> },
-        { key: 'status', header: 'Status', cell: (row) => <StatusBadge status={row.status} /> },
+        { key: 'total', header: 'Total', sortKey: 'total', cell: (row) => <span className="font-medium whitespace-nowrap">{row.total}</span> },
+        { key: 'status', header: 'Status', sortKey: 'status', cell: (row) => <StatusBadge status={row.status} /> },
         {
             key: 'payment_status',
             header: 'Payment',
@@ -173,6 +209,23 @@ clearTimeout(searchTimer.current);
                             </option>
                         ))}
                     </select>
+                    <select
+                        aria-label="Filter by payment status"
+                        defaultValue={filters.payment_status}
+                        onChange={(e) => apply({ payment_status: e.target.value, page: 1 })}
+                        className={inputClass}
+                    >
+                        <option value="">All payments</option>
+                        {paymentStatuses.map((s) => (
+                            <option key={s} value={s} className="capitalize">
+                                {s}
+                            </option>
+                        ))}
+                    </select>
+                    <DateRangeFilter
+                        value={{ range: filters.range, from: filters.from, to: filters.to }}
+                        onChange={(v) => apply({ ...v, page: 1 })}
+                    />
                 </FilterBar>
 
                 {orders.length === 0 ? (
@@ -188,6 +241,9 @@ clearTimeout(searchTimer.current);
                             rows={orders}
                             rowKey={(row) => row.id}
                             renderMobileCard={mobileCard}
+                            sort={filters.sort}
+                            dir={filters.dir}
+                            onSort={onSort}
                         />
 
                         {meta.last_page > 1 && (

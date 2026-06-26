@@ -17,7 +17,8 @@ use Illuminate\Http\Request;
  * Config shape:
  *   [
  *     'searchColumns' => ['order_no', 'customer.name'], // LIKE OR-group (relation.col allowed)
- *     'filters'       => ['status', 'payment_status'],  // exact-match whitelist
+ *     'filters'       => ['status', 'payment_status'],  // exact-match whitelist; list => param==column
+ *                     // or ['status' => 'product_status'] // assoc => requestParam => column
  *     'sorts'         => ['created_at', 'total'],        // ORDER BY whitelist
  *     'defaultSort'   => 'created_at',
  *     'defaultDir'    => 'desc',                          // optional, defaults to desc
@@ -43,7 +44,7 @@ final class ListQuery
     /**
      * @param  array{
      *     searchColumns?: list<string>,
-     *     filters?: list<string>,
+     *     filters?: array<int|string, string>,
      *     sorts?: list<string>,
      *     defaultSort?: string,
      *     defaultDir?: string,
@@ -71,8 +72,10 @@ final class ListQuery
         $search = $search === '' ? null : $search;
 
         $filters = [];
-        foreach ($config['filters'] ?? [] as $column) {
-            $value = $request->query($column);
+        foreach ($config['filters'] ?? [] as $key => $column) {
+            // List form: param name == column. Assoc form: requestParam => column.
+            $param = is_int($key) ? $column : $key;
+            $value = $request->query($param);
             if (is_string($value) && trim($value) !== '') {
                 $filters[$column] = trim($value);
             }

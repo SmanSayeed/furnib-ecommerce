@@ -9,9 +9,11 @@ use App\Http\Requests\Admin\ProductFormRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Eloquent\ProductRepository;
 use App\Services\Catalog\ImageOptimizer;
 use App\Services\Catalog\ProductService;
 use App\Storage\Contracts\StorageRepository;
+use App\Support\Lists\ListQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,9 +22,6 @@ use Inertia\Response;
 class ProductUiController extends Controller
 {
     private const MAX_GALLERY = 6;
-
-    /** @var array<int,string> */
-    private const FILTER_KEYS = ['search', 'status', 'category_id'];
 
     public function __construct(
         private readonly ProductService $service,
@@ -33,8 +32,8 @@ class ProductUiController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(self::FILTER_KEYS);
-        $paginator = $this->products->adminPaginate($filters, 20);
+        $listQuery = ListQuery::fromRequest($request, ProductRepository::listConfig());
+        $paginator = $this->products->adminList($listQuery);
 
         return Inertia::render('catalog/products/index', [
             'products' => collect($paginator->items())
@@ -46,9 +45,14 @@ class ProductUiController extends Controller
                 'total' => $paginator->total(),
             ],
             'filters' => [
-                'search' => $filters['search'] ?? '',
-                'status' => $filters['status'] ?? '',
-                'category_id' => $filters['category_id'] ?? '',
+                'search' => $listQuery->search ?? '',
+                'status' => $listQuery->filters['product_status'] ?? '',
+                'category_id' => $listQuery->filters['category_id'] ?? '',
+                'sort' => $listQuery->sort,
+                'dir' => $listQuery->dir,
+                'range' => $listQuery->dateRange->preset,
+                'from' => (string) $request->query('from', ''),
+                'to' => (string) $request->query('to', ''),
             ],
             'categories' => $this->categoryOptions(),
             'trashedCount' => Product::onlyTrashed()->count(),

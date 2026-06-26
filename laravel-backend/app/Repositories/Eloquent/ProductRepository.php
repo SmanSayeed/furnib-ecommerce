@@ -6,6 +6,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Product;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Support\Lists\ListQuery;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -51,6 +52,42 @@ final class ProductRepository extends BaseRepository implements ProductRepositor
     public function adminPaginate(array $filters, int $perPage = 20): LengthAwarePaginator
     {
         return $this->applyFilters(Product::query()->with('category'), $filters)->paginate($perPage);
+    }
+
+    /**
+     * Injection-safe whitelist for the admin product list. `status` (request) maps
+     * to the `product_status` column; default order is the merchant's manual
+     * position. Used with App\Support\Lists\ListQuery + AppliesListFilters.
+     *
+     * @return array{
+     *     searchColumns: list<string>,
+     *     filters: array<string, string>,
+     *     sorts: list<string>,
+     *     defaultSort: string,
+     *     defaultDir: string,
+     *     perPage: int
+     * }
+     */
+    public static function listConfig(): array
+    {
+        return [
+            'searchColumns' => ['title', 'sku', 'slug'],
+            'filters' => ['status' => 'product_status', 'category_id' => 'category_id'],
+            'sorts' => ['position_order', 'title', 'price', 'stock_amount', 'created_at'],
+            'defaultSort' => 'position_order',
+            'defaultDir' => 'asc',
+            'perPage' => 20,
+        ];
+    }
+
+    /** @return LengthAwarePaginator<int, Product> */
+    public function adminList(ListQuery $query): LengthAwarePaginator
+    {
+        return Product::query()
+            ->with('category')
+            ->applyList($query)
+            ->paginate($query->perPage)
+            ->withQueryString();
     }
 
     /**

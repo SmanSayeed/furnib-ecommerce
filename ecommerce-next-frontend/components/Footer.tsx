@@ -169,13 +169,14 @@ export function Footer({
           <span className="text-xs uppercase tracking-wider text-white/70">
             Pay securely with
           </span>
-          {/* On a white card so the multi-colour gateway logo stays legible. */}
-          <div className="rounded-lg bg-white px-4 py-3">
+          {/* On a white card so the multi-colour gateway logo stays legible.
+              Much larger on desktop (~3×) where there is room. */}
+          <div className="w-full max-w-md rounded-lg bg-white px-4 py-4 sm:max-w-2xl lg:max-w-6xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/sslcommerz.avif"
               alt="Pay with SSLCommerz"
-              className="h-auto w-full max-w-md"
+              className="mx-auto h-auto w-full"
             />
           </div>
           <p className="text-xs text-white/70">

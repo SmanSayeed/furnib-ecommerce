@@ -18,8 +18,8 @@ export default async function Home() {
       {banners.length > 0 ? <BannerCarousel banners={banners} /> : <Hero />}
       <FeaturedCollections categories={categories} />
 
-      <section className="border-t border-border bg-surface/40">
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+      <section className="my-12 rounded-md border border-border bg-surface-2 px-6 py-14 text-center sm:my-16">
+        <div className="mx-auto max-w-3xl">
           <h2 className="text-2xl font-bold sm:text-3xl">
             Price &amp; Dimensions Shown in Photos
           </h2>

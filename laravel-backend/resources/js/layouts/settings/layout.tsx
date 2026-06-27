@@ -31,6 +31,21 @@ const sidebarNavItems: NavItem[] = [
         href: '/settings/site',
         icon: null,
     },
+    {
+        title: 'Marketing & tracking',
+        href: '/settings/marketing',
+        icon: null,
+    },
+    {
+        title: 'Storage (R2)',
+        href: '/settings/storage',
+        icon: null,
+    },
+    {
+        title: 'Integrations',
+        href: '/settings/integrations',
+        icon: null,
+    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

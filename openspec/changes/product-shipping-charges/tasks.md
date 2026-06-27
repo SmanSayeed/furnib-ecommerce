@@ -32,8 +32,8 @@
 - [x] 5.5 RED→GREEN tests (settings save, subscribe, duplicate, invalid)
 
 ## Phase 6 — footer UI
-- [ ] 6.1 `components/Footer.tsx` four-column desktop / stacked mobile, settings-driven, working subscribe form
-- [ ] 6.2 tsc + eslint + build
+- [x] 6.1 `components/Footer.tsx` four-column desktop / stacked mobile, settings-driven, working subscribe form
+- [x] 6.2 tsc + eslint + build (storefront build green)
 
 ## Phase 7 — gate + archive + ship
 - [ ] 7.1 Full Pest suite (PHP 8.3) + Pint + Larastan on changed files

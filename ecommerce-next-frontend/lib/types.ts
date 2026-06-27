@@ -103,6 +103,18 @@ export type CategoryWithProducts = {
   meta: PageMeta;
 };
 
+export type FooterLink = {
+  label: string;
+  url: string;
+};
+
+export type SocialLinks = {
+  facebook?: string;
+  instagram?: string;
+  youtube?: string;
+  linkedin?: string;
+};
+
 export type SiteSettings = {
   site_name: string | null;
   tagline: string | null;
@@ -116,4 +128,6 @@ export type SiteSettings = {
   logo_dark: string | null;
   favicon: string | null;
   banners: string[];
+  socials?: SocialLinks;
+  footer_links?: FooterLink[];
 };

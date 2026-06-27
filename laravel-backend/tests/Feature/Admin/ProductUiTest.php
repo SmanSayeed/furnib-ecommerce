@@ -5,7 +5,10 @@ declare(strict_types=1);
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductShippingCharge;
+use App\Models\ShippingZone;
 use App\Models\User;
+use App\Support\Money;
 use Database\Seeders\PermissionRoleSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -131,6 +134,72 @@ it('updates a product: reorders a kept image, drops one, and appends a new one',
     expect(ProductImage::query()->find($a->id))->toBeNull();
     expect($b->refresh()->position)->toBe(0);
     expect($product->images()->count())->toBe(2);
+});
+
+it('saves per-zone shipping charges, persisting only non-zero entries', function () {
+    $category = Category::factory()->create();
+    $inside = ShippingZone::factory()->create(['name' => 'Inside Dhaka', 'cost' => 80]);
+    $outside = ShippingZone::factory()->create(['name' => 'Outside Dhaka', 'cost' => 120]);
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Big Table',
+            'price' => '5000',
+            'product_status' => 'published',
+            'shipping_charges' => [
+                ['shipping_zone_id' => $inside->id, 'extra_cost' => '20'],   // ৳20
+                ['shipping_zone_id' => $outside->id, 'extra_cost' => ''],     // blank → skipped
+            ],
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product = Product::query()->where('title', 'Big Table')->firstOrFail();
+
+    expect($product->shippingCharges()->count())->toBe(1);
+    expect($product->extraPerUnitMinorFor($inside->id))->toBe(2000);
+    expect($product->extraPerUnitMinorFor($outside->id))->toBe(0);
+});
+
+it('clears a previously set shipping charge on update', function () {
+    $product = Product::factory()->create();
+    $inside = ShippingZone::factory()->create(['name' => 'Inside Dhaka', 'cost' => 80]);
+    ProductShippingCharge::factory()->create([
+        'product_id' => $product->id,
+        'shipping_zone_id' => $inside->id,
+        'extra_cost' => Money::fromMinor(2000),
+    ]);
+
+    actingAs(productManager())
+        ->put("/admin/catalog/products/{$product->id}", [
+            'category_id' => $product->category_id,
+            'title' => $product->title,
+            'price' => '5000',
+            'product_status' => 'published',
+            'shipping_charges' => [
+                ['shipping_zone_id' => $inside->id, 'extra_cost' => ''], // cleared
+            ],
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    expect($product->shippingCharges()->count())->toBe(0);
+});
+
+it('rejects a shipping charge for an inactive zone', function () {
+    $category = Category::factory()->create();
+    $hidden = ShippingZone::factory()->inactive()->create();
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Bad zone',
+            'price' => '10',
+            'product_status' => 'draft',
+            'shipping_charges' => [
+                ['shipping_zone_id' => $hidden->id, 'extra_cost' => '20'],
+            ],
+        ])
+        ->assertSessionHasErrors('shipping_charges.0.shipping_zone_id');
 });
 
 it('soft-deletes a product to the recycle bin', function () {

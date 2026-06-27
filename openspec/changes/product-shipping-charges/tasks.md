@@ -13,10 +13,10 @@
 - [x] 2.4 RED→GREEN feature tests (calc, guard, endpoint shape, 404)
 
 ## Phase 3 — admin product form
-- [ ] 3.1 `Admin\ProductFormRequest` rules for `shipping_charges.*`
-- [ ] 3.2 `ProductUiController` sync (delete + upsert non-zero) on store/update; expose existing charges in formData
-- [ ] 3.3 `catalog/products/form.tsx` Shipping charges section
-- [ ] 3.4 Feature test: save + clear
+- [x] 3.1 `Admin\ProductFormRequest` rules for `shipping_charges.*`
+- [x] 3.2 `ProductUiController` sync (delete + upsert non-zero) on store/update; expose existing charges in formData
+- [x] 3.3 `catalog/products/form.tsx` Shipping charges section
+- [x] 3.4 Feature test: save + clear
 
 ## Phase 4 — storefront checkout
 - [ ] 4.1 `lib/api.ts` `getProductShippingZones(slug)` + `lib/types.ts`

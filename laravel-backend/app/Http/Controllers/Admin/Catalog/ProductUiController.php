@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductFormRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ShippingZone;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Eloquent\ProductRepository;
 use App\Services\Catalog\ImageOptimizer;
@@ -64,6 +65,7 @@ class ProductUiController extends Controller
         return Inertia::render('catalog/products/form', [
             'product' => null,
             'categories' => $this->categoryOptions(),
+            'zones' => $this->zoneOptions(),
         ]);
     }
 
@@ -75,6 +77,7 @@ class ProductUiController extends Controller
 
         $product = $this->service->create($data);
         $this->syncGallery($product, $request);
+        $this->syncShippingCharges($product, $request);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product created.')]);
 
@@ -83,11 +86,12 @@ class ProductUiController extends Controller
 
     public function edit(Product $product): Response
     {
-        $product->load('images');
+        $product->load('images', 'shippingCharges');
 
         return Inertia::render('catalog/products/form', [
             'product' => $this->formData($product),
             'categories' => $this->categoryOptions(),
+            'zones' => $this->zoneOptions(),
         ]);
     }
 
@@ -108,6 +112,7 @@ class ProductUiController extends Controller
 
         $product->update($data);
         $this->syncGallery($product, $request);
+        $this->syncShippingCharges($product, $request);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product updated.')]);
 
@@ -261,6 +266,58 @@ class ProductUiController extends Controller
     }
 
     /**
+     * Replace the product's per-zone shipping charges from the submitted
+     * `shipping_charges` array. Only entries with a positive extra are kept;
+     * blanks/zeros remove the row. Absent field leaves charges untouched.
+     */
+    private function syncShippingCharges(Product $product, ProductFormRequest $request): void
+    {
+        /** @var mixed $rows */
+        $rows = $request->validated('shipping_charges');
+
+        if (! is_array($rows)) {
+            return;
+        }
+
+        $product->shippingCharges()->delete();
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $zoneId = (int) ($row['shipping_zone_id'] ?? 0);
+            $extra = $row['extra_cost'] ?? null;
+
+            if ($zoneId <= 0 || $extra === null || $extra === '' || (float) $extra <= 0) {
+                continue;
+            }
+
+            $product->shippingCharges()->create([
+                'shipping_zone_id' => $zoneId,
+                'extra_cost' => $extra, // display amount; MoneyCast → minor units
+            ]);
+        }
+    }
+
+    /**
+     * @return array<int, array{id:int, name:string, base:string}>
+     */
+    private function zoneOptions(): array
+    {
+        return ShippingZone::query()
+            ->active()
+            ->ordered()
+            ->get()
+            ->map(fn (ShippingZone $z): array => [
+                'id' => $z->id,
+                'name' => $z->name,
+                'base' => $z->cost->format(),
+            ])
+            ->all();
+    }
+
+    /**
      * @return array<int, array{id:int, title:string}>
      */
     private function categoryOptions(): array
@@ -323,6 +380,10 @@ class ProductUiController extends Controller
             'gallery' => $product->images->map(fn ($img): array => [
                 'id' => $img->id,
                 'url' => $this->url($img->path),
+            ])->all(),
+            'shipping_charges' => $product->shippingCharges->map(fn ($c): array => [
+                'shipping_zone_id' => $c->shipping_zone_id,
+                'extra_cost' => $c->extra_cost->toDisplay(),
             ])->all(),
         ];
     }

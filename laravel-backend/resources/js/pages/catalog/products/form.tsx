@@ -10,6 +10,10 @@ import { Label } from '@/components/ui/label';
 
 type Category = { id: number; title: string };
 
+type Zone = { id: number; name: string; base: string };
+
+type ShippingCharge = { shipping_zone_id: number; extra_cost: number };
+
 type GalleryImage = { id: number; url: string };
 
 type Product = {
@@ -36,6 +40,7 @@ type Product = {
     meta_description: string | null;
     main_image_url: string | null;
     gallery: GalleryImage[];
+    shipping_charges: ShippingCharge[];
 };
 
 const MAX_GALLERY = 6;
@@ -51,9 +56,11 @@ const TEXTAREA_CLASS = 'rounded-md border bg-transparent px-3 py-2 text-sm shado
 export default function ProductForm({
     product,
     categories,
+    zones,
 }: {
     product: Product | null;
     categories: Category[];
+    zones: Zone[];
 }) {
     const editing = Boolean(product);
 
@@ -89,6 +96,17 @@ export default function ProductForm({
         product?.gallery.map((g) => ({ kind: 'existing', id: g.id, url: g.url })) ?? [],
     );
     const dragIndex = useRef<number | null>(null);
+
+    // Per-zone extra shipping charge (display ৳), keyed by zone id. Submitted as
+    // the `shipping_charges` array at submit-time; blanks are dropped server-side.
+    const [extraByZone, setExtraByZone] = useState<Record<number, string>>(() => {
+        const map: Record<number, string> = {};
+        product?.shipping_charges?.forEach((c) => {
+            map[c.shipping_zone_id] = String(c.extra_cost);
+        });
+
+        return map;
+    });
 
     const addFiles = (files: FileList | null) => {
         if (!files) {
@@ -153,6 +171,13 @@ return { type: 'existing', id: item.id };
 
         const bool = (v: boolean) => (v ? '1' : '0');
 
+        // One entry per active zone so cleared values reach the server and
+        // remove the row; blank extras are dropped server-side.
+        const shippingCharges = zones.map((z) => ({
+            shipping_zone_id: z.id,
+            extra_cost: extraByZone[z.id] ?? '',
+        }));
+
         transform((current) => ({
             ...current,
             is_advance_payment: bool(current.is_advance_payment as boolean),
@@ -161,6 +186,7 @@ return { type: 'existing', id: item.id };
             stock_status: bool(current.stock_status as boolean),
             gallery_new: newFiles,
             gallery_layout: JSON.stringify(layout),
+            shipping_charges: shippingCharges,
             ...(editing ? { _method: 'put' } : {}),
         }));
 
@@ -451,6 +477,7 @@ setMainPreview(URL.createObjectURL(file));
                                     onChange={(e) => {
                                         const next = e.target.value;
                                         setData('partial_amount_type', next);
+
                                         if (next === 'shipping') {
                                             setData('partial_amount', '');
                                         }
@@ -487,6 +514,56 @@ setMainPreview(URL.createObjectURL(file));
                         </div>
                     )}
                 </section>
+
+                {/* Shipping charges */}
+                {zones.length > 0 && (
+                    <section className="mb-4 space-y-4 rounded-xl border bg-card p-4 md:p-6">
+                        <div>
+                            <h2 className="text-sm font-medium text-muted-foreground">
+                                Shipping charges (optional)
+                            </h2>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Extra delivery cost for this product, <strong>per unit</strong>,
+                                added on top of each zone&apos;s base charge. Leave blank for no
+                                extra. Example: Inside Dhaka base ৳80 + ৳20 here = ৳100/unit.
+                            </p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {zones.map((zone, idx) => {
+                                const errs = errors as Record<string, string | undefined>;
+                                const err =
+                                    errs[`shipping_charges.${idx}.extra_cost`] ??
+                                    errs[`shipping_charges.${idx}.shipping_zone_id`];
+
+                                return (
+                                    <div key={zone.id} className="grid gap-2">
+                                        <Label htmlFor={`zone_${zone.id}`}>
+                                            {zone.name}{' '}
+                                            <span className="text-xs text-muted-foreground">
+                                                (base {zone.base})
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id={`zone_${zone.id}`}
+                                            type="number"
+                                            step="0.01"
+                                            min={0}
+                                            value={extraByZone[zone.id] ?? ''}
+                                            onChange={(e) =>
+                                                setExtraByZone((prev) => ({
+                                                    ...prev,
+                                                    [zone.id]: e.target.value,
+                                                }))
+                                            }
+                                            placeholder="extra ৳ (optional)"
+                                        />
+                                        <InputError message={err} />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+                )}
 
                 {/* Visibility & SEO */}
                 <section className="mb-4 space-y-4 rounded-xl border bg-card p-4 md:p-6">

@@ -61,6 +61,15 @@ class ProductFormRequest extends FormRequest
             'gallery_new' => ['nullable', 'array', 'max:6'],
             'gallery_new.*' => ['file', 'mimes:'.self::IMAGE_MIMES, 'max:4096'],
             'gallery_layout' => ['nullable', 'string'],
+
+            // Optional per-zone extra delivery charge (display amount, ৳). Only
+            // active zones are accepted; one entry per zone (no duplicates).
+            'shipping_charges' => ['nullable', 'array'],
+            'shipping_charges.*.shipping_zone_id' => [
+                'required', 'integer', 'distinct',
+                Rule::exists('shipping_zones', 'id')->where('status', true),
+            ],
+            'shipping_charges.*.extra_cost' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

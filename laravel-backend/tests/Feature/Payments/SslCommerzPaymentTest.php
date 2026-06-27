@@ -83,6 +83,26 @@ it('rejects a VALID transaction whose amount does not reconcile', function () {
     expect($order->fresh()->payment_status)->toBe('unpaid');
 });
 
+it('rejects a VALID transaction in the wrong currency', function () {
+    $order = payableOrder();
+    $tranId = initPayment($this, $order);
+
+    // Gateway says VALID and the amount matches, but the currency is not BDT.
+    $this->gateway->fakeValidation([
+        'status' => 'VALID',
+        'tran_id' => $tranId,
+        'amount' => $order->total->toDisplay(),
+        'currency' => 'USD',
+        'val_id' => 'v-usd',
+    ]);
+
+    $this->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v-usd'])
+        ->assertOk()
+        ->assertJsonPath('status', 'failed');
+
+    expect($order->fresh()->payment_status)->toBe('unpaid');
+});
+
 it('accepts a genuine full payment and marks the order paid + confirmed', function () {
     $order = payableOrder();
     $tranId = initPayment($this, $order);

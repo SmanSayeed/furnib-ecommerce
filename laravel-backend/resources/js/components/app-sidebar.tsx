@@ -89,7 +89,7 @@ const navGroups: AdminNavGroup[] = [
             { title: 'Site & branding', href: '/settings/site', icon: Store },
             { title: 'Storage (R2)', href: '/settings/storage', icon: Database },
             { title: 'Staff & roles', icon: UsersRound, soon: true },
-            { title: 'Integrations', icon: CreditCard, soon: true },
+            { title: 'Integrations', href: '/settings/integrations', icon: CreditCard },
         ],
     },
     {

@@ -35,7 +35,12 @@ final class FakePaymentGateway implements PaymentGateway
     public function validatePayment(string $valId): array
     {
         // Default: gateway reports the transaction as not valid (forged success).
-        return $this->nextValidation ?? ['status' => 'INVALID', 'val_id' => $valId];
+        // Currency defaults to BDT to mirror the real gateway, which always
+        // returns one; a test can override it to simulate a wrong-currency fraud.
+        return array_merge(
+            ['currency' => 'BDT'],
+            $this->nextValidation ?? ['status' => 'INVALID', 'val_id' => $valId],
+        );
     }
 
     /**

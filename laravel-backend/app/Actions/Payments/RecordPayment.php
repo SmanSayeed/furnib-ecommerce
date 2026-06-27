@@ -42,11 +42,14 @@ final class RecordPayment
             $statusOk = in_array(strtoupper((string) ($validated['status'] ?? '')), ['VALID', 'VALIDATED'], true);
             $tranMatches = (string) ($validated['tran_id'] ?? '') === $tranId;
             $amountMatches = Money::fromDisplay((float) ($validated['amount'] ?? 0))->equals($payment->amount);
+            // SSLCommerz security check-point: verify the currency too, so a
+            // VALID transaction settled in another currency can't be accepted.
+            $currencyMatches = strtoupper((string) ($validated['currency'] ?? '')) === 'BDT';
 
             $payment->forceFill([
                 'val_id' => $validated['val_id'] ?? null,
                 'raw_payload' => $validated,
-                'status' => ($statusOk && $tranMatches && $amountMatches)
+                'status' => ($statusOk && $tranMatches && $amountMatches && $currencyMatches)
                     ? Payment::STATUS_SUCCESS
                     : Payment::STATUS_FAILED,
             ])->save();

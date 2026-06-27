@@ -28,6 +28,7 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::post('settings/smtp/test', [SmtpSettingController::class, 'test'])->name('smtp-settings.test');
 
     // Payment / courier gateway credentials (encrypted secrets).
+    Route::get('settings/integrations', [IntegrationSettingController::class, 'edit'])->name('integrations.edit');
     Route::post('settings/sslcommerz', [IntegrationSettingController::class, 'updateSslcommerz'])->name('sslcommerz-settings.update');
     Route::post('settings/steadfast', [IntegrationSettingController::class, 'updateSteadfast'])->name('steadfast-settings.update');
 

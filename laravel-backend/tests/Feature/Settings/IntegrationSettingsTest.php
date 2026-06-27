@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Settings\SettingsService;
 use Database\Seeders\PermissionRoleSeeder;
+use Inertia\Testing\AssertableInertia;
 
 use function Pest\Laravel\actingAs;
 
@@ -52,6 +53,35 @@ it('saves SteadFast credentials with both keys encrypted', function () {
 
     $row = Setting::query()->where('group', 'steadfast')->where('key', 'secret_key')->firstOrFail();
     expect($row->is_secret)->toBeTrue();
+});
+
+it('renders the integrations page with masked secret-set flags', function () {
+    $settings = app(SettingsService::class);
+    $settings->set('sslcommerz', 'store_id', 'furnib_live', false);
+    $settings->set('sslcommerz', 'store_passwd', 'ssl-secret', true);
+    $settings->set('sslcommerz', 'sandbox', false);
+    $settings->set('steadfast', 'api_key', 'sf-key', true);
+
+    actingAs(settingsAdmin())
+        ->get('/settings/integrations')
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('settings/integrations')
+            ->where('sslcommerz.store_id', 'furnib_live')
+            ->where('sslcommerz.sandbox', false)
+            ->where('sslcommerz.store_passwd_set', true)
+            ->where('steadfast.api_key_set', true)
+            ->where('steadfast.secret_key_set', false)
+            // Secrets must never reach the client.
+            ->missing('sslcommerz.store_passwd')
+            ->missing('steadfast.api_key'));
+});
+
+it('forbids users without settings.manage from viewing the integrations page', function () {
+    $user = User::factory()->create();
+    $user->assignRole('sub-admin');
+
+    actingAs($user)->get('/settings/integrations')->assertForbidden();
 });
 
 it('forbids users without settings.manage from saving gateway credentials', function () {

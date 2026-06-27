@@ -10,14 +10,32 @@ use App\Http\Requests\Settings\SteadfastSettingsRequest;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Admin editor for payment/courier gateway credentials. Secrets are stored
- * encrypted and write-only — left blank, the stored value is kept.
+ * encrypted and write-only — left blank, the stored value is kept. The edit
+ * page only ever exposes non-secret fields plus a boolean "is it configured"
+ * flag per secret; the secret values themselves never reach the browser.
  */
 class IntegrationSettingController extends Controller
 {
     public function __construct(private readonly SettingsService $settings) {}
+
+    public function edit(): Response
+    {
+        return Inertia::render('settings/integrations', [
+            'sslcommerz' => [
+                'store_id' => (string) ($this->settings->get('sslcommerz', 'store_id') ?? ''),
+                'sandbox' => (bool) $this->settings->get('sslcommerz', 'sandbox', true),
+                'store_passwd_set' => filled($this->settings->get('sslcommerz', 'store_passwd')),
+            ],
+            'steadfast' => [
+                'api_key_set' => filled($this->settings->get('steadfast', 'api_key')),
+                'secret_key_set' => filled($this->settings->get('steadfast', 'secret_key')),
+            ],
+        ]);
+    }
 
     public function updateSslcommerz(SslcommerzSettingsRequest $request): RedirectResponse
     {

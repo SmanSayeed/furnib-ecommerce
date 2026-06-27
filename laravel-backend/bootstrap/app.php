@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureAccountSecured;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\Dev\ErrorLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -54,6 +55,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Persist exceptions to the DB so the owner can review them from the
+        // developer console even in production (logs go to stderr there).
+        $exceptions->report(function (Throwable $e): void {
+            app(ErrorLogger::class)->record($e, request());
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

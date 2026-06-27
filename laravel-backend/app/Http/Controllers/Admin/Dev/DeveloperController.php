@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Admin\Dev;
 
 use App\Actions\Dev\RunDevCommand;
 use App\Http\Controllers\Controller;
+use App\Models\ErrorLog;
 use App\Support\Dev\DevCommands;
+use App\Support\Dev\Redactor;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,6 +58,84 @@ class DeveloperController extends Controller
         ]);
 
         return back()->with('devResult', $result);
+    }
+
+    /**
+     * Recent captured exceptions (already redacted at capture time).
+     */
+    public function errors(): Response
+    {
+        $errors = ErrorLog::query()
+            ->latest('created_at')
+            ->limit(200)
+            ->get(['id', 'level', 'message', 'exception_class', 'file', 'line', 'method', 'url', 'created_at'])
+            ->map(fn (ErrorLog $e): array => [
+                'id' => $e->id,
+                'level' => $e->level,
+                'message' => $e->message,
+                'exception' => $e->exception_class,
+                'location' => $e->file !== null ? $e->file.':'.$e->line : null,
+                'method' => $e->method,
+                'url' => $e->url,
+                'at' => $e->created_at?->toDateTimeString(),
+            ])
+            ->all();
+
+        return Inertia::render('dev/errors', ['errors' => $errors]);
+    }
+
+    public function clearErrors(): RedirectResponse
+    {
+        ErrorLog::query()->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Error log cleared.')]);
+
+        return back();
+    }
+
+    /**
+     * Tail of the local log file (redacted). Empty in production, where logs
+     * are streamed to stderr — the DB-backed Errors tab is used there instead.
+     */
+    public function logs(): Response
+    {
+        return Inertia::render('dev/logs', $this->logTail());
+    }
+
+    /**
+     * @return array{available: bool, path: string, lines: string}
+     */
+    private function logTail(): array
+    {
+        $path = storage_path('logs/laravel.log');
+        $rel = 'storage/logs/laravel.log';
+
+        if (! is_file($path)) {
+            return ['available' => false, 'path' => $rel, 'lines' => ''];
+        }
+
+        $content = rescue(function () use ($path): string {
+            $size = (int) filesize($path);
+            $read = min($size, 256 * 1024); // last 256KB is plenty for a tail
+            $fh = fopen($path, 'rb');
+
+            if ($fh === false) {
+                return '';
+            }
+
+            if ($read > 0) {
+                fseek($fh, -$read, SEEK_END);
+            }
+
+            $data = (string) fread($fh, max($read, 1));
+            fclose($fh);
+
+            $lines = preg_split('/\r?\n/', $data) ?: [];
+
+            return implode("\n", array_slice($lines, -400));
+        }, '', false);
+
+        return ['available' => true, 'path' => $rel, 'lines' => Redactor::scrub($content)];
     }
 
     /**

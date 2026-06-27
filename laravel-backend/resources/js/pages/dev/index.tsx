@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { DevTabs } from '@/components/dev-tabs';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 
@@ -72,6 +73,8 @@ return;
                     title="Developer tools"
                     description="Owner-only. Run a fixed set of safe maintenance commands, check system health, and view the last command output."
                 />
+
+                <DevTabs />
 
                 {/* System info + health */}
                 <section className="rounded-xl border border-border bg-card p-4">

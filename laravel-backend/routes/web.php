@@ -158,6 +158,9 @@ Route::middleware('auth')->prefix('admin/shipping')->name('admin.')->group(funct
 Route::middleware(['auth', 'permission:developer.access'])->prefix('admin/dev')->name('admin.dev.')->group(function () {
     Route::get('/', [DeveloperController::class, 'index'])->name('index');
     Route::post('run', [DeveloperController::class, 'run'])->name('run');
+    Route::get('errors', [DeveloperController::class, 'errors'])->name('errors');
+    Route::delete('errors', [DeveloperController::class, 'clearErrors'])->name('errors.clear');
+    Route::get('logs', [DeveloperController::class, 'logs'])->name('logs');
 });
 
 require __DIR__.'/settings.php';

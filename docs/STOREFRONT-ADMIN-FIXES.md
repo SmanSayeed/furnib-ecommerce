@@ -9,6 +9,43 @@ Legend: 🟢 quick CSS/text · 🟡 moderate · 🔴 feature (DB + admin + store
 
 ---
 
+## ✅ Completion log (all batches built, verified, pushed to master)
+
+- **Batch 1** `f3be64f` — A5/A6 caption alignment, A7 "Order now", A8 white/semibold
+  buttons, A9 drawer tightening, C1 admin favicon, C4 checkout "Shipping method".
+- **Batch 2** `fdf4070` — A1 `Container` (max-w-1600) on header/footer/main, A2 2-col
+  feed full-width, **square 1:1 product image (`object-contain`, 1080-style, no crop)**,
+  A3 category card 2px inset frame + radius, A4 bigger header logo. Admin upload
+  guidance → 1080×1080.
+- **Batch 3** `9b02924` — B1 footer recolored to brand orange, white text, recolored
+  buttons (white WhatsApp pill, white newsletter field + dark Subscribe, SSLCommerz on
+  white card).
+- **Batch 4** `4b426f8` — C2 `logo_footer` + `logo_invoice` branding keys (admin upload,
+  validation, public API, footer logo), C3 invoice PDF logo (dompdf isRemoteEnabled only
+  when a logo is embedded; admin-controlled URL only). Tests for upload/api/template.
+- **Batch 5** `3320fdd` — B3 "Follow us": socials 4→7 (X, Pinterest, TikTok) with a
+  show/hide toggle each; API emits only enabled+filled; admin toggle UI. Tests.
+- **Batch 6** `bb240f5` — B2 Pages CMS: `pages` table + Page model + Admin CRUD gated by
+  `settings.manage` + **TipTap editor** + **HTMLPurifier sanitize-on-save (XSS boundary)**
+  + public API + storefront `/p/[slug]` + footer "Company" column. 7 tests.
+
+**Gate:** full backend suite 368 pass / 0 fail (2 skipped); Pint + phpstan (lvl 7) +
+storefront tsc/eslint + admin Vite build all clean. New deps: `mews/purifier`
+(composer), `@tiptap/react @tiptap/starter-kit @tiptap/pm` (admin npm).
+
+### Owner deploy steps (morning)
+1. **Redeploy backend** (EasyPanel) — entrypoint auto-runs `migrate --force`, which
+   creates the `pages` table. `composer install` picks up `mews/purifier`.
+2. **Redeploy frontend** (separate image) — required for all storefront changes
+   (square image, footer recolor, `/p/[slug]`, Company column).
+3. **No reseed needed** — Pages reuse `settings.manage` (admin already has it).
+4. In admin: upload footer/invoice logos, set "Follow us" links + toggles, create
+   Pages (e.g. Privacy Policy) and add a footer quick link to `/p/<slug>`, set per-
+   product shipping charges. (Developer console still needs the one-time
+   `php artisan db:seed --class=PermissionRoleSeeder --force` for `developer.access`.)
+
+---
+
 ## GROUP A — Storefront layout & product cards
 
 ### A1. 🟡 Max wrapper 1600px + everything aligned to it

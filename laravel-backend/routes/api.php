@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CollectController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\NewsletterController;
+use App\Http\Controllers\Api\PageController as ApiPageController;
 use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductShippingZoneController;
@@ -33,6 +34,10 @@ Route::prefix('v1')->group(function () {
 
     // Public maintenance flag.
     Route::get('maintenance', [MaintenanceController::class, 'index']);
+
+    // Published CMS pages (footer links → /p/{slug}).
+    Route::get('pages', [ApiPageController::class, 'index']);
+    Route::get('pages/{slug}', [ApiPageController::class, 'show']);
 
     // Storefront pageview beacon.
     Route::middleware('throttle:tracking')->post('track', [TrackingController::class, 'store']);

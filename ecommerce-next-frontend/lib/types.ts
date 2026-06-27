@@ -118,6 +118,17 @@ export type SocialLinks = {
   tiktok?: string;
 };
 
+export type CmsPageLink = {
+  slug: string;
+  title: string;
+};
+
+export type CmsPage = {
+  slug: string;
+  title: string;
+  body_html: string | null;
+};
+
 export type SiteSettings = {
   site_name: string | null;
   tagline: string | null;

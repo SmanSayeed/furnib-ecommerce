@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\InvoiceListController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingZoneController;
@@ -96,6 +97,16 @@ Route::middleware('auth')->prefix('admin/catalog')->name('admin.')->group(functi
         Route::post('products/{id}/restore', [ProductUiController::class, 'restore'])->name('products.restore');
         Route::delete('products/{id}/force', [ProductUiController::class, 'forceDelete'])->name('products.force');
     });
+});
+
+// Admin CMS pages — Inertia UI. Content management reuses settings.manage.
+Route::middleware(['auth', 'permission:settings.manage'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('pages', [AdminPageController::class, 'index'])->name('pages.index');
+    Route::get('pages/create', [AdminPageController::class, 'create'])->name('pages.create');
+    Route::post('pages', [AdminPageController::class, 'store'])->name('pages.store');
+    Route::get('pages/{page}/edit', [AdminPageController::class, 'edit'])->name('pages.edit');
+    Route::put('pages/{page}', [AdminPageController::class, 'update'])->name('pages.update');
+    Route::delete('pages/{page}', [AdminPageController::class, 'destroy'])->name('pages.destroy');
 });
 
 // Admin orders — Inertia UI.

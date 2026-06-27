@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { config } from "@/lib/config";
-import type { SiteSettings } from "@/lib/types";
+import type { CmsPageLink, SiteSettings } from "@/lib/types";
 import { whatsappGeneral } from "@/lib/whatsapp";
 import { Container } from "./Container";
 import { NewsletterForm } from "./NewsletterForm";
@@ -45,7 +46,13 @@ function SocialIcon({ href, name }: { href: string; name: string }) {
   );
 }
 
-export function Footer({ settings }: { settings?: SiteSettings | null }) {
+export function Footer({
+  settings,
+  pages = [],
+}: {
+  settings?: SiteSettings | null;
+  pages?: CmsPageLink[];
+}) {
   const name = settings?.site_name || config.contact.company;
   const address = settings?.contact.address || config.contact.address;
   const phone = settings?.contact.phone || config.contact.phone;
@@ -82,13 +89,23 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
             )}
           </div>
 
-          {/* Quick links */}
-          {links.length > 0 && (
-            <nav aria-label="Footer links">
+          {/* Company — CMS pages (About us, Privacy, …) + manual quick links */}
+          {(pages.length > 0 || links.length > 0) && (
+            <nav aria-label="Company links">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
-                Quick links
+                Company
               </h3>
               <ul className="mt-4 space-y-2 text-sm">
+                {pages.map((page) => (
+                  <li key={`page-${page.slug}`}>
+                    <Link
+                      href={`/p/${page.slug}`}
+                      className="text-white/80 transition hover:text-white"
+                    >
+                      {page.title}
+                    </Link>
+                  </li>
+                ))}
                 {links.map((link) => (
                   <li key={`${link.label}-${link.url}`}>
                     <a

@@ -2,6 +2,8 @@ import { config } from "./config";
 import type {
   Category,
   CategoryWithProducts,
+  CmsPage,
+  CmsPageLink,
   PageMeta,
   Product,
   ProductShippingZone,
@@ -83,9 +85,29 @@ export async function getSettings(): Promise<SiteSettings | null> {
   }
 }
 
+export async function getPages(): Promise<CmsPageLink[]> {
+  try {
+    const json = await api<{ data: CmsPageLink[] }>("/pages");
+    return json.data;
+  } catch {
+    return [];
+  }
+}
+
+export async function getPage(slug: string): Promise<CmsPage | null> {
+  try {
+    const json = await api<{ data: CmsPage }>(`/pages/${slug}`);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
 export type {
   Category,
   CategoryWithProducts,
+  CmsPage,
+  CmsPageLink,
   PageMeta,
   Product,
   ProductShippingZone,

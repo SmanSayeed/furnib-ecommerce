@@ -64,6 +64,34 @@ it('uploads a logo and stores its path', function () {
     Storage::disk('public')->assertExists($path);
 });
 
+it('uploads footer and invoice logos and stores their paths', function () {
+    Storage::fake('public');
+
+    actingAs(adminUser())
+        ->post('/settings/site', [
+            'site_name' => 'Furnib BD',
+            'logo_footer' => UploadedFile::fake()->image('footer.png', 200, 60),
+            'logo_invoice' => UploadedFile::fake()->image('invoice.png', 200, 60),
+        ])
+        ->assertRedirect(route('site-settings.edit'));
+
+    $footer = Setting::where('group', 'branding')->where('key', 'logo_footer')->value('value');
+    $invoice = Setting::where('group', 'branding')->where('key', 'logo_invoice')->value('value');
+
+    expect($footer)->not->toBeNull();
+    expect($invoice)->not->toBeNull();
+    Storage::disk('public')->assertExists($footer);
+    Storage::disk('public')->assertExists($invoice);
+});
+
+it('exposes the footer logo url via the public api', function () {
+    app(SettingsService::class)->set('branding', 'logo_footer', 'branding/footer.png');
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.logo_footer', fn ($url) => is_string($url) && str_contains($url, 'branding/footer.png'));
+});
+
 it('rejects an svg logo upload', function () {
     actingAs(adminUser())
         ->post('/settings/site', [

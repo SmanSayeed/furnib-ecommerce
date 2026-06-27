@@ -35,6 +35,7 @@ class SettingController extends Controller
                 ],
                 'logo_light' => $this->url($b['logo_light'] ?? null),
                 'logo_dark' => $this->url($b['logo_dark'] ?? null),
+                'logo_footer' => $this->url($b['logo_footer'] ?? null),
                 'favicon' => $this->url($b['favicon'] ?? null),
                 'banners' => array_values(array_filter([
                     $this->url($b['banner_1'] ?? null),

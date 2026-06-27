@@ -44,6 +44,8 @@ class SiteSettingsUpdateRequest extends FormRequest
 
             'logo_light' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'logo_dark' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'logo_footer' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'logo_invoice' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'favicon' => ['nullable', 'file', 'mimes:png,ico', 'max:512'],
             'banner_1' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:3072'],
             'banner_2' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:3072'],
@@ -64,6 +66,8 @@ class SiteSettingsUpdateRequest extends FormRequest
             'about_links.*.url.regex' => 'Link must be an https:// URL or a path starting with /.',
             'logo_light.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'logo_dark.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
+            'logo_footer.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
+            'logo_invoice.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'favicon.mimes' => 'Favicon must be a PNG or ICO file.',
             'banner_1.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
             'banner_2.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',

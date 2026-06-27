@@ -35,6 +35,31 @@ it('blocks staff without orders.view from the invoice', function () {
         ->assertForbidden();
 });
 
+it('embeds the configured logo in the invoice template', function () {
+    $order = Order::factory()->has(OrderItem::factory()->count(1), 'items')->create();
+
+    $html = view('invoices.order', [
+        'order' => $order,
+        'siteName' => 'Furnib',
+        'logoUrl' => 'https://cdn.example.com/furnib-invoice.png',
+    ])->render();
+
+    expect($html)->toContain('https://cdn.example.com/furnib-invoice.png')
+        ->and($html)->toContain('<img');
+});
+
+it('omits the invoice logo img when none is configured', function () {
+    $order = Order::factory()->has(OrderItem::factory()->count(1), 'items')->create();
+
+    $html = view('invoices.order', [
+        'order' => $order,
+        'siteName' => 'Furnib',
+        'logoUrl' => null,
+    ])->render();
+
+    expect($html)->not->toContain('<img');
+});
+
 it('returns 404 for a missing order invoice', function () {
     $user = User::factory()->create();
     $user->assignRole('admin');

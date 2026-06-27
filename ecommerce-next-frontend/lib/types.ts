@@ -126,6 +126,7 @@ export type SiteSettings = {
   };
   logo_light: string | null;
   logo_dark: string | null;
+  logo_footer: string | null;
   favicon: string | null;
   banners: string[];
   socials?: SocialLinks;

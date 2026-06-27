@@ -54,7 +54,12 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand + socials */}
           <div>
-            <h2 className="text-xl font-bold tracking-tight">{name}</h2>
+            {settings?.logo_footer ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.logo_footer} alt={name} className="h-10 w-auto" />
+            ) : (
+              <h2 className="text-xl font-bold tracking-tight">{name}</h2>
+            )}
             <p className="mt-3 text-sm leading-relaxed text-white/80">
               {settings?.tagline ||
                 "Elegant, refined furniture for modern living and professional spaces."}

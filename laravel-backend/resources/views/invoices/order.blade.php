@@ -26,7 +26,12 @@
 
     <table class="row">
         <tr>
-            <td><h1>{{ $siteName }}</h1><div class="muted">Invoice</div></td>
+            <td>
+                @if (!empty($logoUrl))
+                    <img src="{{ $logoUrl }}" alt="{{ $siteName }}" style="max-height: 48px; max-width: 220px; margin-bottom: 6px;">
+                @endif
+                <h1>{{ $siteName }}</h1><div class="muted">Invoice</div>
+            </td>
             <td class="right">
                 <div><strong>{{ $order->order_no }}</strong></div>
                 <div class="muted">{{ optional($order->created_at)->format('d M Y, h:i A') }}</div>

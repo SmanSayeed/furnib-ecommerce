@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Catalog\CategoryUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\Dev\DeveloperController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\InvoiceListController;
 use App\Http\Controllers\Admin\MaintenanceController;
@@ -139,6 +140,13 @@ Route::middleware('auth')->prefix('admin/shipping')->name('admin.')->group(funct
         Route::put('zones/{shippingZone}', [ShippingZoneController::class, 'update'])->name('shipping-zones.update');
         Route::delete('zones/{shippingZone}', [ShippingZoneController::class, 'destroy'])->name('shipping-zones.destroy');
     });
+});
+
+// Developer console — owner-only (developer.access). Runs an allow-listed set
+// of artisan commands by id; never accepts a raw command string.
+Route::middleware(['auth', 'permission:developer.access'])->prefix('admin/dev')->name('admin.dev.')->group(function () {
+    Route::get('/', [DeveloperController::class, 'index'])->name('index');
+    Route::post('run', [DeveloperController::class, 'run'])->name('run');
 });
 
 require __DIR__.'/settings.php';

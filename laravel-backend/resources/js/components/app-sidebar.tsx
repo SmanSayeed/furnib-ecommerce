@@ -13,6 +13,7 @@ import {
     ShieldAlert,
     ShoppingCart,
     Store,
+    TerminalSquare,
     TicketPercent,
     Truck,
     Users,
@@ -98,6 +99,11 @@ const navGroups: AdminNavGroup[] = [
             { title: 'Audit log', icon: ScrollText, permission: 'audit.view', soon: true },
             { title: 'Maintenance', icon: ShieldAlert, permission: 'maintenance.manage', soon: true },
         ],
+    },
+    {
+        label: 'Developer',
+        permission: 'developer.access',
+        items: [{ title: 'Developer tools', href: '/admin/dev', icon: TerminalSquare }],
     },
 ];
 

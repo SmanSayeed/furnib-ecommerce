@@ -32,14 +32,14 @@ export function CategoryDrawer({
   if (!open) return null;
 
   const linkClass =
-    "rounded-card px-4 py-3.5 text-lg font-medium text-foreground transition hover:bg-surface-2 hover:text-accent";
+    "rounded-lg px-3 py-2.5 text-[15px] font-medium text-foreground transition hover:bg-surface-2 hover:text-accent";
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-      <aside className="absolute left-0 top-0 flex h-full w-80 max-w-[85%] animate-in flex-col overflow-y-auto border-r border-border bg-surface p-6">
+      <aside className="absolute left-0 top-0 flex h-full w-80 max-w-[85%] animate-in flex-col overflow-y-auto border-r border-border bg-surface p-5">
         {/* Brand + close */}
-        <div className="flex items-center justify-between border-b border-border pb-5">
+        <div className="flex items-center justify-between border-b border-border pb-4">
           <Logo
             className="h-9 w-auto"
             lightUrl={logoLight}
@@ -57,18 +57,18 @@ export function CategoryDrawer({
         </div>
 
         {/* Primary — kept separate from the category list */}
-        <nav className="mt-5 flex flex-col gap-1.5">
+        <nav className="mt-4 flex flex-col gap-1">
           <Link href="/" onClick={() => setOpen(false)} className={linkClass}>
             Home
           </Link>
         </nav>
 
         {/* Categories */}
-        <p className="mt-6 border-t border-border pt-6 text-xs font-semibold uppercase tracking-wider text-muted">
+        <p className="mt-5 border-t border-border pt-5 text-xs font-semibold uppercase tracking-wider text-muted">
           Collections
         </p>
 
-        <nav className="mt-3 flex flex-col gap-1.5">
+        <nav className="mt-2.5 flex flex-col gap-1">
           {categories.map((c) => (
             <Link
               key={c.id}

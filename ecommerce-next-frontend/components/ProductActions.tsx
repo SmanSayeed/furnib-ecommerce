@@ -46,14 +46,14 @@ export function ProductActions({
           )}
         </div>
 
-        {/* Desktop Inquiry — soft WhatsApp pill in the left cluster (hidden on mobile) */}
+        {/* Desktop Inquiry — solid WhatsApp green, white text (hidden on mobile) */}
         <a
           href={inquiryHref}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Inquiry on WhatsApp"
           onClick={onInquiry}
-          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#25D366]/15 px-3 py-1.5 text-sm font-semibold text-[#25D366] transition hover:bg-[#25D366]/25 sm:flex"
+          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold whitespace-nowrap text-white transition hover:brightness-110 sm:flex"
         >
           <WhatsAppIcon size={16} />
           <span>Inquiry</span>
@@ -79,9 +79,9 @@ export function ProductActions({
         {/* Order — straight to the checkout page (no modal) */}
         <Link
           href={`/checkout/${product.slug}?qty=1`}
-          className="rounded-full bg-accent px-5 py-2 text-sm font-semibold whitespace-nowrap text-on-accent transition hover:bg-accent-hover"
+          className="rounded-full bg-accent px-5 py-2 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-accent-hover"
         >
-          Order
+          Order now
         </Link>
       </div>
     </div>

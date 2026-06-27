@@ -225,7 +225,7 @@ export function CheckoutForm({
 
         {zones.length > 0 && (
           <div>
-            <span className="mb-2 block text-sm font-medium">Shipping zone</span>
+            <span className="mb-2 block text-sm font-medium">Shipping method</span>
             <div className="space-y-2">
               {zones.map((zone) => (
                 <label
@@ -256,7 +256,7 @@ export function CheckoutForm({
 
         {blockedNoZone && (
           <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-            Shipping zones aren’t set up yet for this product. Please contact us on
+            Shipping methods aren’t set up yet for this product. Please contact us on
             WhatsApp to place your order.
           </div>
         )}

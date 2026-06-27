@@ -19,6 +19,9 @@ return [
         'users.manage',
         'maintenance.manage',
         'audit.view',
+        // Owner-only developer console (artisan command buttons, logs, errors).
+        // Granted only via the owner '*' wildcard — never added to admin below.
+        'developer.access',
     ],
 
     /*

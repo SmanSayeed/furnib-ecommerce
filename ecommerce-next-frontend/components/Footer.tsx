@@ -27,7 +27,7 @@ function SocialIcon({ href, name }: { href: string; name: string }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={name}
-      className="flex size-9 items-center justify-center rounded-full border border-border text-muted transition hover:border-accent hover:text-accent"
+      className="flex size-9 items-center justify-center rounded-full border border-white/40 text-white transition hover:border-white hover:bg-white hover:text-brand"
     >
       <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden="true">
         {SOCIAL_ICONS[name]}
@@ -48,14 +48,14 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
   );
 
   return (
-    <footer className="mt-20 border-t border-border bg-surface">
+    <footer className="mt-20 bg-brand text-white">
       <Container className="py-14">
         {/* Four columns on desktop, stacked on mobile */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand + socials */}
           <div>
             <h2 className="text-xl font-bold tracking-tight">{name}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
+            <p className="mt-3 text-sm leading-relaxed text-white/80">
               {settings?.tagline ||
                 "Elegant, refined furniture for modern living and professional spaces."}
             </p>
@@ -71,7 +71,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
           {/* Quick links */}
           {links.length > 0 && (
             <nav aria-label="Footer links">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted/80">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
                 Quick links
               </h3>
               <ul className="mt-4 space-y-2 text-sm">
@@ -79,7 +79,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
                   <li key={`${link.label}-${link.url}`}>
                     <a
                       href={link.url}
-                      className="text-muted transition hover:text-accent"
+                      className="text-white/80 transition hover:text-white"
                     >
                       {link.label}
                     </a>
@@ -91,21 +91,21 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted/80">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
               Contact
             </h3>
-            <ul className="mt-4 space-y-2 text-sm text-muted">
+            <ul className="mt-4 space-y-2 text-sm text-white/80">
               {address && <li>{address}</li>}
               {phone && (
                 <li>
-                  <a href={`tel:${phone}`} className="hover:text-accent">
+                  <a href={`tel:${phone}`} className="hover:text-white">
                     {phone}
                   </a>
                 </li>
               )}
               {email && (
                 <li>
-                  <a href={`mailto:${email}`} className="hover:text-accent">
+                  <a href={`mailto:${email}`} className="hover:text-white">
                     {email}
                   </a>
                 </li>
@@ -115,7 +115,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
               href={whatsappGeneral(settings?.whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-hover"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-white/90"
             >
               WhatsApp us
             </a>
@@ -123,10 +123,10 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
 
           {/* Newsletter */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted/80">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
               Newsletter
             </h3>
-            <p className="mt-4 text-sm text-muted">
+            <p className="mt-4 text-sm text-white/80">
               Get new arrivals &amp; offers in your inbox.
             </p>
             <NewsletterForm />
@@ -134,17 +134,20 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
         </div>
 
         {/* Payment + copyright */}
-        <div className="mt-12 flex flex-col items-center gap-4 border-t border-border pt-8">
-          <span className="text-xs uppercase tracking-wider text-muted/70">
+        <div className="mt-12 flex flex-col items-center gap-4 border-t border-white/20 pt-8">
+          <span className="text-xs uppercase tracking-wider text-white/70">
             Pay securely with
           </span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/sslcommerz.avif"
-            alt="Pay with SSLCommerz"
-            className="h-auto w-full max-w-md"
-          />
-          <p className="text-xs text-muted/60">
+          {/* On a white card so the multi-colour gateway logo stays legible. */}
+          <div className="rounded-lg bg-white px-4 py-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/sslcommerz.avif"
+              alt="Pay with SSLCommerz"
+              className="h-auto w-full max-w-md"
+            />
+          </div>
+          <p className="text-xs text-white/70">
             © {settings?.site_name || config.siteName} — All rights reserved.
           </p>
         </div>

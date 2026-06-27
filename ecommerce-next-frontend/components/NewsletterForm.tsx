@@ -34,7 +34,7 @@ export function NewsletterForm() {
 
   return (
     <form onSubmit={submit} className="mt-3 space-y-2">
-      <div className="flex overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="flex overflow-hidden rounded-lg bg-white">
         <input
           type="email"
           required
@@ -45,23 +45,23 @@ export function NewsletterForm() {
           }}
           placeholder="Your email"
           aria-label="Email address"
-          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+          className="min-w-0 flex-1 bg-white px-3 py-2.5 text-sm text-stone-800 outline-none placeholder:text-stone-400"
         />
         <button
           type="submit"
           disabled={status === "loading"}
-          className="shrink-0 bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:opacity-60"
+          className="shrink-0 bg-stone-900 px-4 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-60"
         >
           {status === "loading" ? "…" : "Subscribe"}
         </button>
       </div>
       {status === "ok" && (
-        <p className="text-xs text-green-600 dark:text-green-400">
+        <p className="text-xs font-medium text-white">
           Thanks — you&apos;re subscribed!
         </p>
       )}
       {status === "error" && (
-        <p className="text-xs text-red-500">
+        <p className="text-xs text-red-100">
           Couldn&apos;t subscribe. Please check the email and try again.
         </p>
       )}

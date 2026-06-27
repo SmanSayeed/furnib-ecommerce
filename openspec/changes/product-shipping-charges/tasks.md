@@ -25,11 +25,11 @@
 - [x] 4.4 tsc + eslint (full build in Phase 7 gate)
 
 ## Phase 5 — footer settings + newsletter backend
-- [ ] 5.1 Site settings footer/social fields + `SiteSettingsUpdateRequest` + public settings output
-- [ ] 5.2 `newsletter_subscribers` migration + `NewsletterSubscriber` model + factory
-- [ ] 5.3 `StoreNewsletterRequest` + `NewsletterController` + `POST /api/v1/newsletter` (throttle)
-- [ ] 5.4 Admin `settings/site` footer fields
-- [ ] 5.5 RED→GREEN tests (settings save, subscribe, duplicate, invalid)
+- [x] 5.1 Site settings footer/social fields + `SiteSettingsUpdateRequest` + public settings output
+- [x] 5.2 `newsletter_subscribers` migration + `NewsletterSubscriber` model + factory
+- [x] 5.3 `StoreNewsletterRequest` + `NewsletterController` + `POST /api/v1/newsletter` (throttle)
+- [x] 5.4 Admin `settings/site` footer fields
+- [x] 5.5 RED→GREEN tests (settings save, subscribe, duplicate, invalid)
 
 ## Phase 6 — footer UI
 - [ ] 6.1 `components/Footer.tsx` four-column desktop / stacked mobile, settings-driven, working subscribe form

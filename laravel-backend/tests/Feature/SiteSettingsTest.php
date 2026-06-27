@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Settings\SettingsService;
+use Database\Seeders\PermissionRoleSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\post;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\PermissionRoleSeeder::class);
+    $this->seed(PermissionRoleSeeder::class);
 });
 
 function adminUser(): User
@@ -82,9 +83,62 @@ it('rejects a non-numeric whatsapp number', function () {
 });
 
 it('exposes public branding via the api', function () {
-    app(\App\Services\Settings\SettingsService::class)->set('branding', 'site_name', 'Furnib Public');
+    app(SettingsService::class)->set('branding', 'site_name', 'Furnib Public');
 
     $this->getJson('/api/v1/settings')
         ->assertOk()
         ->assertJsonPath('data.site_name', 'Furnib Public');
+});
+
+it('saves footer social links and quick links', function () {
+    actingAs(adminUser())
+        ->post('/settings/site', [
+            'site_name' => 'Furnib BD',
+            'social_facebook' => 'https://facebook.com/furnib',
+            'social_instagram' => 'https://instagram.com/furnib',
+            'about_links' => [
+                ['label' => 'Privacy Policy', 'url' => '/privacy'],
+                ['label' => 'Blog', 'url' => 'https://furnib.com/blog'],
+            ],
+        ])
+        ->assertRedirect(route('site-settings.edit'));
+
+    $settings = app(SettingsService::class);
+    expect($settings->get('branding', 'social_facebook'))->toBe('https://facebook.com/furnib')
+        ->and($settings->get('branding', 'about_links'))->toBe([
+            ['label' => 'Privacy Policy', 'url' => '/privacy'],
+            ['label' => 'Blog', 'url' => 'https://furnib.com/blog'],
+        ]);
+});
+
+it('exposes footer socials and links via the public api', function () {
+    $settings = app(SettingsService::class);
+    $settings->set('branding', 'social_facebook', 'https://facebook.com/furnib');
+    $settings->set('branding', 'about_links', [['label' => 'Privacy', 'url' => '/privacy']]);
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.socials.facebook', 'https://facebook.com/furnib')
+        ->assertJsonPath('data.footer_links.0.label', 'Privacy')
+        ->assertJsonPath('data.footer_links.0.url', '/privacy');
+});
+
+it('rejects a javascript: url in a footer link (xss guard)', function () {
+    actingAs(adminUser())
+        ->post('/settings/site', [
+            'site_name' => 'Furnib BD',
+            'about_links' => [
+                ['label' => 'Evil', 'url' => 'javascript:alert(1)'],
+            ],
+        ])
+        ->assertSessionHasErrors('about_links.0.url');
+});
+
+it('rejects a non-http social url', function () {
+    actingAs(adminUser())
+        ->post('/settings/site', [
+            'site_name' => 'Furnib BD',
+            'social_facebook' => 'javascript:alert(1)',
+        ])
+        ->assertSessionHasErrors('social_facebook');
 });

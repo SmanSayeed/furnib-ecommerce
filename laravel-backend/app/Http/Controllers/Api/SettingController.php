@@ -40,6 +40,13 @@ class SettingController extends Controller
                     $this->url($b['banner_1'] ?? null),
                     $this->url($b['banner_2'] ?? null),
                 ])),
+                'socials' => array_filter([
+                    'facebook' => $b['social_facebook'] ?? null,
+                    'instagram' => $b['social_instagram'] ?? null,
+                    'youtube' => $b['social_youtube'] ?? null,
+                    'linkedin' => $b['social_linkedin'] ?? null,
+                ], static fn ($v): bool => is_string($v) && $v !== ''),
+                'footer_links' => is_array($b['about_links'] ?? null) ? array_values($b['about_links']) : [],
             ],
         ]);
     }

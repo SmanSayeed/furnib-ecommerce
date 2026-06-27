@@ -24,6 +24,10 @@ class SiteSettingController extends Controller
         'contact_phone',
         'contact_email',
         'contact_address',
+        'social_facebook',
+        'social_instagram',
+        'social_youtube',
+        'social_linkedin',
     ];
 
     /** Uploadable file fields. */
@@ -45,6 +49,14 @@ class SiteSettingController extends Controller
     {
         foreach (self::TEXT_KEYS as $key) {
             $this->settings->set(self::GROUP, $key, $request->string($key)->toString());
+        }
+
+        // Footer quick links (label + url array). Only touched when submitted,
+        // so unrelated saves don't wipe them. Re-keyed to a clean list.
+        if ($request->exists('about_links')) {
+            /** @var array<int, array{label:string, url:string}> $links */
+            $links = $request->validated('about_links') ?? [];
+            $this->settings->set(self::GROUP, 'about_links', array_values($links));
         }
 
         foreach (self::FILE_KEYS as $key) {
@@ -80,6 +92,9 @@ class SiteSettingController extends Controller
             $path = $this->settings->get(self::GROUP, $key);
             $data[$key.'_url'] = is_string($path) && $path !== '' ? $this->storage->url($path) : null;
         }
+
+        $links = $this->settings->get(self::GROUP, 'about_links');
+        $data['about_links'] = is_array($links) ? array_values($links) : [];
 
         return $data;
     }

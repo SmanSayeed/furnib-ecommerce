@@ -1,9 +1,13 @@
 import { Form, Head } from '@inertiajs/react';
+import { Plus, X } from 'lucide-react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+type FooterLink = { label: string; url: string };
 
 type Branding = {
     site_name: string;
@@ -12,12 +16,24 @@ type Branding = {
     contact_phone: string;
     contact_email: string;
     contact_address: string;
+    social_facebook: string;
+    social_instagram: string;
+    social_youtube: string;
+    social_linkedin: string;
+    about_links: FooterLink[];
     logo_light_url: string | null;
     logo_dark_url: string | null;
     favicon_url: string | null;
     banner_1_url: string | null;
     banner_2_url: string | null;
 };
+
+const SOCIALS: { key: keyof Branding; label: string; placeholder: string }[] = [
+    { key: 'social_facebook', label: 'Facebook URL', placeholder: 'https://facebook.com/furnib' },
+    { key: 'social_instagram', label: 'Instagram URL', placeholder: 'https://instagram.com/furnib' },
+    { key: 'social_youtube', label: 'YouTube URL', placeholder: 'https://youtube.com/@furnib' },
+    { key: 'social_linkedin', label: 'LinkedIn URL', placeholder: 'https://linkedin.com/company/furnib' },
+];
 
 function FilePreview({
     url,
@@ -44,6 +60,15 @@ function FilePreview({
 }
 
 export default function Site({ branding }: { branding: Branding }) {
+    const [links, setLinks] = useState<FooterLink[]>(branding.about_links ?? []);
+
+    const setLink = (index: number, field: keyof FooterLink, value: string) =>
+        setLinks((prev) => prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)));
+
+    const addLink = () => setLinks((prev) => [...prev, { label: '', url: '' }]);
+    const removeLink = (index: number) =>
+        setLinks((prev) => prev.filter((_, i) => i !== index));
+
     return (
         <>
             <Head title="Site settings" />
@@ -229,6 +254,109 @@ export default function Site({ branding }: { branding: Branding }) {
                                     />
                                     <InputError message={errors.banner_2} />
                                 </div>
+                            </div>
+
+                            {/* Footer — social links */}
+                            <div className="space-y-4 rounded-lg border border-border p-4">
+                                <div>
+                                    <p className="text-sm font-medium">Footer — social links</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Full https:// URLs. Leave blank to hide an icon.
+                                    </p>
+                                </div>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    {SOCIALS.map((s) => (
+                                        <div key={s.key} className="grid gap-2">
+                                            <Label htmlFor={s.key}>{s.label}</Label>
+                                            <Input
+                                                id={s.key}
+                                                name={s.key}
+                                                type="url"
+                                                defaultValue={branding[s.key] as string}
+                                                placeholder={s.placeholder}
+                                            />
+                                            <InputError
+                                                message={
+                                                    (errors as Record<string, string | undefined>)[
+                                                        s.key
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Footer — quick links */}
+                            <div className="space-y-4 rounded-lg border border-border p-4">
+                                <div>
+                                    <p className="text-sm font-medium">Footer — quick links</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        e.g. Privacy Policy, Terms, Delivery &amp; Return. URL must
+                                        be a full https:// link or a path starting with /.
+                                    </p>
+                                </div>
+                                {links.map((link, i) => {
+                                    const errs = errors as Record<string, string | undefined>;
+
+                                    return (
+                                        <div
+                                            key={i}
+                                            className="flex flex-wrap items-start gap-2 sm:flex-nowrap"
+                                        >
+                                            <div className="grid flex-1 gap-1">
+                                                <Input
+                                                    name={`about_links[${i}][label]`}
+                                                    value={link.label}
+                                                    onChange={(e) =>
+                                                        setLink(i, 'label', e.target.value)
+                                                    }
+                                                    placeholder="Label (e.g. Privacy Policy)"
+                                                />
+                                                <InputError
+                                                    message={errs[`about_links.${i}.label`]}
+                                                />
+                                            </div>
+                                            <div className="grid flex-1 gap-1">
+                                                <Input
+                                                    name={`about_links[${i}][url]`}
+                                                    value={link.url}
+                                                    onChange={(e) =>
+                                                        setLink(i, 'url', e.target.value)
+                                                    }
+                                                    placeholder="/privacy or https://…"
+                                                />
+                                                <InputError
+                                                    message={errs[`about_links.${i}.url`]}
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label="Remove link"
+                                                onClick={() => removeLink(i)}
+                                            >
+                                                <X className="size-4" />
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                                {/* Marker so an empty list still submits the key and
+                                    clears previously saved links server-side. */}
+                                {links.length === 0 && (
+                                    <input type="hidden" name="about_links" value="" />
+                                )}
+                                {links.length < 12 && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={addLink}
+                                    >
+                                        <Plus className="size-4" /> Add link
+                                    </Button>
+                                )}
                             </div>
 
                             <p className="text-xs text-muted-foreground">

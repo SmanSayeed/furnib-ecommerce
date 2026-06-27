@@ -28,6 +28,20 @@ class SiteSettingsUpdateRequest extends FormRequest
             'contact_phone' => ['nullable', 'string', 'max:40'],
             'contact_email' => ['nullable', 'email', 'max:120'],
             'contact_address' => ['nullable', 'string', 'max:200'],
+
+            // Footer social links — must be absolute http(s) URLs (blocks
+            // javascript:/data: hrefs that would enable stored XSS).
+            'social_facebook' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
+            'social_instagram' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
+            'social_youtube' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
+            'social_linkedin' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
+
+            // Footer quick links (label + url). URL must be absolute http(s) or
+            // a site-relative path starting with "/" — never a javascript: href.
+            'about_links' => ['nullable', 'array', 'max:12'],
+            'about_links.*.label' => ['required', 'string', 'max:60'],
+            'about_links.*.url' => ['required', 'string', 'max:200', 'regex:#^(https?://|/)#i'],
+
             'logo_light' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'logo_dark' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'favicon' => ['nullable', 'file', 'mimes:png,ico', 'max:512'],
@@ -43,6 +57,11 @@ class SiteSettingsUpdateRequest extends FormRequest
     {
         return [
             'whatsapp.regex' => 'WhatsApp number must contain digits only (with country code, no +).',
+            'social_facebook.regex' => 'Link must be a full https:// URL.',
+            'social_instagram.regex' => 'Link must be a full https:// URL.',
+            'social_youtube.regex' => 'Link must be a full https:// URL.',
+            'social_linkedin.regex' => 'Link must be a full https:// URL.',
+            'about_links.*.url.regex' => 'Link must be an https:// URL or a path starting with /.',
             'logo_light.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'logo_dark.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'favicon.mimes' => 'Favicon must be a PNG or ICO file.',

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CollectController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MarketingController;
+use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductShippingZoneController;
@@ -45,6 +46,9 @@ Route::prefix('v1')->group(function () {
     Route::get('products/{slug}', [ProductController::class, 'show']);
     // Per-product shipping zones (base + this product's per-unit extra).
     Route::get('products/{slug}/shipping-zones', [ProductShippingZoneController::class, 'index']);
+
+    // Newsletter subscription (storefront footer). Rate-limited per IP.
+    Route::middleware('throttle:6,1')->post('newsletter', [NewsletterController::class, 'store']);
 
     // Storefront checkout
     Route::get('shipping-zones', [ShippingZoneController::class, 'index']);

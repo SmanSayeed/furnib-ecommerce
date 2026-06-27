@@ -5,7 +5,7 @@ import { SafeImage } from "./SafeImage";
 
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
-    <div className="grid gap-6 sm:grid-cols-2">
+    <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
       {categories.map((c) => (
         <Link
           key={c.id}
@@ -24,11 +24,11 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
             </div>
           </div>
           <div className="p-5">
-            <h3 className="text-xl font-semibold">{c.title}</h3>
+            <h3 className="text-2xl font-bold">{c.title}</h3>
             {c.details && (
-              <p className="mt-1 line-clamp-2 text-sm text-muted">{c.details}</p>
+              <p className="mt-1.5 line-clamp-2 text-base text-muted">{c.details}</p>
             )}
-            <span className="mt-4 inline-block rounded-full border border-border px-4 py-1.5 text-xs font-medium uppercase tracking-wider transition group-hover:border-accent group-hover:text-accent">
+            <span className="mt-4 inline-block rounded-full border-2 border-accent bg-accent px-5 py-2 text-sm font-bold uppercase tracking-wider text-white transition group-hover:border-accent-hover group-hover:bg-accent-hover">
               View Series
             </span>
           </div>

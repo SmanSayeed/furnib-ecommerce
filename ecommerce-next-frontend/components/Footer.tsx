@@ -4,6 +4,7 @@ import type { CmsPageLink, SiteSettings } from "@/lib/types";
 import { whatsappGeneral } from "@/lib/whatsapp";
 import { Container } from "./Container";
 import { NewsletterForm } from "./NewsletterForm";
+import { WhatsAppIcon } from "./WhatsAppIcon";
 
 // Minimal inline brand glyphs so the footer needs no icon dependency.
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
@@ -146,8 +147,9 @@ export function Footer({
               href={whatsappGeneral(settings?.whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-white/90"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
             >
+              <WhatsAppIcon size={16} />
               WhatsApp us
             </a>
           </div>

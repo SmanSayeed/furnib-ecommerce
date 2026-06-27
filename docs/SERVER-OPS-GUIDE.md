@@ -215,6 +215,45 @@ NEXT_PUBLIC_WHATSAPP=8801XXXXXXXXX
 
 ---
 
+## 11b. Routine release deploy (redeploy an already-live app)
+
+The first-deploy steps (§3) are for a fresh server. For shipping a **new commit on
+`master`** to the already-running services:
+
+1. **Push** is enough on the code side — `git push origin master` (CI/manual). Confirm
+   `git status` is clean and `git log origin/master..HEAD` is empty.
+2. **Backend** → EasyPanel → `furnib` → `backend` → **Deploy** (rebuild from `master`).
+   - The Dockerfile rebuilds composer deps **and the admin Vite/Inertia assets**, so any
+     `laravel-backend/resources/js` change (e.g. admin product form) ships here.
+   - On boot the **entrypoint auto-runs `php artisan migrate --force`**
+     (`docker/entrypoint.sh`) — so **new migrations apply automatically**. No manual
+     migrate needed unless `RUN_MIGRATIONS=false` is set.
+3. **Frontend** → EasyPanel → `furnib` → `frontend` → **Deploy** (rebuild from `master`).
+   - **Required** for any `ecommerce-next-frontend/` change (storefront is a separate
+     image; `NEXT_PUBLIC_*` are baked at build time). Skipping this = storefront stays old.
+4. **Seeders do NOT auto-run.** Only run via Console if a release needs new reference data,
+   and only **prod-safe** ones — e.g. `php artisan db:seed --class=ShippingZoneSeeder --force`
+   (idempotent). Never run demo/catalog seeders in prod.
+5. **Verify** (Console + browser):
+   - `php artisan migrate:status` → new migrations show **Ran**.
+   - Backend **Overview → Logs** has no boot errors; admin `/login` works.
+   - Storefront loads; exercise the changed flow (e.g. place a test order).
+6. **Rollback** if a release misbehaves: EasyPanel → service → **Deployments** → redeploy the
+   previous successful build; bad schema change → Console `php artisan migrate:rollback --step=1`.
+
+> Order tip: deploy **backend first** (so new tables/endpoints exist), then **frontend**
+> (which calls them). A migration that only **adds** tables/columns is backward-compatible,
+> so the brief window where new frontend hasn't shipped yet is safe.
+
+### Release log
+- **2026-06-27 — product-shipping-charges + footer** (`master` @ `9b73ba4`): adds tables
+  `product_shipping_charges`, `newsletter_subscribers` (both auto-migrated on backend
+  redeploy). Storefront changes (checkout "Shipping zone" qty-aware, 4-col footer,
+  newsletter) **require a frontend redeploy**. Prod zones already seeded at first deploy;
+  re-run `ShippingZoneSeeder` only if `shipping_zones` is empty.
+
+---
+
 ## 12. Moving to a NEW server (transfer)
 
 1. New server: install EasyPanel; create project `furnib`.

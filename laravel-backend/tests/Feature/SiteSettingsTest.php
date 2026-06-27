@@ -151,6 +151,34 @@ it('exposes footer socials and links via the public api', function () {
         ->assertJsonPath('data.footer_links.0.url', '/privacy');
 });
 
+it('exposes new social platforms (x, pinterest, tiktok) via the api', function () {
+    $settings = app(SettingsService::class);
+    $settings->set('branding', 'social_x', 'https://x.com/furnib');
+    $settings->set('branding', 'social_tiktok', 'https://tiktok.com/@furnib');
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.socials.x', 'https://x.com/furnib')
+        ->assertJsonPath('data.socials.tiktok', 'https://tiktok.com/@furnib');
+});
+
+it('hides a disabled social link from the api even when a url is set', function () {
+    actingAs(adminUser())
+        ->post('/settings/site', [
+            'site_name' => 'Furnib BD',
+            'social_facebook' => 'https://facebook.com/furnib',
+            'social_facebook_enabled' => '0',
+            'social_instagram' => 'https://instagram.com/furnib',
+            'social_instagram_enabled' => '1',
+        ])
+        ->assertRedirect(route('site-settings.edit'));
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.socials.instagram', 'https://instagram.com/furnib')
+        ->assertJsonMissingPath('data.socials.facebook');
+});
+
 it('rejects a javascript: url in a footer link (xss guard)', function () {
     actingAs(adminUser())
         ->post('/settings/site', [

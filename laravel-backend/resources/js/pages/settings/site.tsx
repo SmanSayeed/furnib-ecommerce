@@ -20,6 +20,16 @@ type Branding = {
     social_instagram: string;
     social_youtube: string;
     social_linkedin: string;
+    social_x: string;
+    social_pinterest: string;
+    social_tiktok: string;
+    social_facebook_enabled: boolean;
+    social_instagram_enabled: boolean;
+    social_youtube_enabled: boolean;
+    social_linkedin_enabled: boolean;
+    social_x_enabled: boolean;
+    social_pinterest_enabled: boolean;
+    social_tiktok_enabled: boolean;
     about_links: FooterLink[];
     logo_light_url: string | null;
     logo_dark_url: string | null;
@@ -30,11 +40,19 @@ type Branding = {
     banner_2_url: string | null;
 };
 
-const SOCIALS: { key: keyof Branding; label: string; placeholder: string }[] = [
-    { key: 'social_facebook', label: 'Facebook URL', placeholder: 'https://facebook.com/furnib' },
-    { key: 'social_instagram', label: 'Instagram URL', placeholder: 'https://instagram.com/furnib' },
-    { key: 'social_youtube', label: 'YouTube URL', placeholder: 'https://youtube.com/@furnib' },
-    { key: 'social_linkedin', label: 'LinkedIn URL', placeholder: 'https://linkedin.com/company/furnib' },
+const SOCIALS: {
+    key: keyof Branding;
+    enabledKey: keyof Branding;
+    label: string;
+    placeholder: string;
+}[] = [
+    { key: 'social_facebook', enabledKey: 'social_facebook_enabled', label: 'Facebook', placeholder: 'https://facebook.com/furnib' },
+    { key: 'social_instagram', enabledKey: 'social_instagram_enabled', label: 'Instagram', placeholder: 'https://instagram.com/furnib' },
+    { key: 'social_youtube', enabledKey: 'social_youtube_enabled', label: 'YouTube', placeholder: 'https://youtube.com/@furnib' },
+    { key: 'social_linkedin', enabledKey: 'social_linkedin_enabled', label: 'LinkedIn', placeholder: 'https://linkedin.com/company/furnib' },
+    { key: 'social_x', enabledKey: 'social_x_enabled', label: 'X (Twitter)', placeholder: 'https://x.com/furnib' },
+    { key: 'social_pinterest', enabledKey: 'social_pinterest_enabled', label: 'Pinterest', placeholder: 'https://pinterest.com/furnib' },
+    { key: 'social_tiktok', enabledKey: 'social_tiktok_enabled', label: 'TikTok', placeholder: 'https://tiktok.com/@furnib' },
 ];
 
 function FilePreview({
@@ -309,18 +327,40 @@ export default function Site({ branding }: { branding: Branding }) {
                                 </div>
                             </div>
 
-                            {/* Footer — social links */}
+                            {/* Footer — Follow us */}
                             <div className="space-y-4 rounded-lg border border-border p-4">
                                 <div>
-                                    <p className="text-sm font-medium">Footer — social links</p>
+                                    <p className="text-sm font-medium">Follow us</p>
                                     <p className="text-xs text-muted-foreground">
-                                        Full https:// URLs. Leave blank to hide an icon.
+                                        Full https:// URLs. Untick “Show” to hide a button
+                                        without losing its link.
                                     </p>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     {SOCIALS.map((s) => (
                                         <div key={s.key} className="grid gap-2">
-                                            <Label htmlFor={s.key}>{s.label}</Label>
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor={s.key}>{s.label}</Label>
+                                                {/* Hidden field guarantees a value is sent when
+                                                    the box is unticked; checked sends "1" last. */}
+                                                <input
+                                                    type="hidden"
+                                                    name={s.enabledKey}
+                                                    value="0"
+                                                />
+                                                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+                                                    <input
+                                                        type="checkbox"
+                                                        name={s.enabledKey}
+                                                        value="1"
+                                                        defaultChecked={
+                                                            branding[s.enabledKey] as boolean
+                                                        }
+                                                        className="size-4 accent-[#e85d1f]"
+                                                    />
+                                                    Show
+                                                </label>
+                                            </div>
                                             <Input
                                                 id={s.key}
                                                 name={s.key}

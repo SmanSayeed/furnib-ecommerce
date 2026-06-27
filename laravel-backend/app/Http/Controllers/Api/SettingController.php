@@ -41,15 +41,36 @@ class SettingController extends Controller
                     $this->url($b['banner_1'] ?? null),
                     $this->url($b['banner_2'] ?? null),
                 ])),
-                'socials' => array_filter([
-                    'facebook' => $b['social_facebook'] ?? null,
-                    'instagram' => $b['social_instagram'] ?? null,
-                    'youtube' => $b['social_youtube'] ?? null,
-                    'linkedin' => $b['social_linkedin'] ?? null,
-                ], static fn ($v): bool => is_string($v) && $v !== ''),
+                'socials' => $this->socials($b),
                 'footer_links' => is_array($b['about_links'] ?? null) ? array_values($b['about_links']) : [],
             ],
         ]);
+    }
+
+    /**
+     * Enabled, non-empty "Follow us" links keyed by platform.
+     *
+     * A platform shows unless explicitly disabled (flag === '0'), so existing
+     * links stay visible without needing the toggle re-saved.
+     *
+     * @param  array<string, mixed>  $b
+     * @return array<string, string>
+     */
+    private function socials(array $b): array
+    {
+        $platforms = ['facebook', 'instagram', 'youtube', 'linkedin', 'x', 'pinterest', 'tiktok'];
+        $out = [];
+
+        foreach ($platforms as $platform) {
+            $url = $b["social_{$platform}"] ?? null;
+            $enabled = ($b["social_{$platform}_enabled"] ?? '1') !== '0';
+
+            if (is_string($url) && $url !== '' && $enabled) {
+                $out[$platform] = $url;
+            }
+        }
+
+        return $out;
     }
 
     private function url(mixed $path): ?string

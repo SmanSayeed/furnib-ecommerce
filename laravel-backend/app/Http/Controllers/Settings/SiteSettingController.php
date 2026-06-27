@@ -24,10 +24,17 @@ class SiteSettingController extends Controller
         'contact_phone',
         'contact_email',
         'contact_address',
-        'social_facebook',
-        'social_instagram',
-        'social_youtube',
-        'social_linkedin',
+    ];
+
+    /** Social platforms shown under "Follow us" — each has a url + enabled flag. */
+    private const SOCIAL_PLATFORMS = [
+        'facebook',
+        'instagram',
+        'youtube',
+        'linkedin',
+        'x',
+        'pinterest',
+        'tiktok',
     ];
 
     /** Uploadable file fields. */
@@ -49,6 +56,12 @@ class SiteSettingController extends Controller
     {
         foreach (self::TEXT_KEYS as $key) {
             $this->settings->set(self::GROUP, $key, $request->string($key)->toString());
+        }
+
+        // "Follow us" — each platform stores its url and a visibility flag.
+        foreach (self::SOCIAL_PLATFORMS as $platform) {
+            $this->settings->set(self::GROUP, "social_{$platform}", $request->string("social_{$platform}")->toString());
+            $this->settings->set(self::GROUP, "social_{$platform}_enabled", $request->boolean("social_{$platform}_enabled") ? '1' : '0');
         }
 
         // Footer quick links (label + url array). Only touched when submitted,
@@ -86,6 +99,12 @@ class SiteSettingController extends Controller
         $data = [];
         foreach (self::TEXT_KEYS as $key) {
             $data[$key] = (string) ($this->settings->get(self::GROUP, $key) ?? '');
+        }
+
+        // Social url + enabled flag (defaults to enabled when never toggled).
+        foreach (self::SOCIAL_PLATFORMS as $platform) {
+            $data["social_{$platform}"] = (string) ($this->settings->get(self::GROUP, "social_{$platform}") ?? '');
+            $data["social_{$platform}_enabled"] = $this->settings->get(self::GROUP, "social_{$platform}_enabled") !== '0';
         }
 
         foreach (self::FILE_KEYS as $key) {

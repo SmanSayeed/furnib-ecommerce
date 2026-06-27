@@ -70,6 +70,24 @@ class Product extends Model
         return $this->hasMany(ProductImage::class)->orderBy('position');
     }
 
+    /** @return HasMany<ProductShippingCharge, $this> */
+    public function shippingCharges(): HasMany
+    {
+        return $this->hasMany(ProductShippingCharge::class);
+    }
+
+    /**
+     * Per-unit extra delivery cost (in minor units / paisa) for the given
+     * shipping zone, or 0 if this product has no charge configured for it.
+     * Uses the loaded `shippingCharges` relation when available to avoid N+1.
+     */
+    public function extraPerUnitMinorFor(int $zoneId): int
+    {
+        $charge = $this->shippingCharges->firstWhere('shipping_zone_id', $zoneId);
+
+        return $charge?->extra_cost->toMinor() ?? 0;
+    }
+
     /** @param Builder<Product> $query */
     public function scopePublished(Builder $query): void
     {

@@ -21,9 +21,13 @@ export function ProductActions({
     : `${config.siteUrl}/product/${product.slug}`;
   const unit = product.discount_price ?? product.price;
 
+  const inquiryHref = whatsappInquiry(product, productUrl, whatsapp);
+  const onInquiry = () =>
+    trackLead({ sku: product.sku, name: product.title, price: unit.display });
+
   return (
     <div className="flex items-center justify-between gap-2">
-      {/* Left cluster: price + Inquiry */}
+      {/* Left cluster: price + (desktop-only) Inquiry */}
       <div className="flex min-w-0 items-center gap-2.5">
         <div className="flex min-w-0 flex-col leading-tight">
           {product.discount_price ? (
@@ -42,27 +46,44 @@ export function ProductActions({
           )}
         </div>
 
-        {/* Inquiry (WhatsApp) — icon-only on mobile, labelled from sm */}
+        {/* Desktop Inquiry — soft WhatsApp pill in the left cluster (hidden on mobile) */}
         <a
-          href={whatsappInquiry(product, productUrl, whatsapp)}
+          href={inquiryHref}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Inquiry on WhatsApp"
-          onClick={() => trackLead({ sku: product.sku, name: product.title, price: unit.display })}
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#25D366]/15 px-3 py-1.5 text-sm font-semibold text-[#25D366] transition hover:bg-[#25D366]/25"
+          onClick={onInquiry}
+          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#25D366]/15 px-3 py-1.5 text-sm font-semibold text-[#25D366] transition hover:bg-[#25D366]/25 sm:flex"
         >
           <WhatsAppIcon size={16} />
-          <span className="hidden sm:inline">Inquiry</span>
+          <span>Inquiry</span>
         </a>
       </div>
 
-      {/* Right: Order — straight to the checkout page (no modal) */}
-      <Link
-        href={`/checkout/${product.slug}?qty=1`}
-        className="shrink-0 rounded-full bg-accent px-5 py-2 text-sm font-semibold whitespace-nowrap text-on-accent transition hover:bg-accent-hover"
-      >
-        Order
-      </Link>
+      {/* Right cluster: on mobile a solid green Inquiry sits beside Order;
+          on desktop only Order shows here (Inquiry lives on the left). */}
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Mobile Inquiry — same pill shape as Order, WhatsApp green (hidden from sm) */}
+        <a
+          href={inquiryHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Inquiry on WhatsApp"
+          onClick={onInquiry}
+          className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold whitespace-nowrap text-white transition hover:brightness-110 sm:hidden"
+        >
+          <WhatsAppIcon size={16} />
+          <span>Inquiry</span>
+        </a>
+
+        {/* Order — straight to the checkout page (no modal) */}
+        <Link
+          href={`/checkout/${product.slug}?qty=1`}
+          className="rounded-full bg-accent px-5 py-2 text-sm font-semibold whitespace-nowrap text-on-accent transition hover:bg-accent-hover"
+        >
+          Order
+        </Link>
+      </div>
     </div>
   );
 }

@@ -36,7 +36,7 @@
 - [x] 6.2 tsc + eslint + build (storefront build green)
 
 ## Phase 7 — gate + archive + ship
-- [ ] 7.1 Full Pest suite (PHP 8.3) + Pint + Larastan on changed files
-- [ ] 7.2 Storefront tsc + eslint + build
-- [ ] 7.3 OpenSpec archive
-- [ ] 7.4 ff-merge master + push
+- [x] 7.1 Full Pest suite (PHP 8.3, 344 pass / 2 pre-existing skip) + Pint + Larastan (changed files, 0 errors)
+- [x] 7.2 Storefront tsc + eslint + build (green)
+- [x] 7.3 OpenSpec archive
+- [x] 7.4 ff-merge master + push

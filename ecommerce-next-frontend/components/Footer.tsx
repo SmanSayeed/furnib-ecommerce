@@ -1,6 +1,7 @@
 import { config } from "@/lib/config";
 import type { SiteSettings } from "@/lib/types";
 import { whatsappGeneral } from "@/lib/whatsapp";
+import { Container } from "./Container";
 import { NewsletterForm } from "./NewsletterForm";
 
 // Minimal inline brand glyphs so the footer needs no icon dependency.
@@ -48,7 +49,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
 
   return (
     <footer className="mt-20 border-t border-border bg-surface">
-      <div className="mx-auto max-w-6xl px-6 py-14">
+      <Container className="py-14">
         {/* Four columns on desktop, stacked on mobile */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand + socials */}
@@ -147,7 +148,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
             © {settings?.site_name || config.siteName} — All rights reserved.
           </p>
         </div>
-      </div>
+      </Container>
     </footer>
   );
 }

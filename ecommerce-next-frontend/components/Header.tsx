@@ -1,3 +1,4 @@
+import { Container } from "./Container";
 import { HeaderNav } from "./HeaderNav";
 import { Logo } from "./Logo";
 
@@ -10,10 +11,10 @@ export function Header({
 }) {
   return (
     <header className="w-full border-b border-border bg-background">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Logo className="h-7 w-auto sm:h-8" lightUrl={logoLight} darkUrl={logoDark} />
+      <Container className="flex h-16 items-center justify-between sm:h-20">
+        <Logo className="h-9 w-auto sm:h-11" lightUrl={logoLight} darkUrl={logoDark} />
         <HeaderNav />
-      </div>
+      </Container>
     </header>
   );
 }

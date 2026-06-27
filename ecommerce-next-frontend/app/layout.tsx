@@ -62,7 +62,9 @@ export default async function RootLayout({
             logoLight={settings?.logo_light}
             logoDark={settings?.logo_dark}
           />
-          <main className="flex-1 px-3 pb-16 md:px-12 md:pb-0">{children}</main>
+          <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-16 sm:px-6 lg:px-8 md:pb-0">
+            {children}
+          </main>
           <Footer settings={settings} />
           <CategoryDrawer
             categories={categories}

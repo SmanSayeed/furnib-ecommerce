@@ -26,13 +26,14 @@ export function ImageSlider({
 
   return (
     <div>
-      {/* Big preview — fixed 4:3 (same on mobile + desktop), cover so it fills
-          edge-to-edge with no white letterbox gaps. Square corners (no radius). */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
+      {/* Big preview — fixed 1:1 square (Facebook/Instagram style, 1080×1080).
+          object-contain so the whole product is visible with no crop; the
+          surface fills any letterbox margin. Square corners (no radius). */}
+      <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
         <SafeImage
           src={items[index].url}
           alt={items[index].alt}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
         />
         {discountPct && discountPct > 0 ? (
           <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-md">

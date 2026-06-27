@@ -59,7 +59,7 @@ export default async function CategoryPage({
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-6xl px-0 py-5 sm:py-8">
+      <div className="w-full py-5 sm:py-8">
         <InfiniteProducts
           slug={slug}
           initial={products}
@@ -72,7 +72,7 @@ export default async function CategoryPage({
         />
       </div>
 
-      <section className="mx-auto max-w-2xl px-4 pb-16 sm:px-4">
+      <section className="mx-auto max-w-5xl pb-16">
         <h2 className="mb-8 text-center text-2xl font-bold sm:text-3xl">
           Explore Collections
         </h2>

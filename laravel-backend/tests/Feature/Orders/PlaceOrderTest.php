@@ -7,7 +7,9 @@ use App\DTOs\PlaceOrderData;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductShippingCharge;
 use App\Models\ShippingZone;
+use App\Support\Money;
 use App\Support\OrderNumber;
 
 beforeEach(function () {
@@ -68,6 +70,91 @@ it('sets advance_amount to the selected delivery charge for a shipping-advance p
         ->and($order->shipping_cost->toMinor())->toBe(8000)
         ->and($order->total->toMinor())->toBe(208000);
 });
+
+it('adds the product per-unit extra shipping (x qty) on top of the zone base', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+    ]);
+    $zone = ShippingZone::factory()->create(['cost' => 80]); // base ৳80
+    ProductShippingCharge::factory()->create([
+        'product_id' => $product->id,
+        'shipping_zone_id' => $zone->id,
+        'extra_cost' => Money::fromMinor(2000), // ৳20 per unit
+    ]);
+
+    $order = $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 2]],
+        ['shipping_zone_id' => $zone->id],
+    ));
+
+    // 80 base + 20 × 2 = 120.00
+    expect($order->shipping_cost->toMinor())->toBe(12000)
+        ->and($order->total->toMinor())->toBe(212000); // 2000 subtotal + 120
+});
+
+it('accumulates per-line extras and ignores products without a charge for the zone', function () {
+    $table = Product::factory()->create(['price' => 1000, 'stock_amount' => 10, 'stock_status' => true]);
+    $chair = Product::factory()->create(['price' => 500, 'stock_amount' => 10, 'stock_status' => true]);
+    $zone = ShippingZone::factory()->create(['cost' => 80]);
+    ProductShippingCharge::factory()->create([
+        'product_id' => $table->id,
+        'shipping_zone_id' => $zone->id,
+        'extra_cost' => Money::fromMinor(2000), // ৳20/unit for the table only
+    ]);
+
+    $order = $this->action->handle(placeOrderData(
+        [
+            ['product_id' => $table->id, 'qty' => 2],
+            ['product_id' => $chair->id, 'qty' => 1],
+        ],
+        ['shipping_zone_id' => $zone->id],
+    ));
+
+    // 80 + 20×2 (table) + 0×1 (chair) = 120.00
+    expect($order->shipping_cost->toMinor())->toBe(12000);
+});
+
+it('prepays the full effective shipping for a shipping-advance product', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'partial',
+        'partial_amount_type' => 'shipping', 'partial_amount' => null,
+    ]);
+    $zone = ShippingZone::factory()->create(['cost' => 80]);
+    ProductShippingCharge::factory()->create([
+        'product_id' => $product->id,
+        'shipping_zone_id' => $zone->id,
+        'extra_cost' => Money::fromMinor(2000),
+    ]);
+
+    $order = $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 2]],
+        ['shipping_zone_id' => $zone->id],
+    ));
+
+    // advance = effective shipping = 80 + 20×2 = 120.00
+    expect($order->advance_amount->toMinor())->toBe(12000)
+        ->and($order->shipping_cost->toMinor())->toBe(12000);
+});
+
+it('rejects an inactive shipping zone', function () {
+    $product = Product::factory()->create(['price' => 1000, 'stock_amount' => 10, 'stock_status' => true]);
+    $zone = ShippingZone::factory()->inactive()->create(['cost' => 80]);
+
+    $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 1]],
+        ['shipping_zone_id' => $zone->id],
+    ));
+})->throws(DomainException::class);
+
+it('rejects an unknown shipping zone', function () {
+    $product = Product::factory()->create(['price' => 1000, 'stock_amount' => 10, 'stock_status' => true]);
+
+    $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 1]],
+        ['shipping_zone_id' => 99999],
+    ));
+})->throws(DomainException::class);
 
 it('computes a percentage advance_amount from the subtotal', function () {
     $product = Product::factory()->create([

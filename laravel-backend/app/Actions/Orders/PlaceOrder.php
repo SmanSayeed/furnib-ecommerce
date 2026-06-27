@@ -41,6 +41,7 @@ final class PlaceOrder
 
             $products = Product::query()
                 ->whereIn('id', array_map(static fn (array $i): int => (int) $i['product_id'], $data->items))
+                ->with('shippingCharges')
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
@@ -98,13 +99,28 @@ final class PlaceOrder
                 ];
             }
 
-            $shippingMinor = 0;
-            $zone = $data->shippingZoneId !== null
-                ? ShippingZone::query()->find($data->shippingZoneId)
-                : null;
+            // Resolve the selected zone. An explicitly chosen zone must exist and
+            // be active — a missing/inactive zone is rejected rather than silently
+            // shipping for free.
+            $zone = null;
+            if ($data->shippingZoneId !== null) {
+                $zone = ShippingZone::query()->active()->find($data->shippingZoneId);
 
+                if ($zone === null) {
+                    throw new DomainException('Selected shipping zone is unavailable.');
+                }
+            }
+
+            // Effective shipping = zone base + Σ per-line (product per-unit extra
+            // for this zone × qty). Products without a charge for the zone add 0.
+            $shippingMinor = 0;
             if ($zone !== null) {
                 $shippingMinor = $zone->cost->toMinor();
+
+                foreach ($lines as $line) {
+                    $extra = $products->get($line['product_id'])?->extraPerUnitMinorFor($zone->id) ?? 0;
+                    $shippingMinor += $extra * $line['qty'];
+                }
             }
 
             // Shipping-charge advance: the customer must prepay the delivery fee

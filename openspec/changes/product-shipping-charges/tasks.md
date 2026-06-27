@@ -1,16 +1,16 @@
 # Tasks — product-shipping-charges
 
 ## Phase 1 — DB + model
-- [ ] 1.1 Migration `product_shipping_charges` (product_id FK cascade, shipping_zone_id FK cascade, extra_cost paisa, unique(product_id, shipping_zone_id))
-- [ ] 1.2 `ProductShippingCharge` model (MoneyCast on extra_cost) + factory
-- [ ] 1.3 `Product::shippingCharges()` relation + `extraPerUnitMinorFor(int $zoneId): int`
-- [ ] 1.4 RED→GREEN unit test for relation + helper
+- [x] 1.1 Migration `product_shipping_charges` (product_id FK cascade, shipping_zone_id FK cascade, extra_cost paisa, unique(product_id, shipping_zone_id))
+- [x] 1.2 `ProductShippingCharge` model (MoneyCast on extra_cost) + factory
+- [x] 1.3 `Product::shippingCharges()` relation + `extraPerUnitMinorFor(int $zoneId): int`
+- [x] 1.4 RED→GREEN unit test for relation + helper
 
 ## Phase 2 — backend calc + endpoint
-- [ ] 2.1 `PlaceOrder`: shipping = zone.base + Σ(extra_for(zone) × qty); advance uses effective shipping
-- [ ] 2.2 Active-zone guard (inactive/unknown zone rejected)
-- [ ] 2.3 `ProductShippingZoneController` + route `GET products/{slug}/shipping-zones`
-- [ ] 2.4 RED→GREEN feature tests (calc, guard, endpoint shape, 404)
+- [x] 2.1 `PlaceOrder`: shipping = zone.base + Σ(extra_for(zone) × qty); advance uses effective shipping
+- [x] 2.2 Active-zone guard (inactive/unknown zone rejected)
+- [x] 2.3 `ProductShippingZoneController` + route `GET products/{slug}/shipping-zones`
+- [x] 2.4 RED→GREEN feature tests (calc, guard, endpoint shape, 404)
 
 ## Phase 3 — admin product form
 - [ ] 3.1 `Admin\ProductFormRequest` rules for `shipping_charges.*`

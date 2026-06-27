@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductShippingZoneController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShippingZoneController;
 use App\Http\Controllers\Api\TrackingController;
@@ -42,6 +43,8 @@ Route::prefix('v1')->group(function () {
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/{slug}', [CategoryController::class, 'show']);
     Route::get('products/{slug}', [ProductController::class, 'show']);
+    // Per-product shipping zones (base + this product's per-unit extra).
+    Route::get('products/{slug}/shipping-zones', [ProductShippingZoneController::class, 'index']);
 
     // Storefront checkout
     Route::get('shipping-zones', [ShippingZoneController::class, 'index']);

@@ -4,6 +4,7 @@ import type {
   CategoryWithProducts,
   PageMeta,
   Product,
+  ProductShippingZone,
   ShippingZone,
   SiteSettings,
 } from "./types";
@@ -60,6 +61,19 @@ export async function getShippingZones(): Promise<ShippingZone[]> {
   }
 }
 
+export async function getProductShippingZones(
+  slug: string,
+): Promise<ProductShippingZone[]> {
+  try {
+    const json = await api<{ data: ProductShippingZone[] }>(
+      `/products/${slug}/shipping-zones`,
+    );
+    return json.data;
+  } catch {
+    return [];
+  }
+}
+
 export async function getSettings(): Promise<SiteSettings | null> {
   try {
     const json = await api<{ data: SiteSettings }>("/settings");
@@ -74,6 +88,7 @@ export type {
   CategoryWithProducts,
   PageMeta,
   Product,
+  ProductShippingZone,
   ShippingZone,
   SiteSettings,
 };

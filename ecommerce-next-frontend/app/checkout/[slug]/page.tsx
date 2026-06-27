@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CheckoutForm } from "@/components/CheckoutForm";
-import { getProduct, getShippingZones } from "@/lib/api";
+import { getProduct, getProductShippingZones } from "@/lib/api";
 
 export default async function CheckoutPage({
   params,
@@ -12,7 +12,10 @@ export default async function CheckoutPage({
   const { slug } = await params;
   const { qty } = await searchParams;
 
-  const [product, zones] = await Promise.all([getProduct(slug), getShippingZones()]);
+  const [product, zones] = await Promise.all([
+    getProduct(slug),
+    getProductShippingZones(slug),
+  ]);
 
   if (!product) {
     notFound();

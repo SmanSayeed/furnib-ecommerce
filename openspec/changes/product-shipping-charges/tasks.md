@@ -19,10 +19,10 @@
 - [x] 3.4 Feature test: save + clear
 
 ## Phase 4 — storefront checkout
-- [ ] 4.1 `lib/api.ts` `getProductShippingZones(slug)` + `lib/types.ts`
-- [ ] 4.2 `checkout/[slug]/page.tsx` consume product-scoped zones
-- [ ] 4.3 `CheckoutForm.tsx` rename + qty-aware effective cost + advance preview
-- [ ] 4.4 tsc + eslint + build
+- [x] 4.1 `lib/api.ts` `getProductShippingZones(slug)` + `lib/types.ts`
+- [x] 4.2 `checkout/[slug]/page.tsx` consume product-scoped zones
+- [x] 4.3 `CheckoutForm.tsx` rename + qty-aware effective cost + advance preview
+- [x] 4.4 tsc + eslint (full build in Phase 7 gate)
 
 ## Phase 5 — footer settings + newsletter backend
 - [ ] 5.1 Site settings footer/social fields + `SiteSettingsUpdateRequest` + public settings output

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { imageUrl } from "@/lib/image";
 import { trackInitiateCheckout } from "@/lib/track";
-import type { Product, ShippingZone } from "@/lib/types";
+import type { Product, ProductShippingZone } from "@/lib/types";
 import { SafeImage } from "./SafeImage";
 
 function taka(minor: number): string {
@@ -17,7 +17,7 @@ export function CheckoutForm({
   initialQty,
 }: {
   product: Product;
-  zones: ShippingZone[];
+  zones: ProductShippingZone[];
   initialQty: number;
 }) {
   const router = useRouter();
@@ -57,8 +57,12 @@ export function CheckoutForm({
     });
   }, [product.sku, product.title, qty, unit.minor]);
 
+  // Effective shipping for a zone = base + this product's per-unit extra × qty.
+  const zoneCostMinor = (zone: ProductShippingZone): number =>
+    zone.base.minor + zone.extra_per_unit.minor * qty;
+
   const subtotalMinor = unit.minor * qty;
-  const shippingMinor = selectedZone?.cost.minor ?? 0;
+  const shippingMinor = selectedZone ? zoneCostMinor(selectedZone) : 0;
   const totalMinor = subtotalMinor + shippingMinor;
 
   // Live advance preview — mirrors the server's AdvancePayment rule so the
@@ -221,7 +225,7 @@ export function CheckoutForm({
 
         {zones.length > 0 && (
           <div>
-            <span className="mb-2 block text-sm font-medium">Delivery area</span>
+            <span className="mb-2 block text-sm font-medium">Shipping zone</span>
             <div className="space-y-2">
               {zones.map((zone) => (
                 <label
@@ -242,7 +246,7 @@ export function CheckoutForm({
                     />
                     <span className="text-sm font-medium">{zone.name}</span>
                   </span>
-                  <span className="text-sm font-semibold">{zone.cost.formatted}</span>
+                  <span className="text-sm font-semibold">{taka(zoneCostMinor(zone))}</span>
                 </label>
               ))}
             </div>
@@ -252,7 +256,7 @@ export function CheckoutForm({
 
         {blockedNoZone && (
           <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-            Delivery areas aren’t set up yet for this product. Please contact us on
+            Shipping zones aren’t set up yet for this product. Please contact us on
             WhatsApp to place your order.
           </div>
         )}
@@ -276,7 +280,7 @@ export function CheckoutForm({
           <div className="flex justify-between border-t border-border pt-2 text-sm">
             <span className="font-medium">
               Advance payable now
-              {adv?.partial_type === "shipping" ? " (delivery charge)" : ""}
+              {adv?.partial_type === "shipping" ? " (shipping charge)" : ""}
             </span>
             <span className="font-semibold text-accent">{taka(advanceMinor)}</span>
           </div>

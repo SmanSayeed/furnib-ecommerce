@@ -59,6 +59,15 @@ export type ShippingZone = {
   cost: Money;
 };
 
+// Per-product shipping zone: the zone's base cost plus this product's optional
+// per-unit extra. Effective cost = base + extra_per_unit × quantity.
+export type ProductShippingZone = {
+  id: number;
+  name: string;
+  base: Money;
+  extra_per_unit: Money;
+};
+
 export type OrderItemLine = {
   title: string;
   sku: string;

@@ -27,8 +27,8 @@ export function ImageSlider({
   return (
     <div>
       {/* Big preview — fixed 4:3 (same on mobile + desktop), cover so it fills
-          edge-to-edge with no white letterbox gaps. */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-card bg-surface-2">
+          edge-to-edge with no white letterbox gaps. Square corners (no radius). */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
         <SafeImage
           src={items[index].url}
           alt={items[index].alt}

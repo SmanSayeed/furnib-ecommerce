@@ -135,10 +135,10 @@ test (authz + renders), Pint/phpstan.
 - **Gate per phase:** Pest (changed/feature), Pint, phpstan lvl-7 (app files),
   admin `eslint` + `pnpm build`. Commit + push each phase.
 
-## Status
-- [ ] Phase A  — cleanup/rename/move
-- [ ] Phase B  — Transactions, Consignments, Subscriptions, Audit log
-- [ ] Phase C  — Maintenance page
-- [ ] Phase D  — Footer settings dropdown + split pages
-- [ ] Phase E  — Staff & roles (role manage)
-- [ ] Phase F  — settings sub-nav consistency
+## Status — all phases complete (pushed)
+- [x] Phase A  — cleanup/rename/move
+- [x] Phase B  — Transactions, Consignments, Subscriptions, Audit log
+- [x] Phase C  — Maintenance page
+- [x] Phase D  — Footer settings dropdown + split pages
+- [x] Phase E  — Staff & roles (role manage) — adds users.is_active migration
+- [x] Phase F  — settings sub-nav consistency

@@ -9,7 +9,9 @@ import {
     Mail,
     Megaphone,
     Package,
+    PanelBottom,
     ScrollText,
+    Share2,
     ShieldAlert,
     ShoppingCart,
     Store,
@@ -85,8 +87,16 @@ const navGroups: AdminNavGroup[] = [
         permission: 'settings.manage',
         items: [
             { title: 'Site & branding', href: '/settings/site', icon: Store },
-            { title: 'Footer pages', href: '/admin/pages', icon: FileText },
-            { title: 'Subscriptions', href: '/admin/subscribers', icon: Mail },
+            {
+                title: 'Footer settings',
+                icon: PanelBottom,
+                children: [
+                    { title: 'Footer pages', href: '/admin/pages', icon: FileText },
+                    { title: 'Footer social icons', href: '/settings/footer/social', icon: Share2 },
+                    { title: 'Subscriptions', href: '/admin/subscribers', icon: Mail },
+                    { title: 'Footer details', href: '/settings/footer/details', icon: PanelBottom },
+                ],
+            },
             { title: 'Storage (R2)', href: '/settings/storage', icon: Database },
             { title: 'Staff & roles', icon: UsersRound, soon: true },
             { title: 'Integrations', href: '/settings/integrations', icon: CreditCard },

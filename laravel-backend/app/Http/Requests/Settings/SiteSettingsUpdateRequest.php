@@ -25,33 +25,6 @@ class SiteSettingsUpdateRequest extends FormRequest
             'site_name' => ['required', 'string', 'max:120'],
             'tagline' => ['nullable', 'string', 'max:200'],
             'whatsapp' => ['nullable', 'string', 'max:20', 'regex:/^[0-9]+$/'],
-            'contact_phone' => ['nullable', 'string', 'max:40'],
-            'contact_email' => ['nullable', 'email', 'max:120'],
-            'contact_address' => ['nullable', 'string', 'max:200'],
-
-            // "Follow us" links — must be absolute http(s) URLs (blocks
-            // javascript:/data: hrefs that would enable stored XSS). Each has a
-            // visibility flag so an admin can hide a button without losing the url.
-            'social_facebook' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_instagram' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_youtube' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_linkedin' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_x' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_pinterest' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_tiktok' => ['nullable', 'string', 'max:200', 'regex:#^https?://#i'],
-            'social_facebook_enabled' => ['nullable', 'boolean'],
-            'social_instagram_enabled' => ['nullable', 'boolean'],
-            'social_youtube_enabled' => ['nullable', 'boolean'],
-            'social_linkedin_enabled' => ['nullable', 'boolean'],
-            'social_x_enabled' => ['nullable', 'boolean'],
-            'social_pinterest_enabled' => ['nullable', 'boolean'],
-            'social_tiktok_enabled' => ['nullable', 'boolean'],
-
-            // Footer quick links (label + url). URL must be absolute http(s) or
-            // a site-relative path starting with "/" — never a javascript: href.
-            'about_links' => ['nullable', 'array', 'max:12'],
-            'about_links.*.label' => ['required', 'string', 'max:60'],
-            'about_links.*.url' => ['required', 'string', 'max:200', 'regex:#^(https?://|/)#i'],
 
             'logo_light' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'logo_dark' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
@@ -70,14 +43,6 @@ class SiteSettingsUpdateRequest extends FormRequest
     {
         return [
             'whatsapp.regex' => 'WhatsApp number must contain digits only (with country code, no +).',
-            'social_facebook.regex' => 'Link must be a full https:// URL.',
-            'social_instagram.regex' => 'Link must be a full https:// URL.',
-            'social_youtube.regex' => 'Link must be a full https:// URL.',
-            'social_linkedin.regex' => 'Link must be a full https:// URL.',
-            'social_x.regex' => 'Link must be a full https:// URL.',
-            'social_pinterest.regex' => 'Link must be a full https:// URL.',
-            'social_tiktok.regex' => 'Link must be a full https:// URL.',
-            'about_links.*.url.regex' => 'Link must be an https:// URL or a path starting with /.',
             'logo_light.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'logo_dark.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'logo_footer.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',

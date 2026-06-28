@@ -12,29 +12,21 @@ use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Core store identity + logos. Footer-specific settings (social links and the
+ * footer contact/quick-links) live under their own "Footer settings" pages
+ * (FooterSocialController / FooterDetailController) but share the `branding`
+ * group, so the public settings API shape is unchanged.
+ */
 class SiteSettingController extends Controller
 {
     private const GROUP = 'branding';
 
-    /** Text fields and their defaults (default pulled from config when unset). */
+    /** Text fields owned by this page. */
     private const TEXT_KEYS = [
         'site_name',
         'tagline',
         'whatsapp',
-        'contact_phone',
-        'contact_email',
-        'contact_address',
-    ];
-
-    /** Social platforms shown under "Follow us" — each has a url + enabled flag. */
-    private const SOCIAL_PLATFORMS = [
-        'facebook',
-        'instagram',
-        'youtube',
-        'linkedin',
-        'x',
-        'pinterest',
-        'tiktok',
     ];
 
     /** Uploadable file fields. */
@@ -56,20 +48,6 @@ class SiteSettingController extends Controller
     {
         foreach (self::TEXT_KEYS as $key) {
             $this->settings->set(self::GROUP, $key, $request->string($key)->toString());
-        }
-
-        // "Follow us" — each platform stores its url and a visibility flag.
-        foreach (self::SOCIAL_PLATFORMS as $platform) {
-            $this->settings->set(self::GROUP, "social_{$platform}", $request->string("social_{$platform}")->toString());
-            $this->settings->set(self::GROUP, "social_{$platform}_enabled", $request->boolean("social_{$platform}_enabled") ? '1' : '0');
-        }
-
-        // Footer quick links (label + url array). Only touched when submitted,
-        // so unrelated saves don't wipe them. Re-keyed to a clean list.
-        if ($request->exists('about_links')) {
-            /** @var array<int, array{label:string, url:string}> $links */
-            $links = $request->validated('about_links') ?? [];
-            $this->settings->set(self::GROUP, 'about_links', array_values($links));
         }
 
         foreach (self::FILE_KEYS as $key) {
@@ -101,19 +79,10 @@ class SiteSettingController extends Controller
             $data[$key] = (string) ($this->settings->get(self::GROUP, $key) ?? '');
         }
 
-        // Social url + enabled flag (defaults to enabled when never toggled).
-        foreach (self::SOCIAL_PLATFORMS as $platform) {
-            $data["social_{$platform}"] = (string) ($this->settings->get(self::GROUP, "social_{$platform}") ?? '');
-            $data["social_{$platform}_enabled"] = $this->settings->get(self::GROUP, "social_{$platform}_enabled") !== '0';
-        }
-
         foreach (self::FILE_KEYS as $key) {
             $path = $this->settings->get(self::GROUP, $key);
             $data[$key.'_url'] = is_string($path) && $path !== '' ? $this->storage->url($path) : null;
         }
-
-        $links = $this->settings->get(self::GROUP, 'about_links');
-        $data['about_links'] = is_array($links) ? array_values($links) : [];
 
         return $data;
     }

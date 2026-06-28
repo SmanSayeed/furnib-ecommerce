@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Settings\FooterDetailController;
+use App\Http\Controllers\Settings\FooterSocialController;
 use App\Http\Controllers\Settings\IntegrationSettingController;
 use App\Http\Controllers\Settings\MarketingSettingController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -21,6 +23,12 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::get('settings/site', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
     Route::post('settings/site', [SiteSettingController::class, 'update'])->name('site-settings.update');
+
+    // Footer settings — social links + footer details (split out of site settings).
+    Route::get('settings/footer/social', [FooterSocialController::class, 'edit'])->name('footer-social.edit');
+    Route::post('settings/footer/social', [FooterSocialController::class, 'update'])->name('footer-social.update');
+    Route::get('settings/footer/details', [FooterDetailController::class, 'edit'])->name('footer-details.edit');
+    Route::post('settings/footer/details', [FooterDetailController::class, 'update'])->name('footer-details.update');
 
     // SMTP transport settings + deliverability test.
     Route::get('settings/smtp', [SmtpSettingController::class, 'edit'])->name('smtp-settings.edit');

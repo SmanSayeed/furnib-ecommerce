@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Catalog\CategoryUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\ConsignmentController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\Dev\DeveloperController;
 use App\Http\Controllers\Admin\InvoiceController;
@@ -11,9 +12,11 @@ use App\Http\Controllers\Admin\InvoiceListController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingZoneController;
+use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\InvoiceDownloadController;
@@ -150,6 +153,21 @@ Route::middleware('auth')->prefix('admin/shipping')->name('admin.')->group(funct
         Route::get('zones/{shippingZone}/edit', [ShippingZoneController::class, 'edit'])->name('shipping-zones.edit');
         Route::put('zones/{shippingZone}', [ShippingZoneController::class, 'update'])->name('shipping-zones.update');
         Route::delete('zones/{shippingZone}', [ShippingZoneController::class, 'destroy'])->name('shipping-zones.destroy');
+    });
+
+    // Courier consignments (read-only list).
+    Route::get('consignments', [ConsignmentController::class, 'index'])
+        ->middleware('permission:orders.view')->name('consignments.index');
+});
+
+// Admin payments + subscribers — read-only Inertia lists.
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('payments', [PaymentController::class, 'index'])
+        ->middleware('permission:payments.view')->name('payments.index');
+
+    Route::middleware('permission:settings.manage')->group(function () {
+        Route::get('subscribers', [SubscriberController::class, 'index'])->name('subscribers.index');
+        Route::get('subscribers/export', [SubscriberController::class, 'export'])->name('subscribers.export');
     });
 });
 

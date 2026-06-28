@@ -6,6 +6,7 @@ import {
     FileText,
     FolderTree,
     LayoutGrid,
+    Mail,
     Megaphone,
     Package,
     ScrollText,
@@ -62,14 +63,14 @@ const navGroups: AdminNavGroup[] = [
     {
         label: 'Payments',
         permission: 'payments.view',
-        items: [{ title: 'Transactions', icon: CreditCard, soon: true }],
+        items: [{ title: 'Transactions', href: '/admin/payments', icon: CreditCard }],
     },
     {
         label: 'Shipping',
         permission: 'orders.view',
         items: [
             { title: 'Shipping charge', href: '/admin/shipping/zones', icon: Truck },
-            { title: 'Consignments', icon: Truck, soon: true },
+            { title: 'Consignments', href: '/admin/shipping/consignments', icon: Truck },
         ],
     },
     {
@@ -85,6 +86,7 @@ const navGroups: AdminNavGroup[] = [
         items: [
             { title: 'Site & branding', href: '/settings/site', icon: Store },
             { title: 'Footer pages', href: '/admin/pages', icon: FileText },
+            { title: 'Subscriptions', href: '/admin/subscribers', icon: Mail },
             { title: 'Storage (R2)', href: '/settings/storage', icon: Database },
             { title: 'Staff & roles', icon: UsersRound, soon: true },
             { title: 'Integrations', href: '/settings/integrations', icon: CreditCard },
@@ -94,7 +96,7 @@ const navGroups: AdminNavGroup[] = [
         label: 'System',
         items: [
             { title: 'Developer tools', href: '/admin/dev', icon: TerminalSquare, permission: 'developer.access' },
-            { title: 'Audit log', icon: ScrollText, permission: 'audit.view', soon: true },
+            { title: 'Audit log', href: '/admin/audit-logs', icon: ScrollText, permission: 'audit.view' },
             { title: 'Maintenance', icon: ShieldAlert, permission: 'maintenance.manage', soon: true },
         ],
     },

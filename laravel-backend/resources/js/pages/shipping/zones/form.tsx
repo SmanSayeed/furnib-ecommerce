@@ -104,7 +104,7 @@ export default function ZoneForm({ zone }: { zone: Zone | null }) {
 
 ZoneForm.layout = {
     breadcrumbs: [
-        { title: 'Shipping zones', href: '/admin/shipping/zones' },
+        { title: 'Shipping charges', href: '/admin/shipping/zones' },
         { title: 'Edit', href: '#' },
     ],
 };

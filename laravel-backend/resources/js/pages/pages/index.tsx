@@ -95,10 +95,10 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
 
     return (
         <>
-            <Head title="Pages" />
+            <Head title="Footer pages" />
             <div className="mx-auto w-full max-w-5xl p-4">
                 <PageHeader
-                    title="Pages"
+                    title="Footer pages"
                     description="Content pages (About us, Privacy policy, …) linked from the storefront footer."
                     actions={
                         <Button asChild>
@@ -141,5 +141,5 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
 }
 
 PagesIndex.layout = {
-    breadcrumbs: [{ title: 'Pages', href: '/admin/pages' }],
+    breadcrumbs: [{ title: 'Footer pages', href: '/admin/pages' }],
 };

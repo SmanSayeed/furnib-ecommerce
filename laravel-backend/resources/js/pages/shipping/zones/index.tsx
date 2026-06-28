@@ -83,15 +83,15 @@ export default function ZonesIndex({ zones }: { zones: Zone[] }) {
 
     return (
         <>
-            <Head title="Shipping zones" />
+            <Head title="Shipping charges" />
             <div className="mx-auto w-full max-w-4xl p-4">
                 <PageHeader
-                    title="Shipping zones"
+                    title="Shipping charges"
                     description="Delivery areas and their shipping cost, used at checkout."
                     actions={
                         <Button asChild>
                             <Link href="/admin/shipping/zones/create">
-                                <Plus className="size-4" /> New zone
+                                <Plus className="size-4" /> New charge
                             </Link>
                         </Button>
                     }
@@ -124,5 +124,5 @@ export default function ZonesIndex({ zones }: { zones: Zone[] }) {
 }
 
 ZonesIndex.layout = {
-    breadcrumbs: [{ title: 'Shipping zones', href: '/admin/shipping/zones' }],
+    breadcrumbs: [{ title: 'Shipping charges', href: '/admin/shipping/zones' }],
 };

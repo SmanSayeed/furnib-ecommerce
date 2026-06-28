@@ -7,14 +7,12 @@ import {
     FolderTree,
     LayoutGrid,
     Megaphone,
-    MessageCircle,
     Package,
     ScrollText,
     ShieldAlert,
     ShoppingCart,
     Store,
     TerminalSquare,
-    TicketPercent,
     Truck,
     Users,
     UsersRound,
@@ -54,7 +52,6 @@ const navGroups: AdminNavGroup[] = [
         items: [
             { title: 'Orders', href: '/admin/orders', icon: ShoppingCart },
             { title: 'Invoices', href: '/admin/invoices', icon: FileText },
-            { title: 'Inquiries', icon: MessageCircle, soon: true },
         ],
     },
     {
@@ -71,7 +68,7 @@ const navGroups: AdminNavGroup[] = [
         label: 'Shipping',
         permission: 'orders.view',
         items: [
-            { title: 'Shipping zones', href: '/admin/shipping/zones', icon: Truck },
+            { title: 'Shipping charge', href: '/admin/shipping/zones', icon: Truck },
             { title: 'Consignments', icon: Truck, soon: true },
         ],
     },
@@ -79,7 +76,6 @@ const navGroups: AdminNavGroup[] = [
         label: 'Marketing',
         permission: 'marketing.manage',
         items: [
-            { title: 'Coupons', icon: TicketPercent, soon: true },
             { title: 'Tracking & Pixels', href: '/settings/marketing', icon: Megaphone },
         ],
     },
@@ -88,7 +84,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'settings.manage',
         items: [
             { title: 'Site & branding', href: '/settings/site', icon: Store },
-            { title: 'Pages', href: '/admin/pages', icon: FileText },
+            { title: 'Footer pages', href: '/admin/pages', icon: FileText },
             { title: 'Storage (R2)', href: '/settings/storage', icon: Database },
             { title: 'Staff & roles', icon: UsersRound, soon: true },
             { title: 'Integrations', href: '/settings/integrations', icon: CreditCard },
@@ -97,14 +93,10 @@ const navGroups: AdminNavGroup[] = [
     {
         label: 'System',
         items: [
+            { title: 'Developer tools', href: '/admin/dev', icon: TerminalSquare, permission: 'developer.access' },
             { title: 'Audit log', icon: ScrollText, permission: 'audit.view', soon: true },
             { title: 'Maintenance', icon: ShieldAlert, permission: 'maintenance.manage', soon: true },
         ],
-    },
-    {
-        label: 'Developer',
-        permission: 'developer.access',
-        items: [{ title: 'Developer tools', href: '/admin/dev', icon: TerminalSquare }],
     },
 ];
 

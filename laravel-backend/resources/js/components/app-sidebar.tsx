@@ -98,7 +98,7 @@ const navGroups: AdminNavGroup[] = [
                 ],
             },
             { title: 'Storage (R2)', href: '/settings/storage', icon: Database },
-            { title: 'Staff & roles', icon: UsersRound, soon: true },
+            { title: 'Staff & roles', href: '/admin/staff', icon: UsersRound, permission: 'users.manage' },
             { title: 'Integrations', href: '/settings/integrations', icon: CreditCard },
         ],
     },

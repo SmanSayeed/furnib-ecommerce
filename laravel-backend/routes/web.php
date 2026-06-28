@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ShippingZoneController;
+use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
@@ -170,6 +171,13 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::middleware('permission:settings.manage')->group(function () {
         Route::get('subscribers', [SubscriberController::class, 'index'])->name('subscribers.index');
         Route::get('subscribers/export', [SubscriberController::class, 'export'])->name('subscribers.export');
+    });
+
+    // Staff & roles — role management only (no user creation).
+    Route::middleware('permission:users.manage')->group(function () {
+        Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
+        Route::put('staff/{user}/role', [StaffController::class, 'updateRole'])->name('staff.role');
+        Route::put('staff/{user}/active', [StaffController::class, 'toggleActive'])->name('staff.active');
     });
 });
 

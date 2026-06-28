@@ -26,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property bool $must_change_password
  * @property bool $two_factor_required
+ * @property bool $is_active
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -65,6 +66,7 @@ class User extends Authenticatable implements PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'must_change_password' => 'boolean',
             'two_factor_required' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 }

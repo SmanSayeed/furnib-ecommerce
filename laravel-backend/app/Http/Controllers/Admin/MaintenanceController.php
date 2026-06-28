@@ -9,6 +9,7 @@ use App\Services\Settings\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Owner-only reversible Maintenance Lock. Toggling only flips a settings flag
@@ -19,6 +20,14 @@ use Inertia\Inertia;
 class MaintenanceController extends Controller
 {
     public function __construct(private readonly SettingsService $settings) {}
+
+    public function edit(): Response
+    {
+        return Inertia::render('system/maintenance', [
+            'enabled' => (bool) $this->settings->get('maintenance', 'enabled'),
+            'message' => (string) ($this->settings->get('maintenance', 'message') ?? ''),
+        ]);
+    }
 
     public function update(Request $request): RedirectResponse
     {

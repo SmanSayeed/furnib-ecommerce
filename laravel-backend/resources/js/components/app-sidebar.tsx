@@ -97,7 +97,7 @@ const navGroups: AdminNavGroup[] = [
         items: [
             { title: 'Developer tools', href: '/admin/dev', icon: TerminalSquare, permission: 'developer.access' },
             { title: 'Audit log', href: '/admin/audit-logs', icon: ScrollText, permission: 'audit.view' },
-            { title: 'Maintenance', icon: ShieldAlert, permission: 'maintenance.manage', soon: true },
+            { title: 'Maintenance', href: '/admin/maintenance', icon: ShieldAlert, permission: 'maintenance.manage' },
         ],
     },
 ];

@@ -138,6 +138,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     });
 
     // Owner-only reversible Maintenance Lock.
+    Route::get('maintenance', [MaintenanceController::class, 'edit'])
+        ->middleware('permission:maintenance.manage')->name('maintenance.edit');
     Route::put('maintenance', [MaintenanceController::class, 'update'])
         ->middleware('permission:maintenance.manage')->name('maintenance.update');
 });

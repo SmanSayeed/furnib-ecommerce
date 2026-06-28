@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 type FooterLink = { label: string; url: string };
 
 type FooterData = {
+    logo_footer_url: string | null;
     contact_phone: string;
     contact_email: string;
     contact_address: string;
@@ -47,6 +48,36 @@ export default function FooterDetails({ footer }: { footer: FooterData }) {
 
                         return (
                             <>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="logo_footer">Footer logo (PNG/JPG/WebP)</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Shown on the brand-orange footer — use a{' '}
+                                        <strong>white / transparent PNG</strong>, ~240×64 px,
+                                        max 2 MB. Leave empty to show the store name as text.
+                                    </p>
+                                    {/* Preview on a matching brand-orange background. */}
+                                    <div className="flex h-16 items-center rounded-md border border-border bg-[#e85d1f] px-4">
+                                        {footer.logo_footer_url ? (
+                                            <img
+                                                src={footer.logo_footer_url}
+                                                alt="Footer logo"
+                                                className="h-9 w-auto"
+                                            />
+                                        ) : (
+                                            <span className="text-sm text-white/80">
+                                                No footer logo uploaded
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Input
+                                        id="logo_footer"
+                                        type="file"
+                                        name="logo_footer"
+                                        accept="image/png,image/jpeg,image/webp"
+                                    />
+                                    <InputError message={errs.logo_footer} />
+                                </div>
+
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2">
                                         <Label htmlFor="contact_phone">Contact phone</Label>

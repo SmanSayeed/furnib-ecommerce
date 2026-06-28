@@ -30,7 +30,7 @@ class SiteSettingController extends Controller
     ];
 
     /** Uploadable file fields. */
-    private const FILE_KEYS = ['logo_light', 'logo_dark', 'logo_footer', 'logo_invoice', 'favicon', 'banner_1', 'banner_2'];
+    private const FILE_KEYS = ['logo_light', 'logo_dark', 'logo_invoice', 'favicon', 'banner_1', 'banner_2'];
 
     public function __construct(
         private readonly SettingsService $settings,

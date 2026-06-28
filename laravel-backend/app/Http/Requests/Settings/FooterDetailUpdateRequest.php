@@ -20,6 +20,9 @@ class FooterDetailUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // White/transparent footer logo. SVG disallowed (stored-XSS risk).
+            'logo_footer' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+
             'contact_phone' => ['nullable', 'string', 'max:40'],
             'contact_email' => ['nullable', 'email', 'max:120'],
             'contact_address' => ['nullable', 'string', 'max:200'],
@@ -38,6 +41,7 @@ class FooterDetailUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'logo_footer.mimes' => 'Footer logo must be PNG, JPG or WebP (SVG is not allowed).',
             'about_links.*.url.regex' => 'Link must be an https:// URL or a path starting with /.',
         ];
     }

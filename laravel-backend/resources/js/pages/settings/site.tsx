@@ -11,7 +11,6 @@ type Branding = {
     whatsapp: string;
     logo_light_url: string | null;
     logo_dark_url: string | null;
-    logo_footer_url: string | null;
     logo_invoice_url: string | null;
     favicon_url: string | null;
     banner_1_url: string | null;
@@ -45,7 +44,7 @@ export default function Site({ branding }: { branding: Branding }) {
                 <Heading
                     variant="small"
                     title="Site & branding"
-                    description="Store name, WhatsApp number, logos and favicon. Footer social links and footer details live under Footer settings."
+                    description="Store name, WhatsApp number, header/invoice logos and favicon. The footer logo, social links and footer details live under Footer settings."
                 />
 
                 <Form
@@ -128,54 +127,22 @@ export default function Site({ branding }: { branding: Branding }) {
                                 </div>
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="logo_footer">
-                                        Logo — footer (PNG/JPG/WebP)
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Shown on the orange footer — use a white/transparent
-                                        PNG, ~240×64 px, max 2 MB. Falls back to the store name
-                                        if empty.
-                                    </p>
-                                    <div className="flex h-14 items-center rounded-md border border-border bg-[#e85d1f] px-3">
-                                        {branding.logo_footer_url ? (
-                                            <img
-                                                src={branding.logo_footer_url}
-                                                alt="Footer logo"
-                                                className="h-8 w-auto"
-                                            />
-                                        ) : (
-                                            <span className="text-xs text-white/80">
-                                                No file uploaded
-                                            </span>
-                                        )}
-                                    </div>
-                                    <Input
-                                        id="logo_footer"
-                                        type="file"
-                                        name="logo_footer"
-                                        accept="image/png,image/jpeg,image/webp"
-                                    />
-                                    <InputError message={errors.logo_footer} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="logo_invoice">
-                                        Logo — invoice PDF (PNG/JPG/WebP)
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Printed at the top of invoice PDFs, ~220×48 px, max
-                                        2 MB. Falls back to the light logo if empty.
-                                    </p>
-                                    <FilePreview url={branding.logo_invoice_url} />
-                                    <Input
-                                        id="logo_invoice"
-                                        type="file"
-                                        name="logo_invoice"
-                                        accept="image/png,image/jpeg,image/webp"
-                                    />
-                                    <InputError message={errors.logo_invoice} />
-                                </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="logo_invoice">
+                                    Logo — invoice PDF (PNG/JPG/WebP)
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Printed at the top of invoice PDFs, ~220×48 px, max 2 MB.
+                                    Falls back to the light logo if empty.
+                                </p>
+                                <FilePreview url={branding.logo_invoice_url} />
+                                <Input
+                                    id="logo_invoice"
+                                    type="file"
+                                    name="logo_invoice"
+                                    accept="image/png,image/jpeg,image/webp"
+                                />
+                                <InputError message={errors.logo_invoice} />
                             </div>
 
                             <div className="grid gap-2">

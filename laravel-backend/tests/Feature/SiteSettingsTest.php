@@ -63,23 +63,19 @@ it('uploads a logo and stores its path', function () {
     Storage::disk('public')->assertExists($path);
 });
 
-it('uploads footer and invoice logos and stores their paths', function () {
+it('uploads the invoice logo and stores its path', function () {
     Storage::fake('public');
 
     actingAs(adminUser())
         ->post('/settings/site', [
             'site_name' => 'Furnib BD',
-            'logo_footer' => UploadedFile::fake()->image('footer.png', 200, 60),
             'logo_invoice' => UploadedFile::fake()->image('invoice.png', 200, 60),
         ])
         ->assertRedirect(route('site-settings.edit'));
 
-    $footer = Setting::where('group', 'branding')->where('key', 'logo_footer')->value('value');
     $invoice = Setting::where('group', 'branding')->where('key', 'logo_invoice')->value('value');
 
-    expect($footer)->not->toBeNull();
     expect($invoice)->not->toBeNull();
-    Storage::disk('public')->assertExists($footer);
     Storage::disk('public')->assertExists($invoice);
 });
 

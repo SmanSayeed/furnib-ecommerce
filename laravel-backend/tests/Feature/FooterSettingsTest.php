@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Settings\SettingsService;
 use Database\Seeders\PermissionRoleSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\actingAs;
 
@@ -132,4 +135,30 @@ it('rejects a javascript: url in a footer link (xss guard)', function () {
             'about_links' => [['label' => 'Evil', 'url' => 'javascript:alert(1)']],
         ])
         ->assertSessionHasErrors('about_links.0.url');
+});
+
+it('uploads the footer logo and exposes it via the public api', function () {
+    Storage::fake('public');
+
+    actingAs(footerAdmin())
+        ->post('/settings/footer/details', [
+            'logo_footer' => UploadedFile::fake()->image('footer.png', 240, 64),
+        ])
+        ->assertRedirect(route('footer-details.edit'));
+
+    $path = Setting::where('group', 'branding')->where('key', 'logo_footer')->value('value');
+    expect($path)->not->toBeNull();
+    Storage::disk('public')->assertExists($path);
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.logo_footer', fn ($url) => is_string($url) && $url !== '');
+});
+
+it('rejects an svg footer logo (xss guard)', function () {
+    actingAs(footerAdmin())
+        ->post('/settings/footer/details', [
+            'logo_footer' => UploadedFile::fake()->create('logo.svg', 5, 'image/svg+xml'),
+        ])
+        ->assertSessionHasErrors('logo_footer');
 });

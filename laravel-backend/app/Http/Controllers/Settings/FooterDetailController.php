@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\FooterDetailUpdateRequest;
+use App\Models\Page;
 use App\Services\Settings\SettingsService;
 use App\Storage\Contracts\StorageRepository;
 use Illuminate\Http\RedirectResponse;
@@ -40,7 +41,18 @@ class FooterDetailController extends Controller
         $links = $this->settings->get(self::GROUP, 'about_links');
         $data['about_links'] = is_array($links) ? array_values($links) : [];
 
-        return Inertia::render('settings/footer-details', ['footer' => $data]);
+        // CMS pages offered in the "add a page link" picker.
+        $pages = Page::query()
+            ->orderBy('position')
+            ->orderBy('title')
+            ->get(['slug', 'title'])
+            ->map(fn (Page $p): array => ['slug' => $p->slug, 'title' => $p->title])
+            ->all();
+
+        return Inertia::render('settings/footer-details', [
+            'footer' => $data,
+            'pages' => $pages,
+        ]);
     }
 
     public function update(FooterDetailUpdateRequest $request): RedirectResponse

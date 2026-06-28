@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { config } from "@/lib/config";
-import type { CmsPageLink, SiteSettings } from "@/lib/types";
+import type { SiteSettings } from "@/lib/types";
 import { whatsappGeneral } from "@/lib/whatsapp";
 import { Container } from "./Container";
 import { NewsletterForm } from "./NewsletterForm";
@@ -47,13 +46,7 @@ function SocialIcon({ href, name }: { href: string; name: string }) {
   );
 }
 
-export function Footer({
-  settings,
-  pages = [],
-}: {
-  settings?: SiteSettings | null;
-  pages?: CmsPageLink[];
-}) {
+export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const name = settings?.site_name || config.contact.company;
   const address = settings?.contact.address || config.contact.address;
   const phone = settings?.contact.phone || config.contact.phone;
@@ -81,32 +74,15 @@ export function Footer({
               {settings?.tagline ||
                 "Elegant, refined furniture for modern living and professional spaces."}
             </p>
-            {socialEntries.length > 0 && (
-              <div className="mt-4 flex gap-2">
-                {socialEntries.map(([key, url]) => (
-                  <SocialIcon key={key} href={url as string} name={key} />
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Company — CMS pages (About us, Privacy, …) + manual quick links */}
-          {(pages.length > 0 || links.length > 0) && (
+          {/* Company — admin-managed footer links (incl. CMS page links) */}
+          {links.length > 0 && (
             <nav aria-label="Company links">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
                 Company
               </h3>
               <ul className="mt-4 space-y-2 text-sm">
-                {pages.map((page) => (
-                  <li key={`page-${page.slug}`}>
-                    <Link
-                      href={`/p/${page.slug}`}
-                      className="text-white/80 transition hover:text-white"
-                    >
-                      {page.title}
-                    </Link>
-                  </li>
-                ))}
                 {links.map((link) => (
                   <li key={`${link.label}-${link.url}`}>
                     <a
@@ -154,7 +130,7 @@ export function Footer({
             </a>
           </div>
 
-          {/* Newsletter */}
+          {/* Newsletter (with the Follow-us row sitting just above the input) */}
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
               Newsletter
@@ -162,7 +138,23 @@ export function Footer({
             <p className="mt-4 text-sm text-white/80">
               Get new arrivals &amp; offers in your inbox.
             </p>
-            <NewsletterForm />
+
+            {socialEntries.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-white/70">
+                  Follow us
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {socialEntries.map(([key, url]) => (
+                    <SocialIcon key={key} href={url as string} name={key} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4">
+              <NewsletterForm />
+            </div>
           </div>
         </div>
 

@@ -9,7 +9,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { getCategories, getPages, getSettings } from "@/lib/api";
+import { getCategories, getSettings } from "@/lib/api";
 import { config } from "@/lib/config";
 import { getMarketing } from "@/lib/marketing";
 
@@ -42,11 +42,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [categories, settings, marketing, pages] = await Promise.all([
+  const [categories, settings, marketing] = await Promise.all([
     getCategories(),
     getSettings(),
     getMarketing(),
-    getPages(),
   ]);
   const analyticsEnabled = Boolean(marketing.gtm_id);
 
@@ -66,7 +65,7 @@ export default async function RootLayout({
           <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-16 sm:px-6 lg:px-8 md:pb-0">
             {children}
           </main>
-          <Footer settings={settings} pages={pages} />
+          <Footer settings={settings} />
           <CategoryDrawer
             categories={categories}
             logoLight={settings?.logo_light}

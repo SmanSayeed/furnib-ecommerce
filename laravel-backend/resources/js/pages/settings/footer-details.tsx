@@ -1,5 +1,5 @@
-import { Form, Head } from '@inertiajs/react';
-import { Plus, X } from 'lucide-react';
+import { Form, Head, Link } from '@inertiajs/react';
+import { Plus, SquarePen, X } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 type FooterLink = { label: string; url: string };
+type PageOption = { slug: string; title: string };
 
 type FooterData = {
     logo_footer_url: string | null;
@@ -17,13 +18,33 @@ type FooterData = {
     about_links: FooterLink[];
 };
 
-export default function FooterDetails({ footer }: { footer: FooterData }) {
+export default function FooterDetails({
+    footer,
+    pages,
+}: {
+    footer: FooterData;
+    pages: PageOption[];
+}) {
     const [links, setLinks] = useState<FooterLink[]>(footer.about_links ?? []);
 
     const setLink = (index: number, field: keyof FooterLink, value: string) =>
         setLinks((prev) => prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)));
     const addLink = () => setLinks((prev) => [...prev, { label: '', url: '' }]);
     const removeLink = (index: number) => setLinks((prev) => prev.filter((_, i) => i !== index));
+
+    // Append a footer page as a quick link (label = title, url = /p/slug).
+    const addPageLink = (slug: string) => {
+        const page = pages.find((p) => p.slug === slug);
+
+        if (!page) {
+            return;
+        }
+
+        const url = `/p/${page.slug}`;
+        setLinks((prev) =>
+            prev.some((l) => l.url === url) ? prev : [...prev, { label: page.title, url }],
+        );
+    };
 
     return (
         <>
@@ -114,14 +135,44 @@ export default function FooterDetails({ footer }: { footer: FooterData }) {
                                 </div>
 
                                 <div className="space-y-4 rounded-lg border border-border p-4">
-                                    <div>
-                                        <p className="text-sm font-medium">Footer quick links</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            e.g. About us, Privacy Policy, Terms. URL must be a
-                                            full https:// link or a path starting with /
-                                            (e.g. <code>/p/privacy-policy</code>).
-                                        </p>
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                        <div>
+                                            <p className="text-sm font-medium">Footer quick links</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Add a Footer page below, or a custom link. URL must
+                                                be a full https:// link or a path starting with /.
+                                            </p>
+                                        </div>
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href="/admin/pages/create">
+                                                <SquarePen className="size-4" /> Create footer page
+                                            </Link>
+                                        </Button>
                                     </div>
+
+                                    {/* Pick an existing page → adds it as a labelled link. */}
+                                    {pages.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <select
+                                                value=""
+                                                onChange={(e) => {
+                                                    addPageLink(e.target.value);
+                                                    e.target.value = '';
+                                                }}
+                                                className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+                                            >
+                                                <option value="">+ Add a footer page…</option>
+                                                {pages.map((p) => (
+                                                    <option key={p.slug} value={p.slug}>
+                                                        {p.title} (/p/{p.slug})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <span className="text-xs text-muted-foreground">
+                                                picks a page link with its title as the label
+                                            </span>
+                                        </div>
+                                    )}
                                     {links.map((link, i) => (
                                         <div
                                             key={i}

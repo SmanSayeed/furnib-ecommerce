@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Facebook-style post caption. Collapsed it occupies a FIXED two-line block
- * (plus a reserved "See more" row) so every card's media starts at the same Y
- * — cards in a grid stay aligned regardless of caption length. "See more"
- * appears only when the text actually overflows two lines.
+ * Facebook-style post caption. Collapsed it is a FIXED two-line block, with an
+ * inline "See more" sitting at the END of the second line (not on a third line)
+ * — every card's caption is the same height, so the media below stays aligned.
+ * "See more" only appears when the text actually overflows two lines.
  */
 export function ProductCaption({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -22,26 +22,38 @@ export function ProductCaption({ text }: { text: string }) {
 
   return (
     <div className="px-3 sm:px-4">
-      <p
-        ref={ref}
-        className={`whitespace-pre-line text-sm leading-relaxed text-foreground ${
-          expanded ? "" : "line-clamp-2 min-h-[2.6em]"
-        }`}
-      >
-        {text}
-      </p>
-      {/* Reserved row so a clamped caption and a short one are the same height. */}
-      <div className="h-5">
-        {(clamped || expanded) && (
+      <div className="relative">
+        <p
+          ref={ref}
+          className={`whitespace-pre-line text-sm leading-relaxed text-foreground ${
+            expanded ? "" : "line-clamp-2 min-h-[2.6em]"
+          }`}
+        >
+          {text}
+        </p>
+
+        {/* Inline at the end of line 2 — a left-fading mask hides the clipped
+            word so "See more" reads cleanly instead of dropping to a 3rd line. */}
+        {clamped && !expanded && (
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="text-sm font-semibold text-muted transition hover:text-accent"
+            onClick={() => setExpanded(true)}
+            className="absolute right-0 bottom-0 flex items-center bg-gradient-to-l from-surface from-40% to-transparent pl-10 text-sm font-semibold text-accent"
           >
-            {expanded ? "See less" : "See more"}
+            … See more
           </button>
         )}
       </div>
+
+      {expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="mt-1 text-sm font-semibold text-muted transition hover:text-accent"
+        >
+          See less
+        </button>
+      )}
     </div>
   );
 }

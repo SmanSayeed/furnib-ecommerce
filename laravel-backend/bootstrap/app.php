@@ -34,7 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
             '192.168.0.0/16',
         ]);
 
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        // _fbp/_fbc are Meta's first-party (non-secret) attribution cookies set by
+        // the Pixel — they are not Laravel-issued, so they must bypass cookie
+        // encryption or decryption fails and the value is read as null.
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state', '_fbp', '_fbc']);
 
         $middleware->web(append: [
             HandleAppearance::class,

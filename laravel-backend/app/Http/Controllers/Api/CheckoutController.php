@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Actions\Marketing\SendPurchaseEvent;
 use App\Actions\Orders\PlaceOrder;
 use App\Actions\Orders\SendOrderConfirmation;
 use App\DTOs\PlaceOrderData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
-use App\Support\Capi\CapiUserData;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 
@@ -20,12 +18,19 @@ class CheckoutController extends Controller
     public function __construct(
         private readonly PlaceOrder $placeOrder,
         private readonly SendOrderConfirmation $sendConfirmation,
-        private readonly SendPurchaseEvent $sendPurchaseEvent,
     ) {}
 
     public function store(StoreOrderRequest $request): JsonResponse
     {
         $validated = $request->validated();
+
+        // First-party Meta cookies (or their header fallbacks) — persisted on the
+        // order so a later admin-confirm Purchase attributes to this customer.
+        $cookie = static fn (string $name, string $header): ?string => match (true) {
+            is_string($v = $request->cookie($name)) => $v,
+            is_string($h = $request->header($header)) => $h,
+            default => null,
+        };
 
         $data = new PlaceOrderData(
             items: array_map(
@@ -43,6 +48,8 @@ class CheckoutController extends Controller
             ip: $request->ip(),
             userAgent: (string) $request->userAgent(),
             notes: $validated['notes'] ?? null,
+            fbp: $cookie('_fbp', 'X-Fbp'),
+            fbc: $cookie('_fbc', 'X-Fbc'),
         );
 
         try {
@@ -53,29 +60,13 @@ class CheckoutController extends Controller
 
         $this->sendConfirmation->handle($order);
 
-        // Fire the Purchase to Meta at placement so COD orders (which never hit
-        // the payment gateway) are still tracked. Shares the deterministic
-        // event_id with the browser Pixel + any later online-payment fire, so
-        // Meta de-duplicates and counts the order exactly once.
-        $cookie = static fn (string $name, string $header): ?string => match (true) {
-            is_string($v = $request->cookie($name)) => $v,
-            is_string($h = $request->header($header)) => $h,
-            default => null,
-        };
+        // The Purchase conversion is NOT fired here. An order is not a confirmed
+        // sale — it fires once, server-side, when the admin sets the status to
+        // "confirmed" (see Admin\OrderController::updateStatus). The fbp/fbc
+        // captured above are persisted on the order so that later fire attributes
+        // to this customer rather than the admin's browser.
+        $order->loadMissing(['items.product.category', 'customer', 'shippingZone']);
 
-        $this->sendPurchaseEvent->handle(
-            $order,
-            new CapiUserData(
-                email: $validated['customer']['email'] ?? null,
-                phone: $validated['customer']['mobile'],
-                ip: $request->ip(),
-                userAgent: (string) $request->userAgent(),
-                fbp: $cookie('_fbp', 'X-Fbp'),
-                fbc: $cookie('_fbc', 'X-Fbc'),
-            ),
-            $request->header('referer') ?? config('app.frontend_url'),
-        );
-
-        return (new OrderResource($order->loadMissing('items')))->response()->setStatusCode(201);
+        return (new OrderResource($order))->response()->setStatusCode(201);
     }
 }

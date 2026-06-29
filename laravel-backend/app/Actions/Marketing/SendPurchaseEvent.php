@@ -30,6 +30,8 @@ final class SendPurchaseEvent
                 phone: $order->customer?->mobile,
                 ip: $order->customer_ip,
                 userAgent: $order->user_agent,
+                fbp: $order->fbp,
+                fbc: $order->fbc,
             );
 
             $this->capi->send(CapiEvents::purchase($order, $user, $url));

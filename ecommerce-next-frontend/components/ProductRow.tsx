@@ -69,7 +69,14 @@ export function ProductRow({
       {/* Caption — fixed two-line slot (always rendered) so the media below
           starts at the same Y on every card and the grid stays aligned. */}
       <div className="mt-2">
-        <ProductCaption text={product.details ?? ""} />
+        <ProductCaption
+          text={product.details ?? ""}
+          item={{
+            sku: product.sku,
+            name: product.title,
+            price: (product.discount_price ?? product.price).display,
+          }}
+        />
       </div>
 
       {/* Media — slider + discount chip + thumbnails */}

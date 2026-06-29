@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { imageUrl } from "@/lib/image";
+import { trackViewCategory } from "@/lib/track";
 import type { Category } from "@/lib/types";
 import { SafeImage } from "./SafeImage";
 
@@ -10,6 +13,9 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
         <Link
           key={c.id}
           href={`/category/${c.slug}`}
+          onClick={() =>
+            trackViewCategory({ id: c.id, name: c.title, slug: c.slug })
+          }
           className="group overflow-hidden rounded-card border border-border bg-surface transition hover:border-accent/50"
         >
           {/* 2px inset frame + matching (slightly smaller) radius so the image

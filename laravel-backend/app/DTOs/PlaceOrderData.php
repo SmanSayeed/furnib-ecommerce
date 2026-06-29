@@ -19,5 +19,7 @@ final class PlaceOrderData
         public readonly ?string $ip = null,
         public readonly ?string $userAgent = null,
         public readonly ?string $notes = null,
+        public readonly ?string $fbp = null,
+        public readonly ?string $fbc = null,
     ) {}
 }

@@ -76,6 +76,16 @@ export type OrderItemLine = {
   line_total: Money;
 };
 
+// Ready-to-push GA4/Meta dataLayer payload built server-side (Laravel
+// OrderResource). The storefront pushes it verbatim — no PII handling in JS.
+export type OrderTracking = {
+  event: string;
+  event_id: string;
+  ecommerce: Record<string, unknown>;
+  user_data: Record<string, unknown>;
+  order_info: Record<string, unknown>;
+};
+
 export type PlacedOrder = {
   order_no: string;
   status: string;
@@ -88,6 +98,7 @@ export type PlacedOrder = {
   address: string;
   invoice_url: string;
   items: OrderItemLine[];
+  tracking?: OrderTracking;
 };
 
 export type PageMeta = {

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ProductView } from "@/components/analytics/ProductView";
 import { ImageSlider, type Slide } from "@/components/ImageSlider";
 import { ProductActions } from "@/components/ProductActions";
 import { getProduct, getSettings } from "@/lib/api";
@@ -72,7 +71,6 @@ export default async function ProductPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-3 py-5 sm:py-8">
-      <ProductView sku={product.sku} name={product.title} price={unit.display} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

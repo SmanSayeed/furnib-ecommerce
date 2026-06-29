@@ -39,6 +39,26 @@ final class CapiUserData
         ], static fn (?string $v): bool => $v !== null && $v !== '');
     }
 
+    /** SHA-256 of the Meta-normalized email (lowercased, trimmed), or null. */
+    public static function hashEmail(?string $email): ?string
+    {
+        return self::hash(self::normalizeEmail($email));
+    }
+
+    /** SHA-256 of the Meta-normalized phone (digits, country code), or null. */
+    public static function hashPhone(?string $phone): ?string
+    {
+        return self::hash(self::normalizePhone($phone));
+    }
+
+    /** SHA-256 of a Meta-normalized name part (lowercased, trimmed), or null. */
+    public static function hashName(?string $name): ?string
+    {
+        $name = $name === null ? null : strtolower(trim($name));
+
+        return self::hash($name === '' ? null : $name);
+    }
+
     private static function hash(?string $value): ?string
     {
         return ($value === null || $value === '') ? null : hash('sha256', $value);

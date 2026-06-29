@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { trackPurchase } from "@/lib/track";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import type { PlacedOrder } from "@/lib/types";
 
 const SERVER_SNAPSHOT = "__server__";
@@ -31,25 +30,9 @@ export default function SuccessPage() {
     }
   }, [raw, loaded]);
 
-  // Browser-side Purchase, sharing event_id `purchase.<order_no>` with the
-  // server CAPI copy (fired at COD placement / online-payment success) so Meta
-  // de-duplicates and counts the conversion exactly once.
-  const purchaseTracked = useRef<string | null>(null);
-  useEffect(() => {
-    if (!order || purchaseTracked.current === order.order_no) return;
-    purchaseTracked.current = order.order_no;
-    trackPurchase({
-      orderNo: order.order_no,
-      value: order.total.display,
-      shipping: order.shipping_cost.display,
-      items: order.items.map((i) => ({
-        sku: i.sku,
-        name: i.title,
-        qty: i.qty,
-        price: i.price.display,
-      })),
-    });
-  }, [order]);
+  // No purchase fires here. `place_order` already fired at checkout (order
+  // creation); the authoritative Meta Purchase is sent server-side when the
+  // admin confirms the order.
 
   async function pay(type: "full" | "partial") {
     if (!order) return;

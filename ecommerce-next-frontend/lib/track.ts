@@ -1,6 +1,7 @@
 "use client";
 
 import { clearEcommerce, pushEvent } from "./dataLayer";
+import type { OrderTracking } from "./types";
 
 /**
  * One funnel action = two synchronized sends that share an `event_id`:
@@ -110,35 +111,31 @@ export function trackLead(item: Item): void {
 }
 
 /**
- * Purchase fires on the browser only — the server already sent the CAPI copy
- * (at COD placement and/or online-payment success) using the SAME id
- * `purchase.<order_no>`, so Meta de-duplicates. GA4 `purchase` requires
- * `transaction_id`, `value`, `currency` and `items`.
+ * Category card click. A category view has no Meta product event, so this is a
+ * dataLayer-only signal — the marketer wires whatever GTM tag they want to it.
  */
-export function trackPurchase(opts: {
-  orderNo: string;
-  value: number;
-  currency?: string;
-  shipping?: number;
-  items: { sku: string; name?: string; qty: number; price: number }[];
+export function trackViewCategory(c: {
+  id: number;
+  name: string;
+  slug: string;
 }): void {
-  clearEcommerce();
-  pushEvent("purchase", {
-    event_id: `purchase.${opts.orderNo}`,
-    meta_event: "Purchase",
-    ecommerce: {
-      transaction_id: opts.orderNo,
-      currency: opts.currency ?? "BDT",
-      value: opts.value,
-      ...(opts.shipping !== undefined ? { shipping: opts.shipping } : {}),
-      items: opts.items.map((i) => ({
-        item_id: i.sku,
-        ...(i.name ? { item_name: i.name } : {}),
-        price: i.price,
-        quantity: i.qty,
-      })),
-    },
-    content_type: "product",
-    content_ids: opts.items.map((i) => i.sku),
+  pushEvent("view_category", {
+    category_id: c.id,
+    category_name: c.name,
+    category_slug: c.slug,
   });
+}
+
+/**
+ * `place_order` — fired when the order is created (checkout HTTP 201). The rich
+ * payload (ecommerce + raw/hashed user_data + fbp/fbc/client_ip + order_info) is
+ * built server-side by Laravel and pushed verbatim; no PII handling happens in
+ * JS. This is a dataLayer-only signal (the marketer wires the GTM tags). The
+ * authoritative Meta `Purchase` conversion is sent server-side later, when the
+ * admin confirms the order — an order is not yet a confirmed sale.
+ */
+export function trackPlaceOrder(tracking: OrderTracking): void {
+  const { event, ...rest } = tracking;
+  clearEcommerce();
+  pushEvent(event, rest);
 }

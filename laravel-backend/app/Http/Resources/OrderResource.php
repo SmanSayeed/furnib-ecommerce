@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Order;
+use App\Support\Marketing\OrderTrackingPayload;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -43,6 +44,14 @@ class OrderResource extends JsonResource
                 'qty' => $item->qty,
                 'line_total' => $this->money($item->line_total),
             ])->values()->all()),
+            // Ready-to-push GA4/Meta dataLayer payload for the storefront
+            // `place_order` event (fired on the checkout success path). The
+            // browser pushes this verbatim; no PII handling happens in JS.
+            'tracking' => [
+                'event' => 'place_order',
+                'event_id' => 'place_order.'.$this->order_no,
+                ...OrderTrackingPayload::for($this->resource),
+            ],
         ];
     }
 

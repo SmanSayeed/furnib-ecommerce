@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -29,6 +30,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Money $advance_paid
  * @property int|null $shipping_zone_id
  * @property string $address
+ * @property string|null $customer_ip
+ * @property string|null $user_agent
+ * @property string|null $fbp
+ * @property string|null $fbc
+ * @property Carbon|null $marketing_purchase_sent_at
  */
 class Order extends Model
 {
@@ -60,6 +66,7 @@ class Order extends Model
         'order_no', 'customer_id', 'status', 'payment_status',
         'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes',
+        'fbp', 'fbc', 'marketing_purchase_sent_at',
     ];
 
     protected function casts(): array
@@ -70,6 +77,7 @@ class Order extends Model
             'total' => MoneyCast::class,
             'advance_amount' => MoneyCast::class,
             'advance_paid' => MoneyCast::class,
+            'marketing_purchase_sent_at' => 'datetime',
         ];
     }
 

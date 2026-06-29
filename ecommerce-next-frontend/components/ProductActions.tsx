@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { config } from "@/lib/config";
-import { trackLead } from "@/lib/track";
+import { trackInitiateCheckout, trackLead } from "@/lib/track";
 import type { Product } from "@/lib/types";
 import { whatsappInquiry } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "./WhatsAppIcon";
@@ -24,6 +24,16 @@ export function ProductActions({
   const inquiryHref = whatsappInquiry(product, productUrl, whatsapp);
   const onInquiry = () =>
     trackLead({ sku: product.sku, name: product.title, price: unit.display });
+
+  // "Order now" is our begin_checkout signal — fires before the click navigates
+  // to the checkout page (keepalive sends keep the beacon alive across the nav).
+  const onOrder = () =>
+    trackInitiateCheckout({
+      sku: product.sku,
+      name: product.title,
+      price: unit.display,
+      qty: 1,
+    });
 
   return (
     <div className="flex items-center justify-between gap-2">
@@ -79,6 +89,7 @@ export function ProductActions({
         {/* Order — straight to the checkout page (no modal) */}
         <Link
           href={`/checkout/${product.slug}?qty=1`}
+          onClick={onOrder}
           className="rounded-full bg-accent px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-accent-hover"
         >
           Order now

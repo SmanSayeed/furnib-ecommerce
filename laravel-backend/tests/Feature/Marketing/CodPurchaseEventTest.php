@@ -13,7 +13,7 @@ beforeEach(function () {
     $this->app->instance(ConversionApi::class, $this->capi);
 });
 
-it('fires a Purchase to Meta when a COD order is placed (no gateway payment)', function () {
+it('does NOT fire a Purchase when an order is merely placed (an order is not a confirmed sale)', function () {
     $product = Product::factory()->create([
         'sku' => 'SOFA-9', 'price' => 1000, 'stock_amount' => 10,
         'stock_status' => true, 'product_status' => 'published',
@@ -27,13 +27,7 @@ it('fires a Purchase to Meta when a COD order is placed (no gateway payment)', f
         'address' => 'House 1, Road 2, Dhaka',
     ])->assertStatus(201);
 
-    $purchases = $this->capi->ofType('Purchase');
-    expect($purchases)->toHaveCount(1);
-
-    $payload = $purchases[0]->toArray();
-    expect($payload['custom_data']['value'])->toBe('2080.00')        // 2×1000 + 80 shipping
-        ->and($payload['custom_data']['content_ids'])->toBe(['SOFA-9'])
-        // Customer PII is hashed (never sent in the clear).
-        ->and($payload['user_data']['ph'])->toBe(hash('sha256', '8801712345678'))
-        ->and($payload['user_data']['em'])->toBe(hash('sha256', 'karim@example.com'));
+    // The Purchase conversion fires only when the admin confirms the order
+    // (see Admin\OrderController::updateStatus) — never at placement.
+    expect($this->capi->ofType('Purchase'))->toHaveCount(0);
 });

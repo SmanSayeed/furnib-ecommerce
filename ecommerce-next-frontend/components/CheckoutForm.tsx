@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { imageUrl } from "@/lib/image";
-import { trackInitiateCheckout } from "@/lib/track";
-import type { Product, ProductShippingZone } from "@/lib/types";
+import { trackPlaceOrder } from "@/lib/track";
+import type { PlacedOrder, Product, ProductShippingZone } from "@/lib/types";
 import { SafeImage } from "./SafeImage";
 
 function taka(minor: number): string {
@@ -43,19 +43,6 @@ export function CheckoutForm({
     (product.advance?.required ?? false) &&
     product.advance?.partial_type === "shipping";
   const blockedNoZone = needsShippingZone && zones.length === 0;
-
-  // Fire InitiateCheckout once when the checkout screen is first shown.
-  const checkoutTracked = useRef(false);
-  useEffect(() => {
-    if (checkoutTracked.current) return;
-    checkoutTracked.current = true;
-    trackInitiateCheckout({
-      sku: product.sku,
-      name: product.title,
-      price: unit.minor / 100,
-      qty,
-    });
-  }, [product.sku, product.title, qty, unit.minor]);
 
   // Effective shipping for a zone = base + this product's per-unit extra × qty.
   const zoneCostMinor = (zone: ProductShippingZone): number =>
@@ -103,7 +90,11 @@ export function CheckoutForm({
       const json = await res.json();
 
       if (res.status === 201 && json?.data) {
-        sessionStorage.setItem("furnib:order", JSON.stringify(json.data));
+        const placed = json.data as PlacedOrder;
+        // place_order fires here — the moment the order is created — using the
+        // rich dataLayer payload Laravel built for it.
+        if (placed.tracking) trackPlaceOrder(placed.tracking);
+        sessionStorage.setItem("furnib:order", JSON.stringify(placed));
         router.push("/checkout/success");
         return;
       }

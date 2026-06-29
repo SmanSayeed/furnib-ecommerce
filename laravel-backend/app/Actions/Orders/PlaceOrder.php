@@ -150,6 +150,8 @@ final class PlaceOrder
                 'address' => $data->address,
                 'customer_ip' => $data->ip,
                 'user_agent' => $data->userAgent,
+                'fbp' => $data->fbp,
+                'fbc' => $data->fbc,
                 'notes' => $data->notes,
             ]);
 

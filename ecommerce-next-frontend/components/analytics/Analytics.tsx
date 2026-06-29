@@ -1,32 +1,23 @@
-"use client";
-
 import Script from "next/script";
-import { useSyncExternalStore } from "react";
-import {
-  consentServerSnapshot,
-  consentSnapshot,
-  subscribeConsent,
-} from "@/lib/consent";
 import type { Marketing } from "@/lib/marketing";
 
 /**
- * Loads Web GTM (Google-hosted, free GUI) ONLY after the visitor grants consent.
- * Once loaded, the actual tags — Meta Pixel, GA4, Clarity — are configured and
- * managed inside the GTM GUI listening to our dataLayer events. The owner adds
- * or changes campaigns/pixels by clicking in GTM, with no redeploy.
+ * Loads Web GTM (Google-hosted, free GUI) on every page. The container is always
+ * present so Google Tag Assistant / GTM Preview can detect it ("GTM works"). The
+ * actual tags — Meta Pixel, GA4, Clarity — are configured and managed inside the
+ * GTM GUI, listening to our dataLayer events. The owner adds or changes
+ * campaigns/pixels by clicking in GTM, with no redeploy.
  *
- * Security: only the public GTM container id reaches the browser. The Meta CAPI
- * token never leaves the server.
+ * Security: only the public GTM container id reaches the browser (the Meta CAPI
+ * token never leaves the server). The id is also format-checked before it is
+ * interpolated into the inline loader, so a malformed settings value can never
+ * break out of the string and inject script.
  */
-export function Analytics({ marketing }: { marketing: Marketing }) {
-  const consent = useSyncExternalStore(
-    subscribeConsent,
-    consentSnapshot,
-    consentServerSnapshot,
-  );
+const GTM_ID = /^GTM-[A-Z0-9]+$/;
 
+export function Analytics({ marketing }: { marketing: Marketing }) {
   const gtmId = marketing.gtm_id;
-  if (!gtmId || consent !== "granted") return null;
+  if (!gtmId || !GTM_ID.test(gtmId)) return null;
 
   return (
     <>

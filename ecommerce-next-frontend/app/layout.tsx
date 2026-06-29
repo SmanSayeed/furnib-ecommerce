@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@/components/analytics/Analytics";
-import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 import { CategoryDrawer } from "@/components/CategoryDrawer";
 import { FloatingActions } from "@/components/FloatingActions";
 import { Footer } from "@/components/Footer";
@@ -47,7 +46,6 @@ export default async function RootLayout({
     getSettings(),
     getMarketing(),
   ]);
-  const analyticsEnabled = Boolean(marketing.gtm_id);
 
   return (
     <html
@@ -73,7 +71,6 @@ export default async function RootLayout({
           />
           <MobileTabBar whatsapp={settings?.whatsapp} />
           <FloatingActions whatsapp={settings?.whatsapp} />
-          <ConsentBanner enabled={analyticsEnabled} />
         </ThemeProvider>
       </body>
     </html>

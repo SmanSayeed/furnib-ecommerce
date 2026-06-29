@@ -1,6 +1,5 @@
 "use client";
 
-import { hasConsent } from "./consent";
 import { clearEcommerce, pushEvent } from "./dataLayer";
 
 /**
@@ -8,7 +7,7 @@ import { clearEcommerce, pushEvent } from "./dataLayer";
  *   1. dataLayer.push  → Web GTM fires the browser tags (GA4 + Meta Pixel)
  *   2. POST /api/collect → our Laravel server-side tagging server (Meta CAPI)
  * Meta de-duplicates the two by `event_id`, so each action counts ONCE while
- * staying ad-block-proof. Nothing fires until the visitor grants consent.
+ * staying ad-block-proof.
  *
  * The dataLayer push follows the GA4 ecommerce spec (canonical event name +
  * `ecommerce` object, with the previous object cleared first). The Meta-only
@@ -57,8 +56,6 @@ function ga4Item(item: Item, quantity: number) {
 }
 
 async function emit(action: Action, eventId: string, item: Item): Promise<void> {
-  if (!hasConsent()) return;
-
   const { ga4, meta } = EVENTS[action];
   const qty = item.qty ?? 1;
   const value = item.price !== undefined ? item.price * qty : undefined;
@@ -125,8 +122,6 @@ export function trackPurchase(opts: {
   shipping?: number;
   items: { sku: string; name?: string; qty: number; price: number }[];
 }): void {
-  if (!hasConsent()) return;
-
   clearEcommerce();
   pushEvent("purchase", {
     event_id: `purchase.${opts.orderNo}`,

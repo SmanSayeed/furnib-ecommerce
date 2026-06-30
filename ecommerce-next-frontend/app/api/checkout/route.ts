@@ -12,15 +12,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: { code: "bad_request", message: "Invalid body." } }, { status: 400 });
   }
 
+  // Real visitor IP — Cloudflare's CF-Connecting-IP is authoritative; fall back
+  // to x-real-ip, then the first hop of x-forwarded-for. Forwarded as a single
+  // clean value so the backend records the customer's IP, not an edge IP.
   const forwardedFor =
-    request.headers.get("x-forwarded-for") ??
+    request.headers.get("cf-connecting-ip") ??
     request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     "";
 
-  // Forward Meta first-party cookies so the server-side Purchase (CAPI) can
-  // match the browser Pixel — improves Event Match Quality for COD orders.
+  // Forward first-party attribution cookies so the server-side conversions
+  // (Meta CAPI, TikTok Events API, GA4 Measurement Protocol) can match the
+  // browser pixels — improves match quality, incl. for admin-confirmed COD.
   const fbp = request.cookies.get("_fbp")?.value;
   const fbc = request.cookies.get("_fbc")?.value;
+  const ttp = request.cookies.get("_ttp")?.value;
+  const ttclid = request.cookies.get("ttclid")?.value;
+  // GA4 client id lives inside the _ga cookie: "GA1.1.<id1>.<id2>" → "<id1>.<id2>".
+  const ga = request.cookies.get("_ga")?.value;
+  const gaClientId = ga ? ga.split(".").slice(-2).join(".") : undefined;
   const referer = request.headers.get("referer") ?? "";
 
   const res = await fetch(`${config.apiBaseUrl}/orders`, {
@@ -32,6 +42,9 @@ export async function POST(request: NextRequest) {
       ...(referer ? { Referer: referer } : {}),
       ...(fbp ? { "X-Fbp": fbp } : {}),
       ...(fbc ? { "X-Fbc": fbc } : {}),
+      ...(ttp ? { "X-Ttp": ttp } : {}),
+      ...(ttclid ? { "X-Ttclid": ttclid } : {}),
+      ...(gaClientId ? { "X-Ga-Client-Id": gaClientId } : {}),
     },
     body: JSON.stringify(body),
     cache: "no-store",

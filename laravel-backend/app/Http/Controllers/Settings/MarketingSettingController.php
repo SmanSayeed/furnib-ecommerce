@@ -20,17 +20,24 @@ class MarketingSettingController extends Controller
     private const GROUP = 'marketing';
 
     /** Public (client-safe) ID fields. */
-    private const PUBLIC_KEYS = ['gtm_id', 'ga4_id', 'fb_pixel_id', 'clarity_id'];
+    private const PUBLIC_KEYS = ['gtm_id', 'ga4_id', 'fb_pixel_id', 'clarity_id', 'tiktok_pixel_id'];
 
     /** Server-side-only, non-secret fields (not exposed to the storefront). */
-    private const SERVER_KEYS = ['fb_test_event_code'];
+    private const SERVER_KEYS = ['fb_test_event_code', 'tiktok_test_event_code'];
+
+    /** Write-only server-side secrets (never returned to the client). */
+    private const SECRET_KEYS = ['fb_capi_token', 'tiktok_access_token', 'ga4_api_secret'];
 
     public function __construct(private readonly SettingsService $settings) {}
 
     public function edit(): Response
     {
-        $marketing = $this->settings->toArray(self::GROUP); // masks fb_capi_token
-        $marketing['fb_capi_token_set'] = filled($this->settings->get(self::GROUP, 'fb_capi_token'));
+        $marketing = $this->settings->toArray(self::GROUP); // masks secrets
+
+        // Expose only WHETHER each secret is configured — never the value.
+        foreach (self::SECRET_KEYS as $key) {
+            $marketing[$key.'_set'] = filled($this->settings->get(self::GROUP, $key));
+        }
 
         return Inertia::render('settings/marketing', [
             'marketing' => $marketing,
@@ -45,9 +52,11 @@ class MarketingSettingController extends Controller
             $this->settings->set(self::GROUP, $key, $validated[$key] ?? null);
         }
 
-        // CAPI token is write-only: only overwrite when a new one is supplied.
-        if (filled($validated['fb_capi_token'] ?? null)) {
-            $this->settings->set(self::GROUP, 'fb_capi_token', $validated['fb_capi_token'], isSecret: true);
+        // Secrets are write-only: only overwrite when a new value is supplied.
+        foreach (self::SECRET_KEYS as $key) {
+            if (filled($validated[$key] ?? null)) {
+                $this->settings->set(self::GROUP, $key, $validated[$key], isSecret: true);
+            }
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Marketing settings saved.')]);

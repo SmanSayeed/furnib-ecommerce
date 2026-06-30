@@ -27,10 +27,15 @@ class MarketingSettingsUpdateRequest extends FormRequest
             'ga4_id' => ['nullable', 'string', 'max:64'],
             'fb_pixel_id' => ['nullable', 'string', 'max:64'],
             'clarity_id' => ['nullable', 'string', 'max:64'],
-            // QA-only: Events Manager → Test Events code. Server-side only (never
-            // exposed to the storefront), not a secret.
+            'tiktok_pixel_id' => ['nullable', 'string', 'max:64'],
+            // QA-only: Events Manager → Test Events codes. Server-side only (never
+            // exposed to the storefront), not secrets.
             'fb_test_event_code' => ['nullable', 'string', 'max:64'],
+            'tiktok_test_event_code' => ['nullable', 'string', 'max:64'],
+            // Write-only server-side secrets.
             'fb_capi_token' => ['nullable', 'string', 'max:512'],
+            'tiktok_access_token' => ['nullable', 'string', 'max:512'],
+            'ga4_api_secret' => ['nullable', 'string', 'max:512'],
         ];
     }
 }

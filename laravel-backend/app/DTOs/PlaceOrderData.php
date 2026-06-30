@@ -21,5 +21,8 @@ final class PlaceOrderData
         public readonly ?string $notes = null,
         public readonly ?string $fbp = null,
         public readonly ?string $fbc = null,
+        public readonly ?string $ttp = null,
+        public readonly ?string $ttclid = null,
+        public readonly ?string $gaClientId = null,
     ) {}
 }

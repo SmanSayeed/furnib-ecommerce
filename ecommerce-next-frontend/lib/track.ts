@@ -90,6 +90,8 @@ async function emit(action: Action, eventId: string, item: Item): Promise<void> 
         event_source_url: typeof location !== "undefined" ? location.href : undefined,
         fbp: readCookie("_fbp"),
         fbc: readCookie("_fbc"),
+        ttp: readCookie("_ttp"),
+        ttclid: readCookie("ttclid"),
       }),
       keepalive: true,
     });

@@ -34,6 +34,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $user_agent
  * @property string|null $fbp
  * @property string|null $fbc
+ * @property string|null $ttp
+ * @property string|null $ttclid
+ * @property string|null $ga_client_id
  * @property Carbon|null $marketing_purchase_sent_at
  */
 class Order extends Model
@@ -66,7 +69,7 @@ class Order extends Model
         'order_no', 'customer_id', 'status', 'payment_status',
         'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes',
-        'fbp', 'fbc', 'marketing_purchase_sent_at',
+        'fbp', 'fbc', 'ttp', 'ttclid', 'ga_client_id', 'marketing_purchase_sent_at',
     ];
 
     protected function casts(): array

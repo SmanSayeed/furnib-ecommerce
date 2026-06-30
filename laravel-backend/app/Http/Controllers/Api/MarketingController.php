@@ -27,6 +27,7 @@ class MarketingController extends Controller
                 'ga4_id' => $m['ga4_id'] ?? null,
                 'fb_pixel_id' => $m['fb_pixel_id'] ?? null,
                 'clarity_id' => $m['clarity_id'] ?? null,
+                'tiktok_pixel_id' => $m['tiktok_pixel_id'] ?? null,
             ],
         ]);
     }

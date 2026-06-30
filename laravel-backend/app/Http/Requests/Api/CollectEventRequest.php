@@ -35,6 +35,9 @@ class CollectEventRequest extends FormRequest
             // First-party Meta cookies (non-secret); raised match quality.
             'fbp' => ['nullable', 'string', 'max:255'],
             'fbc' => ['nullable', 'string', 'max:255'],
+            // First-party TikTok identifiers (non-secret); raised match quality.
+            'ttp' => ['nullable', 'string', 'max:255'],
+            'ttclid' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

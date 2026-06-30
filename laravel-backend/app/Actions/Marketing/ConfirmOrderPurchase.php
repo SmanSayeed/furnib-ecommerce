@@ -15,7 +15,11 @@ use App\Models\Order;
  */
 final class ConfirmOrderPurchase
 {
-    public function __construct(private readonly SendPurchaseEvent $purchaseEvent) {}
+    public function __construct(
+        private readonly SendPurchaseEvent $metaPurchase,
+        private readonly SendTiktokPurchase $tiktokPurchase,
+        private readonly SendGa4Purchase $ga4Purchase,
+    ) {}
 
     /**
      * @return bool True if the Purchase fired on THIS call (i.e. first confirm).
@@ -26,9 +30,13 @@ final class ConfirmOrderPurchase
             return false;
         }
 
-        // Non-fatal CAPI send (SendPurchaseEvent swallows its own errors). The
-        // stamp is set regardless so we never retry/duplicate a flaky send.
-        $this->purchaseEvent->handle($order);
+        // Server-side conversions on every platform — each swallows its own
+        // errors, so one platform failing never blocks the others or the
+        // confirmation. The stamp is set regardless so we never refire.
+        $this->metaPurchase->handle($order);
+        $this->tiktokPurchase->handle($order);
+        $this->ga4Purchase->handle($order);
+
         $order->forceFill(['marketing_purchase_sent_at' => now()])->save();
 
         return true;

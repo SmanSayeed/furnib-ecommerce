@@ -132,6 +132,46 @@ Refinements made during build (all consistent with the locked decisions):
 - Backend: `phpstan` L7 = 0 errors; full `pest` suite 409 passed / 2 skipped / 0 failed (incl. new `OrderTrackingTest`, `AdminConfirmPurchaseTest`, updated `CodPurchaseEventTest`). All touched files Pint-clean.
 - Admin: `vite build` succeeds.
 
+## 10. Multi-platform server-side conversions (TikTok + GA4) & real client IP
+
+Added after launch, because the marketer's GTM `purchase` trigger is locked to
+hostname `furnib.com` and so the browser tag never fires on `admin.furnib.com`.
+The fix is to make every purchase a **server-side** conversion (GTM/hostname-
+independent), mirroring the existing Meta CAPI.
+
+- **TikTok Events API** (`app/Support/Tiktok/`): `EventsApi` (bound to
+  `HttpEventsApi`, faked by `FakeEventsApi`), `TiktokUserData` (SHA-256 email +
+  phone — TikTok keeps the leading `+`, unlike Meta), `TiktokEvent`,
+  `TiktokEvents`. Full funnel parity: `/collect` now also sends TikTok
+  `ViewContent` / `InitiateCheckout` / `Contact` (Lead→Contact); confirm sends
+  `CompletePayment`. Same `event_id` as the pixel → TikTok de-duplicates.
+- **GA4 Measurement Protocol** (`app/Support/Ga4/`): `MeasurementProtocol`
+  (bound to `HttpMeasurementProtocol`, faked by `FakeMeasurementProtocol`),
+  `Ga4Event`, `Ga4Events`. Confirm sends the GA4 `purchase` using the `_ga`
+  client id captured at checkout (falls back to `srv.<order_no>`).
+- **Fire point:** `ConfirmOrderPurchase` now fires Meta + TikTok + GA4 together
+  (each non-fatal, idempotent via `marketing_purchase_sent_at`). So the purchase
+  conversion lands on all three platforms regardless of the GTM hostname filter.
+- **New captured fields:** migration adds `orders.ttp`, `ttclid`, `ga_client_id`
+  (alongside `fbp`/`fbc`). The Next checkout/collect proxies forward
+  `_ttp`/`ttclid`/`_ga`(→client id) as `X-Ttp`/`X-Ttclid`/`X-Ga-Client-Id`.
+- **Settings (admin → Marketing):** `tiktok_pixel_id` (public),
+  `tiktok_access_token` + `ga4_api_secret` (write-only secrets, encrypted),
+  `tiktok_test_event_code`. Public `/marketing` API now also returns
+  `tiktok_pixel_id`. All three integrations no-op safely until configured.
+- **Real client IP:** `trustProxies` now includes Cloudflare's published IPv4/
+  IPv6 ranges (specific ranges, never `*`), and the Next proxies prefer
+  `CF-Connecting-IP` — so `orders.customer_ip` is the real visitor, not a
+  Cloudflare edge IP (was `172.69.x`).
+
+### Owner action items (no code)
+1. **Marketer:** make the Meta Pixel base tag fire on **all** storefront pages
+   (currently `_fbp`/`_fbc` cookies are never set → fbp/fbc null on orders).
+2. **Marketer:** add the **TikTok Pixel** base tag in GTM (sets `_ttp`/`ttclid`).
+3. **Admin → Marketing settings:** paste the TikTok pixel code + access token,
+   and the GA4 API secret, to switch the server-side TikTok/GA4 sends on.
+4. Verify Meta/TikTok/GA4 "Server" events arrive in each platform's events tool.
+
 ## 8. Security note (recorded)
 
 Raw name/phone/address/IP in the browser dataLayer is readable by any third-party script or browser extension on the page; Meta itself only needs hashed values for matching. Recommended secure path (hashed-only in browser, raw via server CAPI) was offered and the owner chose the marketer's raw+hashed format. Server CAPI continues to send raw PII hashed. Admin-side `purchase` dataLayer exposes customer PII only inside the authenticated owner's browser.

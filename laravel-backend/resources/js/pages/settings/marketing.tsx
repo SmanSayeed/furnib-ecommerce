@@ -10,8 +10,12 @@ type Marketing = {
     ga4_id: string | null;
     fb_pixel_id: string | null;
     clarity_id: string | null;
+    tiktok_pixel_id: string | null;
     fb_test_event_code: string | null;
+    tiktok_test_event_code: string | null;
     fb_capi_token_set: boolean;
+    tiktok_access_token_set: boolean;
+    ga4_api_secret_set: boolean;
 };
 
 export default function MarketingSettings({ marketing }: { marketing: Marketing }) {
@@ -47,8 +51,8 @@ export default function MarketingSettings({ marketing }: { marketing: Marketing 
                                     placeholder="GTM-XXXXXXX"
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    The storefront loads GTM only after a visitor accepts cookies.
-                                    Manage the Pixel/GA4/Clarity tags inside the GTM GUI.
+                                    Loaded on both the storefront and this admin. Manage the
+                                    Pixel/GA4/Clarity/TikTok tags inside the GTM GUI.
                                 </p>
                                 <InputError message={errors.gtm_id} />
                             </div>
@@ -77,15 +81,27 @@ export default function MarketingSettings({ marketing }: { marketing: Marketing 
                                 </div>
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="clarity_id">Microsoft Clarity ID</Label>
-                                <Input
-                                    id="clarity_id"
-                                    name="clarity_id"
-                                    defaultValue={marketing.clarity_id ?? ''}
-                                    placeholder="abcdef1234"
-                                />
-                                <InputError message={errors.clarity_id} />
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="clarity_id">Microsoft Clarity ID</Label>
+                                    <Input
+                                        id="clarity_id"
+                                        name="clarity_id"
+                                        defaultValue={marketing.clarity_id ?? ''}
+                                        placeholder="abcdef1234"
+                                    />
+                                    <InputError message={errors.clarity_id} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="tiktok_pixel_id">TikTok Pixel code</Label>
+                                    <Input
+                                        id="tiktok_pixel_id"
+                                        name="tiktok_pixel_id"
+                                        defaultValue={marketing.tiktok_pixel_id ?? ''}
+                                        placeholder="CXXXXXXXXXXXXXXXXX"
+                                    />
+                                    <InputError message={errors.tiktok_pixel_id} />
+                                </div>
                             </div>
 
                             <div className="space-y-4 rounded-lg border border-border p-4">
@@ -132,6 +148,78 @@ export default function MarketingSettings({ marketing }: { marketing: Marketing 
                                         production.
                                     </p>
                                     <InputError message={errors.fb_test_event_code} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 rounded-lg border border-border p-4">
+                                <p className="text-sm font-medium">
+                                    TikTok Events API (server-side)
+                                </p>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="tiktok_access_token">
+                                        Access token{' '}
+                                        <span className="text-muted-foreground">
+                                            {marketing.tiktok_access_token_set
+                                                ? '(saved — leave blank to keep)'
+                                                : '(not set)'}
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="tiktok_access_token"
+                                        name="tiktok_access_token"
+                                        type="password"
+                                        autoComplete="off"
+                                        placeholder="TikTok Events API token"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Stored encrypted. Server-side only — never sent to the
+                                        browser or logs.
+                                    </p>
+                                    <InputError message={errors.tiktok_access_token} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="tiktok_test_event_code">
+                                        Test event code{' '}
+                                        <span className="text-muted-foreground">(QA only)</span>
+                                    </Label>
+                                    <Input
+                                        id="tiktok_test_event_code"
+                                        name="tiktok_test_event_code"
+                                        defaultValue={marketing.tiktok_test_event_code ?? ''}
+                                        placeholder="TEST12345"
+                                    />
+                                    <InputError message={errors.tiktok_test_event_code} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 rounded-lg border border-border p-4">
+                                <p className="text-sm font-medium">
+                                    GA4 Measurement Protocol (server-side)
+                                </p>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="ga4_api_secret">
+                                        API secret{' '}
+                                        <span className="text-muted-foreground">
+                                            {marketing.ga4_api_secret_set
+                                                ? '(saved — leave blank to keep)'
+                                                : '(not set)'}
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="ga4_api_secret"
+                                        name="ga4_api_secret"
+                                        type="password"
+                                        autoComplete="off"
+                                        placeholder="GA4 Measurement Protocol API secret"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        From GA4 → Admin → Data Streams → Measurement Protocol API
+                                        secrets. Uses the GA4 Measurement ID above. Stored encrypted.
+                                    </p>
+                                    <InputError message={errors.ga4_api_secret} />
                                 </div>
                             </div>
 

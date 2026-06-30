@@ -50,6 +50,9 @@ class CheckoutController extends Controller
             notes: $validated['notes'] ?? null,
             fbp: $cookie('_fbp', 'X-Fbp'),
             fbc: $cookie('_fbc', 'X-Fbc'),
+            ttp: $cookie('_ttp', 'X-Ttp'),
+            ttclid: $cookie('ttclid', 'X-Ttclid'),
+            gaClientId: $cookie('_ga_client_id', 'X-Ga-Client-Id'),
         );
 
         try {

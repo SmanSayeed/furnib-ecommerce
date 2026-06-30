@@ -152,6 +152,9 @@ final class PlaceOrder
                 'user_agent' => $data->userAgent,
                 'fbp' => $data->fbp,
                 'fbc' => $data->fbc,
+                'ttp' => $data->ttp,
+                'ttclid' => $data->ttclid,
+                'ga_client_id' => $data->gaClientId,
                 'notes' => $data->notes,
             ]);
 

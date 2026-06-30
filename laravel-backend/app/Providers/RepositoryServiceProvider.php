@@ -16,10 +16,14 @@ use App\Support\Capi\ConversionApi;
 use App\Support\Capi\MetaConversionApi;
 use App\Support\Courier\CourierGateway;
 use App\Support\Courier\SteadFastCourier;
+use App\Support\Ga4\HttpMeasurementProtocol;
+use App\Support\Ga4\MeasurementProtocol;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Payments\SslCommerzGateway;
 use App\Support\Sms\LogSmsGateway;
 use App\Support\Sms\SmsGateway;
+use App\Support\Tiktok\EventsApi;
+use App\Support\Tiktok\HttpEventsApi;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -37,6 +41,8 @@ class RepositoryServiceProvider extends ServiceProvider
         PaymentGateway::class => SslCommerzGateway::class,
         CourierGateway::class => SteadFastCourier::class,
         ConversionApi::class => MetaConversionApi::class,
+        EventsApi::class => HttpEventsApi::class,
+        MeasurementProtocol::class => HttpMeasurementProtocol::class,
     ];
 
     public function register(): void

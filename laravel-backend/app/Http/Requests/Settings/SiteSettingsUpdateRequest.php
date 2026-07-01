@@ -26,12 +26,12 @@ class SiteSettingsUpdateRequest extends FormRequest
             'tagline' => ['nullable', 'string', 'max:200'],
             'whatsapp' => ['nullable', 'string', 'max:20', 'regex:/^[0-9]+$/'],
 
-            'logo_light' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
-            'logo_dark' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
-            'logo_invoice' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'logo_light' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
+            'logo_dark' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
+            'logo_invoice' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
             'favicon' => ['nullable', 'file', 'mimes:png,ico', 'max:512'],
-            'banner_1' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:3072'],
-            'banner_2' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:3072'],
+            'banner_1' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'banner_2' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
         ];
     }
 

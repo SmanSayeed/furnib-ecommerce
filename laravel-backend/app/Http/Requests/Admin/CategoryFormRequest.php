@@ -35,8 +35,8 @@ class CategoryFormRequest extends FormRequest
             'position_order' => ['nullable', 'integer', 'min:0'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
-            'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:3072'],
-            'thumbnail_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:2048'],
+            'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'thumbnail_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
         ];
     }
 

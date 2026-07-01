@@ -151,13 +151,13 @@ export default function CategoryForm({ category }: { category: Category | null }
                                     name="header_image"
                                     label="Header image"
                                     current={category?.header_url ?? null}
-                                    description="Wide hero banner — recommended 1600×600 px. PNG/JPG/WebP/AVIF, max 3 MB."
+                                    description="Wide hero banner — recommended 1600×600 px. PNG/JPG/WebP/AVIF, max 20 MB."
                                 />
                                 <ImageField
                                     name="thumbnail_image"
                                     label="Thumbnail image"
                                     current={category?.thumbnail_url ?? null}
-                                    description="Square card image — recommended 600×600 px. Max 2 MB."
+                                    description="Square card image — recommended 600×600 px. Max 20 MB."
                                 />
                             </div>
                             <InputError message={errors.header_image} />

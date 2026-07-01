@@ -56,10 +56,10 @@ class ProductFormRequest extends FormRequest
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
 
-            'main_image' => ['nullable', 'file', 'mimes:'.self::IMAGE_MIMES, 'max:4096'],
-            'social_thumbnail_image' => ['nullable', 'file', 'mimes:'.self::IMAGE_MIMES, 'max:2048'],
+            'main_image' => ['nullable', 'file', 'mimes:'.self::IMAGE_MIMES, 'max:20480'],
+            'social_thumbnail_image' => ['nullable', 'file', 'mimes:'.self::IMAGE_MIMES, 'max:20480'],
             'gallery_new' => ['nullable', 'array', 'max:6'],
-            'gallery_new.*' => ['file', 'mimes:'.self::IMAGE_MIMES, 'max:4096'],
+            'gallery_new.*' => ['file', 'mimes:'.self::IMAGE_MIMES, 'max:20480'],
             'gallery_layout' => ['nullable', 'string'],
 
             // Optional per-zone extra delivery charge (display amount, ৳). Only

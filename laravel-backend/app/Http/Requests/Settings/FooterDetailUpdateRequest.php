@@ -21,7 +21,7 @@ class FooterDetailUpdateRequest extends FormRequest
     {
         return [
             // White/transparent footer logo. SVG disallowed (stored-XSS risk).
-            'logo_footer' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'logo_footer' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
 
             'contact_phone' => ['nullable', 'string', 'max:40'],
             'contact_email' => ['nullable', 'email', 'max:120'],

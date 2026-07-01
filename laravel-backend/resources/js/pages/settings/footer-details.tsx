@@ -74,7 +74,7 @@ export default function FooterDetails({
                                     <p className="text-xs text-muted-foreground">
                                         Shown on the brand-orange footer — use a{' '}
                                         <strong>white / transparent PNG</strong>, ~240×64 px,
-                                        max 2 MB. Leave empty to show the store name as text.
+                                        max 20 MB. Leave empty to show the store name as text.
                                     </p>
                                     {/* Preview on a matching brand-orange background. */}
                                     <div className="flex h-16 items-center rounded-md border border-border bg-[#e85d1f] px-4">

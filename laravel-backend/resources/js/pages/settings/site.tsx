@@ -98,7 +98,7 @@ export default function Site({ branding }: { branding: Branding }) {
                                         Logo — light theme (PNG/JPG/WebP)
                                     </Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Transparent PNG, recommended ~240×64 px, max 2 MB.
+                                        Transparent PNG, recommended ~240×64 px, max 20 MB.
                                     </p>
                                     <FilePreview url={branding.logo_light_url} />
                                     <Input
@@ -114,7 +114,7 @@ export default function Site({ branding }: { branding: Branding }) {
                                         Logo — dark theme (PNG/JPG/WebP)
                                     </Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Transparent PNG, recommended ~240×64 px, max 2 MB.
+                                        Transparent PNG, recommended ~240×64 px, max 20 MB.
                                     </p>
                                     <FilePreview url={branding.logo_dark_url} dark />
                                     <Input
@@ -132,7 +132,7 @@ export default function Site({ branding }: { branding: Branding }) {
                                     Logo — invoice PDF (PNG/JPG/WebP)
                                 </Label>
                                 <p className="text-xs text-muted-foreground">
-                                    Printed at the top of invoice PDFs, ~220×48 px, max 2 MB.
+                                    Printed at the top of invoice PDFs, ~220×48 px, max 20 MB.
                                     Falls back to the light logo if empty.
                                 </p>
                                 <FilePreview url={branding.logo_invoice_url} />
@@ -166,7 +166,7 @@ export default function Site({ branding }: { branding: Branding }) {
                                     Home page banners (PNG/JPG/WebP/AVIF)
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Wide banners — recommended 1600×600 px, max 3 MB each.
+                                    Wide banners — recommended 1600×600 px, max 20 MB each.
                                 </p>
                                 <div className="grid gap-2">
                                     <Label htmlFor="banner_1">Banner 1</Label>

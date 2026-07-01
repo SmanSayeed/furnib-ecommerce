@@ -36,6 +36,7 @@ class CategoryFormRequest extends FormRequest
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'header_image_mobile' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
             'thumbnail_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
         ];
     }

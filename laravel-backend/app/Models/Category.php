@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $title
  * @property string $slug
  * @property string|null $details
+ * @property string|null $header_image
+ * @property string|null $header_image_mobile
+ * @property string|null $thumbnail_image
  * @property bool $status
  * @property int $position_order
  */
@@ -26,7 +29,7 @@ class Category extends Model
     use Auditable, HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'title', 'slug', 'details', 'header_image', 'thumbnail_image',
+        'title', 'slug', 'details', 'header_image', 'header_image_mobile', 'thumbnail_image',
         'status', 'position_order', 'meta_title', 'meta_description', 'og_image',
     ];
 

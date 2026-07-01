@@ -37,10 +37,7 @@ class SettingController extends Controller
                 'logo_dark' => $this->url($b['logo_dark'] ?? null),
                 'logo_footer' => $this->url($b['logo_footer'] ?? null),
                 'favicon' => $this->url($b['favicon'] ?? null),
-                'banners' => array_values(array_filter([
-                    $this->url($b['banner_1'] ?? null),
-                    $this->url($b['banner_2'] ?? null),
-                ])),
+                'banners' => $this->banners($b),
                 'socials' => $this->socials($b),
                 'footer_links' => is_array($b['about_links'] ?? null) ? array_values($b['about_links']) : [],
                 // Payment-gateway compliance data (non-secret). Shown on the
@@ -77,6 +74,36 @@ class SettingController extends Controller
             if (is_string($url) && $url !== '' && $enabled) {
                 $out[$platform] = $url;
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Responsive home banners, one object per non-empty slot in order.
+     *
+     * Each slot resolves to `{ desktop, mobile }` where:
+     *   desktop = banner_N_desktop ?? banner_N (legacy)
+     *   mobile  = banner_N_mobile  ?? desktop
+     * A slot is skipped only when it has no desktop, mobile, or legacy image.
+     *
+     * @param  array<string, mixed>  $b
+     * @return array<int, array{desktop: ?string, mobile: ?string}>
+     */
+    private function banners(array $b): array
+    {
+        $out = [];
+
+        foreach ([1, 2] as $n) {
+            $desktop = $this->url($b["banner_{$n}_desktop"] ?? null)
+                ?? $this->url($b["banner_{$n}"] ?? null);
+            $mobile = $this->url($b["banner_{$n}_mobile"] ?? null) ?? $desktop;
+
+            if ($desktop === null && $mobile === null) {
+                continue;
+            }
+
+            $out[] = ['desktop' => $desktop, 'mobile' => $mobile];
         }
 
         return $out;

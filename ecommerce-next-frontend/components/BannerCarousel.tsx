@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-export function BannerCarousel({ banners }: { banners: string[] }) {
+type Banner = { desktop: string; mobile: string };
+
+export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const [index, setIndex] = useState(0);
   const count = banners.length;
 
@@ -18,17 +20,22 @@ export function BannerCarousel({ banners }: { banners: string[] }) {
 
   return (
     <section className="relative mt-3 w-full overflow-hidden rounded-card border border-border">
-      <div className="relative aspect-[16/7] w-full sm:aspect-[9/2]">
-        {banners.map((src, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+      <div className="relative aspect-[4/5] w-full sm:aspect-[9/2]">
+        {banners.map((b, i) => (
+          <picture
             key={i}
-            src={src}
-            alt={`Banner ${i + 1}`}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${
               i === index ? "opacity-100" : "opacity-0"
             }`}
-          />
+          >
+            <source media="(min-width:768px)" srcSet={b.desktop} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={b.mobile}
+              alt={`Banner ${i + 1}`}
+              className="h-full w-full object-cover"
+            />
+          </picture>
         ))}
       </div>
 

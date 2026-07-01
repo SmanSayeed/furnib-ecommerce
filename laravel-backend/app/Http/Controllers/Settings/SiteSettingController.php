@@ -30,7 +30,14 @@ class SiteSettingController extends Controller
     ];
 
     /** Uploadable file fields. */
-    private const FILE_KEYS = ['logo_light', 'logo_dark', 'logo_invoice', 'favicon', 'banner_1', 'banner_2'];
+    private const FILE_KEYS = [
+        'logo_light', 'logo_dark', 'logo_invoice', 'favicon',
+        // Legacy single-image banner slots (kept for backward compatibility).
+        'banner_1', 'banner_2',
+        // Responsive banner slots (desktop + mobile per slot).
+        'banner_1_desktop', 'banner_1_mobile',
+        'banner_2_desktop', 'banner_2_mobile',
+    ];
 
     public function __construct(
         private readonly SettingsService $settings,

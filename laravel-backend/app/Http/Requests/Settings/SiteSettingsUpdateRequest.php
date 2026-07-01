@@ -32,6 +32,10 @@ class SiteSettingsUpdateRequest extends FormRequest
             'favicon' => ['nullable', 'file', 'mimes:png,ico', 'max:512'],
             'banner_1' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
             'banner_2' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'banner_1_desktop' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'banner_1_mobile' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'banner_2_desktop' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
+            'banner_2_mobile' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,avif', 'max:20480'],
         ];
     }
 
@@ -48,6 +52,10 @@ class SiteSettingsUpdateRequest extends FormRequest
             'favicon.mimes' => 'Favicon must be a PNG or ICO file.',
             'banner_1.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
             'banner_2.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
+            'banner_1_desktop.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
+            'banner_1_mobile.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
+            'banner_2_desktop.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
+            'banner_2_mobile.mimes' => 'Banner must be PNG, JPG, WebP or AVIF (SVG is not allowed).',
         ];
     }
 }

@@ -16,6 +16,7 @@ type Category = {
     meta_title: string | null;
     meta_description: string | null;
     header_url: string | null;
+    header_mobile_url: string | null;
     thumbnail_url: string | null;
 };
 
@@ -149,9 +150,15 @@ export default function CategoryForm({ category }: { category: Category | null }
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <ImageField
                                     name="header_image"
-                                    label="Header image"
+                                    label="Header image (desktop)"
                                     current={category?.header_url ?? null}
                                     description="Wide hero banner — recommended 1600×600 px. PNG/JPG/WebP/AVIF, max 20 MB."
+                                />
+                                <ImageField
+                                    name="header_image_mobile"
+                                    label="Header image (mobile)"
+                                    current={category?.header_mobile_url ?? null}
+                                    description="Optional mobile header (portrait). Falls back to the desktop header if empty. Max 20 MB."
                                 />
                                 <ImageField
                                     name="thumbnail_image"
@@ -161,6 +168,7 @@ export default function CategoryForm({ category }: { category: Category | null }
                                 />
                             </div>
                             <InputError message={errors.header_image} />
+                            <InputError message={errors.header_image_mobile} />
                             <InputError message={errors.thumbnail_image} />
 
                             <div className="grid gap-2">

@@ -27,6 +27,7 @@ class CategoryResource extends JsonResource
             'slug' => $this->slug,
             'details' => $this->details,
             'header_image' => $this->mediaUrl($this->header_image),
+            'header_mobile_url' => $this->mediaUrl($this->header_image_mobile),
             'thumbnail_image' => $this->mediaUrl($this->thumbnail_image),
             'position_order' => $this->position_order,
             'seo' => [

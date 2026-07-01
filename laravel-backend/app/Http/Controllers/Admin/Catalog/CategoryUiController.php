@@ -15,7 +15,7 @@ use Inertia\Response;
 
 class CategoryUiController extends Controller
 {
-    private const IMAGE_KEYS = ['header_image', 'thumbnail_image'];
+    private const IMAGE_KEYS = ['header_image', 'header_image_mobile', 'thumbnail_image'];
 
     public function __construct(
         private readonly CategoryService $service,
@@ -71,6 +71,7 @@ class CategoryUiController extends Controller
                 'meta_title' => $category->meta_title,
                 'meta_description' => $category->meta_description,
                 'header_url' => $this->url($category->header_image),
+                'header_mobile_url' => $this->url($category->header_image_mobile),
                 'thumbnail_url' => $this->url($category->thumbnail_image),
             ],
         ]);

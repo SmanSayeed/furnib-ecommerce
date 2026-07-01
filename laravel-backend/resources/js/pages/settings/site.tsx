@@ -15,6 +15,10 @@ type Branding = {
     favicon_url: string | null;
     banner_1_url: string | null;
     banner_2_url: string | null;
+    banner_1_desktop_url: string | null;
+    banner_1_mobile_url: string | null;
+    banner_2_desktop_url: string | null;
+    banner_2_mobile_url: string | null;
 };
 
 function FilePreview({ url, dark = false }: { url: string | null; dark?: boolean }) {
@@ -166,42 +170,73 @@ export default function Site({ branding }: { branding: Branding }) {
                                     Home page banners (PNG/JPG/WebP/AVIF)
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Wide banners — recommended 1600×600 px, max 20 MB each.
+                                    Upload a desktop and a mobile image for each banner.
+                                    Desktop ≈ 1600×600 px (wide), mobile ≈ 800×1000 px
+                                    (portrait), max 20 MB each.
                                 </p>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="banner_1">Banner 1</Label>
-                                    {branding.banner_1_url && (
-                                        <img
-                                            src={branding.banner_1_url}
-                                            alt="Banner 1"
-                                            className="h-20 w-full rounded-md border border-border object-cover"
-                                        />
-                                    )}
-                                    <Input
-                                        id="banner_1"
-                                        type="file"
-                                        name="banner_1"
-                                        accept="image/png,image/jpeg,image/webp,image/avif"
-                                    />
-                                    <InputError message={errors.banner_1} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="banner_2">Banner 2</Label>
-                                    {branding.banner_2_url && (
-                                        <img
-                                            src={branding.banner_2_url}
-                                            alt="Banner 2"
-                                            className="h-20 w-full rounded-md border border-border object-cover"
-                                        />
-                                    )}
-                                    <Input
-                                        id="banner_2"
-                                        type="file"
-                                        name="banner_2"
-                                        accept="image/png,image/jpeg,image/webp,image/avif"
-                                    />
-                                    <InputError message={errors.banner_2} />
-                                </div>
+
+                                {([1, 2] as const).map((n) => {
+                                    const desktopFallback =
+                                        branding[`banner_${n}_desktop_url`] ??
+                                        branding[`banner_${n}_url`];
+                                    const mobileUrl = branding[`banner_${n}_mobile_url`];
+
+                                    return (
+                                        <div
+                                            key={n}
+                                            className="grid gap-4 rounded-md border border-border/60 p-3 sm:grid-cols-2"
+                                        >
+                                            <div className="grid gap-2">
+                                                <Label htmlFor={`banner_${n}_desktop`}>
+                                                    Banner {n} — desktop
+                                                </Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    ≈ 1600×600 px (wide), max 20 MB.
+                                                </p>
+                                                {desktopFallback && (
+                                                    <img
+                                                        src={desktopFallback}
+                                                        alt={`Banner ${n} desktop`}
+                                                        className="h-20 w-full rounded-md border border-border object-cover"
+                                                    />
+                                                )}
+                                                <Input
+                                                    id={`banner_${n}_desktop`}
+                                                    type="file"
+                                                    name={`banner_${n}_desktop`}
+                                                    accept="image/png,image/jpeg,image/webp,image/avif"
+                                                />
+                                                <InputError
+                                                    message={errors[`banner_${n}_desktop`]}
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor={`banner_${n}_mobile`}>
+                                                    Banner {n} — mobile
+                                                </Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    ≈ 800×1000 px (portrait), max 20 MB.
+                                                </p>
+                                                {mobileUrl && (
+                                                    <img
+                                                        src={mobileUrl}
+                                                        alt={`Banner ${n} mobile`}
+                                                        className="h-28 w-auto rounded-md border border-border object-cover"
+                                                    />
+                                                )}
+                                                <Input
+                                                    id={`banner_${n}_mobile`}
+                                                    type="file"
+                                                    name={`banner_${n}_mobile`}
+                                                    accept="image/png,image/jpeg,image/webp,image/avif"
+                                                />
+                                                <InputError
+                                                    message={errors[`banner_${n}_mobile`]}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             <p className="text-xs text-muted-foreground">

@@ -38,6 +38,7 @@ class ProductResource extends JsonResource
             'price' => $this->money($this->price),
             'discount_price' => $this->discount_price instanceof Money ? $this->money($this->discount_price) : null,
             'in_stock' => $this->isInStock(),
+            'stock_amount' => (int) $this->stock_amount,
             'advance' => [
                 'required' => (bool) $this->is_advance_payment,
                 'type' => $this->advance_payment_type,        // full | partial | null

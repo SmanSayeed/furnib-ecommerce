@@ -38,14 +38,31 @@ export default async function CategoryPage({
     getSettings(),
   ]);
 
+  // Responsive header: desktop = header_image, mobile = header_mobile_url
+  // (falls back to the desktop header when no dedicated mobile image).
+  const desktopHeader = imageUrl(category.header_image);
+  const mobileHeader = imageUrl(category.header_mobile_url) ?? desktopHeader;
+
   return (
     <div>
-      <section className="relative mt-3 h-[23vh] w-full overflow-hidden rounded-card border border-border sm:h-[50vh]">
-        <SafeImage
-          src={imageUrl(category.header_image ?? category.thumbnail_image)}
-          alt={category.title}
-          className="h-full w-full object-cover"
-        />
+      <section className="relative mt-3 h-[45vh] w-full overflow-hidden rounded-card border border-border sm:h-[50vh]">
+        {desktopHeader ? (
+          <picture className="block h-full w-full">
+            <source media="(min-width:768px)" srcSet={desktopHeader} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={mobileHeader ?? desktopHeader}
+              alt={category.title}
+              className="h-full w-full object-cover"
+            />
+          </picture>
+        ) : (
+          <SafeImage
+            src={imageUrl(category.thumbnail_image)}
+            alt={category.title}
+            className="h-full w-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute bottom-0 left-0 w-full p-6 sm:p-12">
           <div className="mx-auto max-w-5xl">

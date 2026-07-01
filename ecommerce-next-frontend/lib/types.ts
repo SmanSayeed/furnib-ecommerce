@@ -10,6 +10,7 @@ export type Category = {
   slug: string;
   details: string | null;
   header_image: string | null;
+  header_mobile_url: string | null;
   thumbnail_image: string | null;
   position_order: number;
   seo: Seo;
@@ -166,7 +167,7 @@ export type SiteSettings = {
   logo_dark: string | null;
   logo_footer: string | null;
   favicon: string | null;
-  banners: string[];
+  banners: Array<{ desktop: string; mobile: string }>;
   socials?: SocialLinks;
   footer_links?: FooterLink[];
   compliance?: SiteCompliance | null;

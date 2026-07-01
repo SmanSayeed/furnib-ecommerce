@@ -26,6 +26,7 @@ class CompliancePagesSeeder extends Seeder
                 'slug' => 'terms-and-conditions',
                 'title' => 'Terms & Conditions',
                 'position' => 90,
+                'is_system' => true,
                 'body_html' => <<<HTML
                     {$edit}
                     <h2>Terms &amp; Conditions</h2>
@@ -42,6 +43,7 @@ class CompliancePagesSeeder extends Seeder
                 'slug' => 'privacy-policy',
                 'title' => 'Privacy Policy',
                 'position' => 91,
+                'is_system' => true,
                 'body_html' => <<<HTML
                     {$edit}
                     <h2>Privacy Policy</h2>
@@ -58,6 +60,7 @@ class CompliancePagesSeeder extends Seeder
                 'slug' => 'return-refund-policy',
                 'title' => 'Return & Refund Policy',
                 'position' => 92,
+                'is_system' => true,
                 'body_html' => <<<HTML
                     {$edit}
                     <h2>Return &amp; Refund Policy</h2>
@@ -88,15 +91,24 @@ class CompliancePagesSeeder extends Seeder
         ];
 
         foreach ($pages as $page) {
-            Page::query()->firstOrCreate(
+            $isSystem = $page['is_system'] ?? false;
+
+            $model = Page::query()->firstOrCreate(
                 ['slug' => $page['slug']],
                 [
                     'title' => $page['title'],
                     'body_html' => $page['body_html'],
                     'is_published' => true,
+                    'is_system' => $isSystem,
                     'position' => $page['position'],
                 ],
             );
+
+            // For legal pages that already existed, ensure they are flagged as
+            // system + published without touching the owner's edited title/body.
+            if ($isSystem && (! $model->is_system || ! $model->is_published)) {
+                $model->update(['is_system' => true, 'is_published' => true]);
+            }
         }
     }
 }

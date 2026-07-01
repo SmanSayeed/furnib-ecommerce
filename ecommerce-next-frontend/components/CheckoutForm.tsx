@@ -31,8 +31,6 @@ export function CheckoutForm({
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
-  // Compliance #11 — mandatory, starts unchecked. Order can't be placed until ticked.
-  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const selectedZone = useMemo(
     () => zones.find((z) => z.id === zoneId) ?? null,
@@ -87,7 +85,8 @@ export function CheckoutForm({
           customer: { name, mobile },
           shipping_zone_id: zoneId,
           address,
-          terms_accepted: termsAccepted,
+          // Passive acceptance — clicking Place Order = agreeing to our policies.
+          terms_accepted: true,
         }),
       });
       const json = await res.json();
@@ -281,67 +280,46 @@ export function CheckoutForm({
         )}
       </div>
 
-      {/* Compliance #11 — mandatory terms acceptance, right before Place order. */}
-      <div className="mt-6">
-        <label className="flex cursor-pointer items-start gap-3 text-sm">
-          <input
-            type="checkbox"
-            checked={termsAccepted}
-            onChange={(e) => {
-              setTermsAccepted(e.target.checked);
-              if (e.target.checked) {
-                setErrors((prev) => {
-                  const next = { ...prev };
-                  delete next.terms_accepted;
-                  return next;
-                });
-              }
-            }}
-            required
-            aria-invalid={Boolean(errors.terms_accepted)}
-            className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
-          />
-          <span className="leading-relaxed text-muted">
-            I have read and agree to the{" "}
-            <a
-              href="/p/terms-and-conditions"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
-            >
-              Terms &amp; Conditions
-            </a>
-            ,{" "}
-            <a
-              href="/p/privacy-policy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
-            >
-              Privacy Policy
-            </a>{" "}
-            and{" "}
-            <a
-              href="/p/return-refund-policy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
-            >
-              Return &amp; Refund Policy
-            </a>
-            .
-          </span>
-        </label>
-        {fieldError("terms_accepted")}
-      </div>
-
       <button
         type="submit"
-        disabled={submitting || blockedNoZone || !termsAccepted}
-        className="mt-5 w-full rounded-xl bg-accent px-6 py-3.5 text-center font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={submitting || blockedNoZone}
+        className="mt-6 w-full rounded-xl bg-accent px-6 py-3.5 text-center font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Placing order…" : "Place order"}
       </button>
+
+      {/* Passive acceptance — clicking Place Order counts as agreement (backend
+          keeps the audit trail). No blocking checkbox. */}
+      <p className="mt-3 text-center text-xs leading-relaxed text-muted">
+        By clicking Place Order, you agree to our{" "}
+        <a
+          href="/p/terms-and-conditions"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+        >
+          Terms &amp; Conditions
+        </a>
+        ,{" "}
+        <a
+          href="/p/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+        >
+          Privacy Policy
+        </a>{" "}
+        &amp;{" "}
+        <a
+          href="/p/return-refund-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+        >
+          Refund Policy
+        </a>
+        .
+      </p>
 
       <p className="mt-3 text-center text-xs text-muted">
         Cash on delivery or online payment — choose on the next step.

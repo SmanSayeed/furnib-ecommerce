@@ -20,7 +20,7 @@ class PageController extends Controller
         $pages = Page::query()
             ->orderBy('position')
             ->orderBy('title')
-            ->get(['id', 'slug', 'title', 'is_published', 'position'])
+            ->get(['id', 'slug', 'title', 'is_published', 'is_system', 'position'])
             ->all();
 
         return Inertia::render('pages/index', ['pages' => $pages]);
@@ -65,6 +65,13 @@ class PageController extends Controller
 
     public function destroy(Page $page): RedirectResponse
     {
+        // System pages (legal / compliance) are protected and cannot be deleted.
+        if ($page->is_system) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('System pages cannot be deleted.')]);
+
+            return to_route('admin.pages.index');
+        }
+
         $page->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Page deleted.')]);
@@ -83,10 +90,17 @@ class PageController extends Controller
     private function payload(PageFormRequest $request, ?Page $page = null): array
     {
         $title = (string) $request->validated('title');
-        $slug = (string) ($request->validated('slug') ?: Str::slug($title));
 
-        // Guarantee uniqueness when the title-derived slug collides.
-        $slug = $this->uniqueSlug($slug, $page?->id);
+        if ($page !== null && $page->is_system) {
+            // System pages keep a fixed slug (footer links depend on it);
+            // title / body stay editable.
+            $slug = $page->slug;
+        } else {
+            $slug = (string) ($request->validated('slug') ?: Str::slug($title));
+
+            // Guarantee uniqueness when the title-derived slug collides.
+            $slug = $this->uniqueSlug($slug, $page?->id);
+        }
 
         $body = $request->validated('body');
         $clean = is_string($body) && $body !== '' ? Purifier::clean($body) : null;

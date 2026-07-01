@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ExternalLink, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, FileText, Lock, Pencil, Plus, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/admin/data-table';
 import type { Column } from '@/components/admin/data-table';
 import { EmptyState } from '@/components/admin/empty-state';
@@ -11,6 +11,7 @@ type Page = {
     title: string;
     slug: string;
     is_published: boolean;
+    is_system: boolean;
     position: number;
 };
 
@@ -42,10 +43,28 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
                     <Pencil className="size-4" />
                 </Link>
             </Button>
-            <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => remove(p)}>
-                <Trash2 className="size-4 text-destructive" />
-            </Button>
+            {p.is_system ? (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Protected page"
+                    title="System page — cannot be deleted"
+                    disabled
+                >
+                    <Lock className="size-4 text-muted-foreground" />
+                </Button>
+            ) : (
+                <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => remove(p)}>
+                    <Trash2 className="size-4 text-destructive" />
+                </Button>
+            )}
         </div>
+    );
+
+    const SystemBadge = () => (
+        <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <Lock className="size-3" /> System
+        </span>
     );
 
     const columns: Column<Page>[] = [
@@ -54,7 +73,10 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
             header: 'Page',
             cell: (p) => (
                 <div>
-                    <div className="font-medium">{p.title}</div>
+                    <div className="flex items-center gap-2 font-medium">
+                        {p.title}
+                        {p.is_system && <SystemBadge />}
+                    </div>
                     <div className="text-xs text-muted-foreground">/p/{p.slug}</div>
                 </div>
             ),
@@ -84,8 +106,9 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
             </div>
             <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{p.title}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <StatusBadge published={p.is_published} />
+                    {p.is_system && <SystemBadge />}
                     <span>/p/{p.slug}</span>
                 </div>
             </div>

@@ -228,7 +228,9 @@ return { type: 'existing', id: item.id };
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="category_id">Category</Label>
+                            <Label htmlFor="category_id">
+                                Category <span className="text-destructive">*</span>
+                            </Label>
                             <select
                                 id="category_id"
                                 value={data.category_id}
@@ -452,67 +454,85 @@ setMainPreview(URL.createObjectURL(file));
                         />
                         <Label htmlFor="is_advance_payment">Requires advance payment</Label>
                     </div>
-                    {data.is_advance_payment && (
-                        <div className="grid gap-4 sm:grid-cols-3">
-                            <div className="grid gap-2">
-                                <Label htmlFor="advance_payment_type">Advance type</Label>
-                                <select
-                                    id="advance_payment_type"
-                                    value={data.advance_payment_type}
-                                    onChange={(e) =>
-                                        setData('advance_payment_type', e.target.value)
-                                    }
-                                    className={SELECT_CLASS}
-                                >
-                                    <option value="">—</option>
-                                    <option value="full">Full</option>
-                                    <option value="partial">Partial</option>
-                                </select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="partial_amount_type">Partial as</Label>
-                                <select
-                                    id="partial_amount_type"
-                                    value={data.partial_amount_type}
-                                    onChange={(e) => {
-                                        const next = e.target.value;
-                                        setData('partial_amount_type', next);
+                    {data.is_advance_payment && (() => {
+                        // Partial fields only apply to a "partial" advance. For
+                        // "full" (or no type selected) they are disabled + cleared.
+                        const partialEnabled = data.advance_payment_type === 'partial';
 
-                                        if (next === 'shipping') {
-                                            setData('partial_amount', '');
+                        return (
+                            <div className="grid gap-4 sm:grid-cols-3">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="advance_payment_type">Advance type</Label>
+                                    <select
+                                        id="advance_payment_type"
+                                        value={data.advance_payment_type}
+                                        onChange={(e) => {
+                                            const next = e.target.value;
+                                            setData('advance_payment_type', next);
+
+                                            // Clear partial fields unless switching
+                                            // to "partial".
+                                            if (next !== 'partial') {
+                                                setData('partial_amount_type', '');
+                                                setData('partial_amount', '');
+                                            }
+                                        }}
+                                        className={SELECT_CLASS}
+                                    >
+                                        <option value="">—</option>
+                                        <option value="full">Full</option>
+                                        <option value="partial">Partial</option>
+                                    </select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="partial_amount_type">Partial as</Label>
+                                    <select
+                                        id="partial_amount_type"
+                                        value={data.partial_amount_type}
+                                        disabled={!partialEnabled}
+                                        onChange={(e) => {
+                                            const next = e.target.value;
+                                            setData('partial_amount_type', next);
+
+                                            if (next === 'shipping') {
+                                                setData('partial_amount', '');
+                                            }
+                                        }}
+                                        className={`${SELECT_CLASS} disabled:cursor-not-allowed disabled:opacity-50`}
+                                    >
+                                        <option value="">—</option>
+                                        <option value="percentage">Percentage</option>
+                                        <option value="amount">Fixed amount</option>
+                                        <option value="shipping">Shipping charge</option>
+                                    </select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="partial_amount">Partial value</Label>
+                                    <Input
+                                        id="partial_amount"
+                                        type="number"
+                                        min={0}
+                                        value={
+                                            data.partial_amount_type === 'shipping'
+                                                ? ''
+                                                : data.partial_amount
                                         }
-                                    }}
-                                    className={SELECT_CLASS}
-                                >
-                                    <option value="">—</option>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="amount">Fixed amount</option>
-                                    <option value="shipping">Shipping charge</option>
-                                </select>
+                                        disabled={
+                                            !partialEnabled ||
+                                            data.partial_amount_type === 'shipping'
+                                        }
+                                        onChange={(e) => setData('partial_amount', e.target.value)}
+                                    />
+                                    {data.partial_amount_type === 'shipping' && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Advance = the customer&apos;s selected delivery
+                                            charge at checkout (Inside / Outside Dhaka).
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="partial_amount">Partial value</Label>
-                                <Input
-                                    id="partial_amount"
-                                    type="number"
-                                    min={0}
-                                    value={
-                                        data.partial_amount_type === 'shipping'
-                                            ? ''
-                                            : data.partial_amount
-                                    }
-                                    disabled={data.partial_amount_type === 'shipping'}
-                                    onChange={(e) => setData('partial_amount', e.target.value)}
-                                />
-                                {data.partial_amount_type === 'shipping' && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Advance = the customer&apos;s selected delivery
-                                        charge at checkout (Inside / Outside Dhaka).
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                        );
+                    })()}
                 </section>
 
                 {/* Shipping charges */}

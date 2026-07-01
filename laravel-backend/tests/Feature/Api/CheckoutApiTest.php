@@ -52,6 +52,20 @@ it('captures the client IP on the order', function () {
     expect(Order::query()->first()->customer_ip)->not->toBeNull();
 });
 
+it('records terms acceptance on the order when Place Order is submitted', function () {
+    $product = publishedProduct();
+    $zone = ShippingZone::factory()->create();
+
+    // The storefront sends terms_accepted:true when the customer clicks Place Order.
+    $this->postJson('/api/v1/orders', checkoutPayload($product, $zone, [
+        'terms_accepted' => true,
+    ]))->assertCreated();
+
+    $order = Order::query()->first();
+    expect($order->terms_accepted_at)->not->toBeNull()
+        ->and($order->terms_ip)->not->toBeNull();
+});
+
 it('ignores any client-sent money and recomputes server-side', function () {
     $product = publishedProduct(['price' => 1000]);
     $zone = ShippingZone::factory()->create(['cost' => 80]);

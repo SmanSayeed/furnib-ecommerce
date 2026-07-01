@@ -75,13 +75,26 @@ class ProductFormRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $isAdvance = $this->boolean('is_advance_payment');
+        $advanceType = $this->input('advance_payment_type');
+
         $this->merge([
-            'is_advance_payment' => $this->boolean('is_advance_payment'),
+            'is_advance_payment' => $isAdvance,
             'is_featured' => $this->boolean('is_featured'),
             'is_new' => $this->boolean('is_new'),
             'stock_status' => $this->boolean('stock_status'),
             'position_order' => $this->input('position_order', 0),
             'stock_amount' => $this->input('stock_amount', 0),
         ]);
+
+        // Partial fields are only meaningful for a "partial" advance. When advance
+        // payment is off, or the advance type is "full", null them out so stale
+        // partial values are never persisted.
+        if (! $isAdvance || $advanceType === 'full') {
+            $this->merge([
+                'partial_amount_type' => null,
+                'partial_amount' => null,
+            ]);
+        }
     }
 }

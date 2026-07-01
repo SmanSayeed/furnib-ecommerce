@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Page;
 use App\Services\Settings\SettingsService;
 use App\Storage\Contracts\StorageRepository;
 use Illuminate\Http\JsonResponse;
@@ -40,6 +41,9 @@ class SettingController extends Controller
                 'banners' => $this->banners($b),
                 'socials' => $this->socials($b),
                 'footer_links' => is_array($b['about_links'] ?? null) ? array_values($b['about_links']) : [],
+                // Published system (legal) pages — the storefront footer renders
+                // these links automatically, no manual setup needed.
+                'legal_pages' => $this->legalPages(),
                 // Payment-gateway compliance data (non-secret). Shown on the
                 // storefront footer / policy pages.
                 'compliance' => [
@@ -51,6 +55,23 @@ class SettingController extends Controller
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Published system (legal) pages for the storefront footer, ordered by
+     * position: Terms & Conditions, Privacy Policy, Return & Refund Policy.
+     *
+     * @return array<int, array{slug: string, title: string}>
+     */
+    private function legalPages(): array
+    {
+        return Page::query()
+            ->published()
+            ->where('is_system', true)
+            ->orderBy('position')
+            ->get(['slug', 'title'])
+            ->map(fn (Page $p): array => ['slug' => $p->slug, 'title' => $p->title])
+            ->all();
     }
 
     /**

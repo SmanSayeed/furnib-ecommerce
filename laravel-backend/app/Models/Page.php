@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $title
  * @property string|null $body_html
  * @property bool $is_published
+ * @property bool $is_system
  * @property int $position
  */
 class Page extends Model
@@ -31,6 +32,7 @@ class Page extends Model
         'title',
         'body_html',
         'is_published',
+        'is_system',
         'position',
     ];
 
@@ -38,6 +40,7 @@ class Page extends Model
     {
         return [
             'is_published' => 'boolean',
+            'is_system' => 'boolean',
             'position' => 'integer',
         ];
     }

@@ -53,6 +53,14 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const email = settings?.contact.email || config.contact.email;
   const socials = settings?.socials ?? {};
   const links = settings?.footer_links ?? [];
+
+  // Legal/CMS pages → /p/{slug}. Best-effort dedupe: skip any page whose target
+  // URL already appears among the admin-managed footer links.
+  const existingUrls = new Set(links.map((l) => l.url));
+  const legalPages = (settings?.legal_pages ?? []).filter(
+    (page) => !existingUrls.has(`/p/${page.slug}`),
+  );
+
   const socialEntries = Object.entries(socials).filter(
     ([, url]) => typeof url === "string" && url !== "",
   );
@@ -103,6 +111,27 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
                       className="text-white/80 transition hover:text-white"
                     >
                       {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+
+          {/* Legal — auto-rendered CMS policy pages (/p/{slug}) */}
+          {legalPages.length > 0 && (
+            <nav aria-label="Legal links">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
+                Legal
+              </h3>
+              <ul className="mt-4 space-y-2 text-sm">
+                {legalPages.map((page) => (
+                  <li key={page.slug}>
+                    <a
+                      href={`/p/${page.slug}`}
+                      className="text-white/80 transition hover:text-white"
+                    >
+                      {page.title}
                     </a>
                   </li>
                 ))}

@@ -170,5 +170,7 @@ export type SiteSettings = {
   banners: Array<{ desktop: string; mobile: string }>;
   socials?: SocialLinks;
   footer_links?: FooterLink[];
+  // Legal/CMS pages surfaced in the footer, each linking to /p/{slug}.
+  legal_pages?: Array<{ slug: string; title: string }>;
   compliance?: SiteCompliance | null;
 };

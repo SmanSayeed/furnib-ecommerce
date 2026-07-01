@@ -1,5 +1,5 @@
 import { config } from "@/lib/config";
-import type { SiteSettings } from "@/lib/types";
+import type { Badge, SiteSettings } from "@/lib/types";
 import { whatsappGeneral } from "@/lib/whatsapp";
 import { Container } from "./Container";
 import { NewsletterForm } from "./NewsletterForm";
@@ -46,6 +46,42 @@ function SocialIcon({ href, name }: { href: string; name: string }) {
   );
 }
 
+// One partner badge — dark logos sit on a white rounded card. Wrapped in a
+// link only when a URL is set. Grayscale → colour on hover.
+function PartnerBadge({ badge }: { badge: Badge }) {
+  const card = (
+    <div className="rounded-lg bg-white px-5 py-3">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={badge.image_url as string}
+        alt={badge.heading}
+        className="h-10 w-auto grayscale transition duration-300 group-hover:grayscale-0"
+      />
+    </div>
+  );
+  return (
+    <div className="flex flex-col items-center gap-2 text-center">
+      {badge.heading && (
+        <span className="text-xs font-semibold uppercase tracking-wider text-white/70">
+          {badge.heading}
+        </span>
+      )}
+      {badge.url ? (
+        <a
+          href={badge.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group"
+        >
+          {card}
+        </a>
+      ) : (
+        <div className="group">{card}</div>
+      )}
+    </div>
+  );
+}
+
 export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const name = settings?.site_name || config.contact.company;
   const address = settings?.contact.address || config.contact.address;
@@ -54,36 +90,49 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const socials = settings?.socials ?? {};
   const links = settings?.footer_links ?? [];
 
-  // Legal/CMS pages → /p/{slug}. Best-effort dedupe: skip any page whose target
-  // URL already appears among the admin-managed footer links.
-  const existingUrls = new Set(links.map((l) => l.url));
-  const legalPages = (settings?.legal_pages ?? []).filter(
-    (page) => !existingUrls.has(`/p/${page.slug}`),
-  );
+  // "About Us" column — a single, deduped list of page links merging the
+  // admin-added footer links with the auto CMS/legal pages (→ /p/{slug}).
+  const aboutLinks: { label: string; url: string }[] = [];
+  const seenUrls = new Set<string>();
+  for (const link of links) {
+    if (link.url && !seenUrls.has(link.url)) {
+      seenUrls.add(link.url);
+      aboutLinks.push({ label: link.label, url: link.url });
+    }
+  }
+  for (const page of settings?.legal_pages ?? []) {
+    const url = `/p/${page.slug}`;
+    if (!seenUrls.has(url)) {
+      seenUrls.add(url);
+      aboutLinks.push({ label: page.title, url });
+    }
+  }
 
   const socialEntries = Object.entries(socials).filter(
     ([, url]) => typeof url === "string" && url !== "",
   );
 
-  // Payment-gateway compliance details — each rendered only when present.
-  const compliance = settings?.compliance ?? null;
-  const tradeLicenseNo = compliance?.trade_license_no || null;
-  const registeredAddress = compliance?.registered_address || null;
-  const deliveryInside = compliance?.delivery_inside_dhaka || null;
-  const deliveryOutside = compliance?.delivery_outside_dhaka || null;
-  const paymentBannerUrl = compliance?.payment_banner_url || null;
-  const hasComplianceInfo =
-    Boolean(tradeLicenseNo) ||
-    Boolean(registeredAddress) ||
-    Boolean(deliveryInside) ||
-    Boolean(deliveryOutside);
+  const hours = settings?.footer_contact?.hours || null;
+
+  // Partner badges — each rendered only when enabled AND has an image.
+  const badges = settings?.footer_badges ?? null;
+  const memberBadge =
+    badges?.member_of?.enabled && badges.member_of.image_url ? badges.member_of : null;
+  const deliveryBadge =
+    badges?.delivery_partner?.enabled && badges.delivery_partner.image_url
+      ? badges.delivery_partner
+      : null;
+  const hasBadges = Boolean(memberBadge) || Boolean(deliveryBadge);
+
+  // Admin-managed extra payment-methods banner (kept beside the gateway logo).
+  const paymentBannerUrl = settings?.compliance?.payment_banner_url || null;
 
   return (
     <footer className="mt-20 bg-brand text-white">
       <Container className="py-14">
-        {/* Four columns on desktop, stacked on mobile */}
+        {/* BAND 1 — four columns on desktop, two on tablet, stacked on mobile */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Brand + socials */}
+          {/* 1. Brand + contact details */}
           <div>
             {settings?.logo_footer ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -91,76 +140,102 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
             ) : (
               <h2 className="text-xl font-bold tracking-tight">{name}</h2>
             )}
-            <p className="mt-3 text-sm leading-relaxed text-white/80">
-              {settings?.tagline ||
-                "Elegant, refined furniture for modern living and professional spaces."}
-            </p>
+            <div className="mt-4 space-y-3 text-sm text-white/80">
+              {address && <p className="leading-relaxed">{address}</p>}
+              {phone && (
+                <p>
+                  <a
+                    href={`tel:${phone}`}
+                    className="transition hover:text-white hover:underline"
+                  >
+                    {phone}
+                  </a>
+                </p>
+              )}
+              {email && (
+                <p>
+                  <a
+                    href={`mailto:${email}`}
+                    className="transition hover:text-white hover:underline"
+                  >
+                    {email}
+                  </a>
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Company — admin-managed footer links (incl. CMS page links) */}
-          {links.length > 0 && (
-            <nav aria-label="Company links">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
-                Company
-              </h3>
+          {/* 2. About Us — merged, deduped page links */}
+          <nav aria-label="About Us">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
+              About Us
+            </h3>
+            {aboutLinks.length > 0 && (
               <ul className="mt-4 space-y-2 text-sm">
-                {links.map((link) => (
-                  <li key={`${link.label}-${link.url}`}>
+                {aboutLinks.map((link) => (
+                  <li key={link.url}>
                     <a
                       href={link.url}
-                      className="text-white/80 transition hover:text-white"
+                      className="inline-block text-white/80 transition-all duration-200 hover:translate-x-1 hover:text-white"
                     >
                       {link.label}
                     </a>
                   </li>
                 ))}
               </ul>
-            </nav>
-          )}
+            )}
+          </nav>
 
-          {/* Legal — auto-rendered CMS policy pages (/p/{slug}) */}
-          {legalPages.length > 0 && (
-            <nav aria-label="Legal links">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
-                Legal
-              </h3>
-              <ul className="mt-4 space-y-2 text-sm">
-                {legalPages.map((page) => (
-                  <li key={page.slug}>
-                    <a
-                      href={`/p/${page.slug}`}
-                      className="text-white/80 transition hover:text-white"
-                    >
-                      {page.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          )}
-
-          {/* Contact */}
+          {/* 3. Contact Us — hours + three pill buttons */}
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
-              Contact
+              Contact Us
             </h3>
-            <ul className="mt-4 space-y-2 text-sm text-white/80">
-              {address && <li>{address}</li>}
+            {hours && <p className="mt-4 text-sm text-white/80">{hours}</p>}
+            <div className="mt-4 flex flex-col gap-3">
               {phone && (
-                <li>
-                  <a href={`tel:${phone}`} className="hover:text-white">
-                    {phone}
-                  </a>
-                </li>
+                <a
+                  href={`tel:${phone}`}
+                  className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:text-brand"
+                >
+                  Call Us
+                </a>
               )}
-              {email && (
-                <li>
-                  <a href={`mailto:${email}`} className="hover:text-white">
-                    {email}
-                  </a>
-                </li>
+              {phone && (
+                <a
+                  href={`tel:${phone}`}
+                  className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:text-brand"
+                >
+                  {phone}
+                </a>
               )}
-            </ul>
+              <a
+                href="/"
+                className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:text-brand"
+              >
+                {name}
+              </a>
+            </div>
+          </div>
+
+          {/* 4. Follow Us — socials + newsletter */}
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
+              Follow Us
+            </h3>
+            {socialEntries.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {socialEntries.map(([key, url]) => (
+                  <SocialIcon key={key} href={url as string} name={key} />
+                ))}
+              </div>
+            )}
+            <p className="mt-4 text-sm text-white/80">
+              Subscribe and be the first to get great deals!
+            </p>
+            <div className="mt-4">
+              <NewsletterForm />
+            </div>
             <a
               href={whatsappGeneral(settings?.whatsapp)}
               target="_blank"
@@ -171,78 +246,17 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
               WhatsApp us
             </a>
           </div>
-
-          {/* Newsletter (with the Follow-us row sitting just above the input) */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">
-              Newsletter
-            </h3>
-            <p className="mt-4 text-sm text-white/80">
-              Get new arrivals &amp; offers in your inbox.
-            </p>
-
-            {socialEntries.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs font-medium uppercase tracking-wider text-white/70">
-                  Follow us
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {socialEntries.map(([key, url]) => (
-                    <SocialIcon key={key} href={url as string} name={key} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4">
-              <NewsletterForm />
-            </div>
-          </div>
         </div>
 
-        {/* Legal / compliance details — Trade License (#6), Registered
-            Address (#4), Delivery time inside/outside Dhaka (#5). */}
-        {hasComplianceInfo && (
-          <dl className="mt-10 grid grid-cols-1 gap-4 border-t border-white/20 pt-8 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-4">
-            {tradeLicenseNo && (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-white/70">
-                  Trade License No.
-                </dt>
-                <dd className="mt-1">{tradeLicenseNo}</dd>
-              </div>
-            )}
-            {registeredAddress && (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-white/70">
-                  Registered Address
-                </dt>
-                <dd className="mt-1 whitespace-pre-line">{registeredAddress}</dd>
-              </div>
-            )}
-            {(deliveryInside || deliveryOutside) && (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-white/70">
-                  Delivery Time
-                </dt>
-                <dd className="mt-1 space-y-1">
-                  {deliveryInside && (
-                    <p>
-                      <span className="text-white/70">Inside Dhaka:</span> {deliveryInside}
-                    </p>
-                  )}
-                  {deliveryOutside && (
-                    <p>
-                      <span className="text-white/70">Outside Dhaka:</span> {deliveryOutside}
-                    </p>
-                  )}
-                </dd>
-              </div>
-            )}
-          </dl>
+        {/* BAND 2 — partner badges (only when enabled + image present) */}
+        {hasBadges && (
+          <div className="mt-12 flex flex-wrap justify-center gap-10 border-t border-white/20 pt-10">
+            {memberBadge && <PartnerBadge badge={memberBadge} />}
+            {deliveryBadge && <PartnerBadge badge={deliveryBadge} />}
+          </div>
         )}
 
-        {/* Payment + copyright */}
+        {/* BAND 3 — payment + copyright */}
         <div className="mt-12 flex flex-col items-center gap-4 border-t border-white/20 pt-8">
           <span className="text-xs uppercase tracking-wider text-white/70">
             Pay securely with

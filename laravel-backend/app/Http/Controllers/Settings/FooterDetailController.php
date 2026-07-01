@@ -22,10 +22,13 @@ class FooterDetailController extends Controller
     private const GROUP = 'branding';
 
     private const TEXT_KEYS = [
-        'contact_phone', 'contact_email', 'contact_address',
+        'contact_phone', 'contact_email', 'contact_address', 'contact_hours',
         // Payment-gateway compliance fields.
         'trade_license_no', 'registered_address',
         'delivery_inside_dhaka', 'delivery_outside_dhaka',
+        // Trust-badge headings + optional links.
+        'member_of_heading', 'member_of_url',
+        'delivery_partner_heading', 'delivery_partner_url',
     ];
 
     public function __construct(
@@ -39,6 +42,8 @@ class FooterDetailController extends Controller
         $defaults = [
             'delivery_inside_dhaka' => 'Inside Dhaka: 5 days',
             'delivery_outside_dhaka' => 'Outside Dhaka: 10 days',
+            'member_of_heading' => "Member's Of",
+            'delivery_partner_heading' => 'Delivery Partner',
         ];
 
         $data = [];
@@ -55,6 +60,21 @@ class FooterDetailController extends Controller
         $paymentBanner = $this->settings->get(self::GROUP, 'payment_banner');
         $data['payment_banner_url'] = is_string($paymentBanner) && $paymentBanner !== ''
             ? $this->storage->url($paymentBanner)
+            : null;
+
+        // Trust-badge toggles (stored as '1'/'0'; default off).
+        $data['member_of_enabled'] = $this->settings->get(self::GROUP, 'member_of_enabled') === '1';
+        $data['delivery_partner_enabled'] = $this->settings->get(self::GROUP, 'delivery_partner_enabled') === '1';
+
+        // Trust-badge images.
+        $memberImage = $this->settings->get(self::GROUP, 'member_of_image');
+        $data['member_of_image_url'] = is_string($memberImage) && $memberImage !== ''
+            ? $this->storage->url($memberImage)
+            : null;
+
+        $deliveryImage = $this->settings->get(self::GROUP, 'delivery_partner_image');
+        $data['delivery_partner_image_url'] = is_string($deliveryImage) && $deliveryImage !== ''
+            ? $this->storage->url($deliveryImage)
             : null;
 
         $links = $this->settings->get(self::GROUP, 'about_links');
@@ -96,6 +116,32 @@ class FooterDetailController extends Controller
             $old = $this->settings->get(self::GROUP, 'payment_banner');
             $path = $this->storage->store($request->file('payment_banner'), self::GROUP);
             $this->settings->set(self::GROUP, 'payment_banner', $path);
+
+            if (is_string($old) && $old !== '' && $old !== $path) {
+                $this->storage->delete($old);
+            }
+        }
+
+        // Trust-badge toggles — stored as '1'/'0' like the social flags.
+        $this->settings->set(self::GROUP, 'member_of_enabled', $request->boolean('member_of_enabled') ? '1' : '0');
+        $this->settings->set(self::GROUP, 'delivery_partner_enabled', $request->boolean('delivery_partner_enabled') ? '1' : '0');
+
+        // "Member's Of" badge image.
+        if ($request->hasFile('member_of_image')) {
+            $old = $this->settings->get(self::GROUP, 'member_of_image');
+            $path = $this->storage->store($request->file('member_of_image'), self::GROUP);
+            $this->settings->set(self::GROUP, 'member_of_image', $path);
+
+            if (is_string($old) && $old !== '' && $old !== $path) {
+                $this->storage->delete($old);
+            }
+        }
+
+        // "Delivery Partner" badge image.
+        if ($request->hasFile('delivery_partner_image')) {
+            $old = $this->settings->get(self::GROUP, 'delivery_partner_image');
+            $path = $this->storage->store($request->file('delivery_partner_image'), self::GROUP);
+            $this->settings->set(self::GROUP, 'delivery_partner_image', $path);
 
             if (is_string($old) && $old !== '' && $old !== $path) {
                 $this->storage->delete($old);

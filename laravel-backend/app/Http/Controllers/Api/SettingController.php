@@ -53,6 +53,25 @@ class SettingController extends Controller
                     'delivery_outside_dhaka' => $b['delivery_outside_dhaka'] ?? 'Outside Dhaka: 10 days',
                     'payment_banner_url' => $this->url($b['payment_banner'] ?? null),
                 ],
+                // Footer "opening hours" line.
+                'footer_contact' => [
+                    'hours' => $b['contact_hours'] ?? null,
+                ],
+                // Trust badges: "Member's Of" + "Delivery Partner".
+                'footer_badges' => [
+                    'member_of' => [
+                        'enabled' => ($b['member_of_enabled'] ?? '0') === '1',
+                        'heading' => $b['member_of_heading'] ?? "Member's Of",
+                        'image_url' => $this->url($b['member_of_image'] ?? null),
+                        'url' => $b['member_of_url'] ?? null,
+                    ],
+                    'delivery_partner' => [
+                        'enabled' => ($b['delivery_partner_enabled'] ?? '0') === '1',
+                        'heading' => $b['delivery_partner_heading'] ?? 'Delivery Partner',
+                        'image_url' => $this->url($b['delivery_partner_image'] ?? null),
+                        'url' => $b['delivery_partner_url'] ?? null,
+                    ],
+                ],
             ],
         ]);
     }

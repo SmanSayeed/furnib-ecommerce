@@ -15,6 +15,7 @@ type FooterData = {
     contact_phone: string;
     contact_email: string;
     contact_address: string;
+    contact_hours: string;
     about_links: FooterLink[];
     // Payment-gateway compliance fields.
     payment_banner_url: string | null;
@@ -22,6 +23,15 @@ type FooterData = {
     registered_address: string;
     delivery_inside_dhaka: string;
     delivery_outside_dhaka: string;
+    // Trust badges.
+    member_of_enabled: boolean;
+    member_of_heading: string;
+    member_of_url: string;
+    member_of_image_url: string | null;
+    delivery_partner_enabled: boolean;
+    delivery_partner_heading: string;
+    delivery_partner_url: string;
+    delivery_partner_image_url: string | null;
 };
 
 export default function FooterDetails({
@@ -138,6 +148,17 @@ export default function FooterDetails({
                                         placeholder="Dhaka, Bangladesh"
                                     />
                                     <InputError message={errs.contact_address} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="contact_hours">Contact hours</Label>
+                                    <Input
+                                        id="contact_hours"
+                                        name="contact_hours"
+                                        defaultValue={footer.contact_hours}
+                                        placeholder="Every Day 9 AM To 2 AM"
+                                    />
+                                    <InputError message={errs.contact_hours} />
                                 </div>
 
                                 <div className="space-y-4 rounded-lg border border-border p-4">
@@ -320,6 +341,144 @@ export default function FooterDetails({
                                             accept="image/png,image/jpeg,image/webp"
                                         />
                                         <InputError message={errs.payment_banner} />
+                                    </div>
+                                </div>
+
+                                {/* Trust badge — Member's Of. */}
+                                <div className="space-y-4 rounded-lg border border-border p-4">
+                                    <div>
+                                        <label className="flex items-center gap-2 text-sm font-medium">
+                                            <input
+                                                type="checkbox"
+                                                name="member_of_enabled"
+                                                value="1"
+                                                defaultChecked={footer.member_of_enabled}
+                                                className="size-4 rounded border-input"
+                                            />
+                                            Show &ldquo;Member&rsquo;s Of&rdquo; badge
+                                        </label>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            An association / membership logo shown in the storefront
+                                            footer.
+                                        </p>
+                                        <InputError message={errs.member_of_enabled} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="member_of_heading">Heading</Label>
+                                        <Input
+                                            id="member_of_heading"
+                                            name="member_of_heading"
+                                            defaultValue={footer.member_of_heading}
+                                            placeholder="Member's Of"
+                                        />
+                                        <InputError message={errs.member_of_heading} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="member_of_image">
+                                            Badge image (PNG/JPG/WebP)
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Max 20 MB. Shown on a neutral card.
+                                        </p>
+                                        {footer.member_of_image_url && (
+                                            <div className="flex items-center rounded-md border border-border bg-muted px-4 py-3">
+                                                <img
+                                                    src={footer.member_of_image_url}
+                                                    alt="Member's Of badge"
+                                                    className="h-10 w-auto"
+                                                />
+                                            </div>
+                                        )}
+                                        <Input
+                                            id="member_of_image"
+                                            type="file"
+                                            name="member_of_image"
+                                            accept="image/png,image/jpeg,image/webp"
+                                        />
+                                        <InputError message={errs.member_of_image} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="member_of_url">Link (optional)</Label>
+                                        <Input
+                                            id="member_of_url"
+                                            name="member_of_url"
+                                            defaultValue={footer.member_of_url}
+                                            placeholder="https://… or /p/…"
+                                        />
+                                        <InputError message={errs.member_of_url} />
+                                    </div>
+                                </div>
+
+                                {/* Trust badge — Delivery Partner. */}
+                                <div className="space-y-4 rounded-lg border border-border p-4">
+                                    <div>
+                                        <label className="flex items-center gap-2 text-sm font-medium">
+                                            <input
+                                                type="checkbox"
+                                                name="delivery_partner_enabled"
+                                                value="1"
+                                                defaultChecked={footer.delivery_partner_enabled}
+                                                className="size-4 rounded border-input"
+                                            />
+                                            Show &ldquo;Delivery Partner&rdquo; badge
+                                        </label>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Your courier / logistics partner logo shown in the
+                                            storefront footer.
+                                        </p>
+                                        <InputError message={errs.delivery_partner_enabled} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="delivery_partner_heading">Heading</Label>
+                                        <Input
+                                            id="delivery_partner_heading"
+                                            name="delivery_partner_heading"
+                                            defaultValue={footer.delivery_partner_heading}
+                                            placeholder="Delivery Partner"
+                                        />
+                                        <InputError message={errs.delivery_partner_heading} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="delivery_partner_image">
+                                            Badge image (PNG/JPG/WebP)
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Max 20 MB. Shown on a neutral card.
+                                        </p>
+                                        {footer.delivery_partner_image_url && (
+                                            <div className="flex items-center rounded-md border border-border bg-muted px-4 py-3">
+                                                <img
+                                                    src={footer.delivery_partner_image_url}
+                                                    alt="Delivery Partner badge"
+                                                    className="h-10 w-auto"
+                                                />
+                                            </div>
+                                        )}
+                                        <Input
+                                            id="delivery_partner_image"
+                                            type="file"
+                                            name="delivery_partner_image"
+                                            accept="image/png,image/jpeg,image/webp"
+                                        />
+                                        <InputError message={errs.delivery_partner_image} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="delivery_partner_url">
+                                            Link (optional)
+                                        </Label>
+                                        <Input
+                                            id="delivery_partner_url"
+                                            name="delivery_partner_url"
+                                            defaultValue={footer.delivery_partner_url}
+                                            placeholder="https://… or /p/…"
+                                        />
+                                        <InputError message={errs.delivery_partner_url} />
                                     </div>
                                 </div>
 

@@ -154,6 +154,15 @@ export type SiteCompliance = {
   payment_banner_url: string | null;
 };
 
+// A single partner badge (e.g. "Member of", "Delivery Partner") shown in the
+// footer. Rendered only when `enabled && image_url`.
+export type Badge = {
+  enabled: boolean;
+  heading: string;
+  image_url: string | null;
+  url: string | null;
+};
+
 export type SiteSettings = {
   site_name: string | null;
   tagline: string | null;
@@ -173,4 +182,6 @@ export type SiteSettings = {
   // Legal/CMS pages surfaced in the footer, each linking to /p/{slug}.
   legal_pages?: Array<{ slug: string; title: string }>;
   compliance?: SiteCompliance | null;
+  footer_contact?: { hours: string | null } | null;
+  footer_badges?: { member_of: Badge; delivery_partner: Badge } | null;
 };

@@ -162,3 +162,57 @@ it('rejects an svg footer logo (xss guard)', function () {
         ])
         ->assertSessionHasErrors('logo_footer');
 });
+
+// ---- Footer contact hours + trust badges ----
+
+it('exposes footer_contact and footer_badges via the public api with defaults', function () {
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.footer_contact.hours', null)
+        ->assertJsonPath('data.footer_badges.member_of.enabled', false)
+        ->assertJsonPath('data.footer_badges.member_of.heading', "Member's Of")
+        ->assertJsonPath('data.footer_badges.member_of.image_url', null)
+        ->assertJsonPath('data.footer_badges.member_of.url', null)
+        ->assertJsonPath('data.footer_badges.delivery_partner.enabled', false)
+        ->assertJsonPath('data.footer_badges.delivery_partner.heading', 'Delivery Partner')
+        ->assertJsonPath('data.footer_badges.delivery_partner.image_url', null)
+        ->assertJsonPath('data.footer_badges.delivery_partner.url', null);
+});
+
+it('saves contact hours + trust badges and exposes them via the public api', function () {
+    Storage::fake('public');
+
+    actingAs(footerAdmin())
+        ->post('/settings/footer/details', [
+            'contact_hours' => 'Every Day 9 AM To 2 AM',
+            'member_of_enabled' => '1',
+            'member_of_heading' => 'Proud Member Of',
+            'member_of_url' => 'https://e-cab.net',
+            'member_of_image' => UploadedFile::fake()->image('member.png', 200, 80),
+            'delivery_partner_enabled' => '1',
+            'delivery_partner_heading' => 'Shipped By',
+            'delivery_partner_url' => '/p/delivery',
+            'delivery_partner_image' => UploadedFile::fake()->image('courier.png', 200, 80),
+        ])
+        ->assertRedirect(route('footer-details.edit'));
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.footer_contact.hours', 'Every Day 9 AM To 2 AM')
+        ->assertJsonPath('data.footer_badges.member_of.enabled', true)
+        ->assertJsonPath('data.footer_badges.member_of.heading', 'Proud Member Of')
+        ->assertJsonPath('data.footer_badges.member_of.url', 'https://e-cab.net')
+        ->assertJsonPath('data.footer_badges.member_of.image_url', fn ($u) => is_string($u) && $u !== '')
+        ->assertJsonPath('data.footer_badges.delivery_partner.enabled', true)
+        ->assertJsonPath('data.footer_badges.delivery_partner.heading', 'Shipped By')
+        ->assertJsonPath('data.footer_badges.delivery_partner.url', '/p/delivery')
+        ->assertJsonPath('data.footer_badges.delivery_partner.image_url', fn ($u) => is_string($u) && $u !== '');
+});
+
+it('rejects a javascript: url in a trust badge link (xss guard)', function () {
+    actingAs(footerAdmin())
+        ->post('/settings/footer/details', [
+            'member_of_url' => 'javascript:alert(1)',
+        ])
+        ->assertSessionHasErrors('member_of_url');
+});

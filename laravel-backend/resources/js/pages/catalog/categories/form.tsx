@@ -74,9 +74,16 @@ export default function CategoryForm({ category }: { category: Category | null }
     return (
         <>
             <Head title={editing ? 'Edit category' : 'New category'} />
+            {/*
+             * Always POST — spoof PUT via `_method` when editing. A real PUT with
+             * multipart/form-data is NOT parsed by PHP ($_POST/$_FILES stay empty),
+             * which drops every field (title, images) and surfaces as a bogus
+             * "title is required" error with the image never uploading. POST +
+             * `_method` (same pattern as the product form) fixes both.
+             */}
             <Form
                 action={action}
-                method={editing ? 'put' : 'post'}
+                method="post"
                 options={{ preserveScroll: true }}
                 className="mx-auto w-full max-w-2xl p-4 pb-24"
             >
@@ -86,6 +93,7 @@ export default function CategoryForm({ category }: { category: Category | null }
                             {editing ? 'Edit category' : 'New category'}
                         </h1>
 
+                        {editing && <input type="hidden" name="_method" value="put" />}
                         <input type="hidden" name="status" value={status ? '1' : '0'} />
 
                         <div className="space-y-6 rounded-xl border bg-card p-4 md:p-6">

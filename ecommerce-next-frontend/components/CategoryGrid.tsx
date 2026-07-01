@@ -23,7 +23,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
           <div className="p-0.5">
             <div className="aspect-[16/10] overflow-hidden rounded-[8px]">
               <SafeImage
-                src={imageUrl(c.header_image ?? c.thumbnail_image)}
+                src={imageUrl(c.thumbnail_image ?? c.header_image)}
                 alt={c.title}
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />

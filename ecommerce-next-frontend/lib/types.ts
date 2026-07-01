@@ -46,6 +46,9 @@ export type Product = {
   price: Money;
   discount_price: Money | null;
   in_stock: boolean;
+  // Optional numeric on-hand quantity. The public products API may not return
+  // this yet; when absent we fall back to the boolean in_stock flag.
+  stock_amount?: number | null;
   advance?: ProductAdvance;
   is_featured: boolean;
   is_new: boolean;
@@ -140,6 +143,16 @@ export type CmsPage = {
   body_html: string | null;
 };
 
+// Payment-gateway compliance fields surfaced by the public settings API. All
+// optional/nullable — the footer only renders each when present.
+export type SiteCompliance = {
+  trade_license_no: string | null;
+  registered_address: string | null;
+  delivery_inside_dhaka: string | null;
+  delivery_outside_dhaka: string | null;
+  payment_banner_url: string | null;
+};
+
 export type SiteSettings = {
   site_name: string | null;
   tagline: string | null;
@@ -156,4 +169,5 @@ export type SiteSettings = {
   banners: string[];
   socials?: SocialLinks;
   footer_links?: FooterLink[];
+  compliance?: SiteCompliance | null;
 };

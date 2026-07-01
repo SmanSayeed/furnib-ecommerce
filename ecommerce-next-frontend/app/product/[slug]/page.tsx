@@ -77,10 +77,33 @@ export default async function ProductPage({
       />
 
       <article className="overflow-hidden rounded-2xl border border-border bg-surface/30">
-        <ImageSlider slides={slides} title={product.title} discountPct={discountPct} />
+        <ImageSlider
+          slides={slides}
+          title={product.title}
+          discountPct={discountPct}
+          outOfStock={!product.in_stock}
+        />
         <div className="space-y-4 p-4 sm:p-6">
           <h1 className="text-xl font-extrabold sm:text-2xl">{product.title}</h1>
           <p className="text-xs text-muted">SKU: {product.sku}</p>
+
+          {/* Compliance #9 — clear stock status (with quantity when available). */}
+          {product.in_stock ? (
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600 dark:text-green-400">
+              <span className="size-2 rounded-full bg-green-500" aria-hidden="true" />
+              In Stock
+              {typeof product.stock_amount === "number" && (
+                <span className="font-normal text-muted">
+                  ({product.stock_amount} available)
+                </span>
+              )}
+            </p>
+          ) : (
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
+              <span className="size-2 rounded-full bg-red-500" aria-hidden="true" />
+              Out of Stock
+            </p>
+          )}
 
           {product.details && (
             <p className="text-sm leading-relaxed text-muted">{product.details}</p>

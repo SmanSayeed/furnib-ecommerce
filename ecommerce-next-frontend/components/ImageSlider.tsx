@@ -9,10 +9,13 @@ export function ImageSlider({
   slides,
   title,
   discountPct,
+  outOfStock = false,
 }: {
   slides: Slide[];
   title: string;
   discountPct?: number;
+  /** Compliance #9 — dim the image and stamp an Out of Stock badge on it. */
+  outOfStock?: boolean;
 }) {
   const items = slides.length ? slides : [{ url: null, alt: title }];
   const [index, setIndex] = useState(0);
@@ -33,8 +36,15 @@ export function ImageSlider({
         <SafeImage
           src={items[index].url}
           alt={items[index].alt}
-          className="h-full w-full object-contain"
+          className={`h-full w-full object-contain ${outOfStock ? "opacity-60 grayscale" : ""}`}
         />
+        {outOfStock && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="rounded-md bg-black/70 px-4 py-2 text-sm font-bold uppercase tracking-wider text-white shadow-lg sm:text-base">
+              Out of Stock
+            </span>
+          </div>
+        )}
         {discountPct && discountPct > 0 ? (
           <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-md">
             {discountPct}% OFF

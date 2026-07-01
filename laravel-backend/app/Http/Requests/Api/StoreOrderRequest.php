@@ -52,6 +52,21 @@ class StoreOrderRequest extends FormRequest
             ],
             'address' => ['required', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:1000'],
+
+            // Compliance #11 — the customer must agree to the Terms & Conditions,
+            // Privacy Policy and Return & Refund Policy. Enforced server-side so a
+            // client cannot skip it. Frontend sends `terms_accepted: true`.
+            'terms_accepted' => ['accepted'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'terms_accepted.accepted' => 'You must agree to the Terms & Conditions, Privacy Policy and Return & Refund Policy.',
         ];
     }
 }

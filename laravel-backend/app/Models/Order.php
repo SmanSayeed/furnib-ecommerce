@@ -38,6 +38,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $ttclid
  * @property string|null $ga_client_id
  * @property Carbon|null $marketing_purchase_sent_at
+ * @property Carbon|null $terms_accepted_at
+ * @property string|null $terms_ip
  */
 class Order extends Model
 {
@@ -70,6 +72,7 @@ class Order extends Model
         'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes',
         'fbp', 'fbc', 'ttp', 'ttclid', 'ga_client_id', 'marketing_purchase_sent_at',
+        'terms_accepted_at', 'terms_ip',
     ];
 
     protected function casts(): array
@@ -81,6 +84,7 @@ class Order extends Model
             'advance_amount' => MoneyCast::class,
             'advance_paid' => MoneyCast::class,
             'marketing_purchase_sent_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
         ];
     }
 

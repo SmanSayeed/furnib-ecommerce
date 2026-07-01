@@ -156,6 +156,10 @@ final class PlaceOrder
                 'ttclid' => $data->ttclid,
                 'ga_client_id' => $data->gaClientId,
                 'notes' => $data->notes,
+                // Compliance #11 — proof of policy acceptance (enforced by the
+                // FormRequest). IP matches the same value captured for the order.
+                'terms_accepted_at' => now(),
+                'terms_ip' => $data->ip,
             ]);
 
             foreach ($lines as $line) {

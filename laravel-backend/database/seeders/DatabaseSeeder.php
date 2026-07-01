@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
         // Default delivery areas (idempotent) so checkout has zones to show.
         $this->call(ShippingZoneSeeder::class);
 
+        // Legal / about CMS pages required for payment-gateway compliance.
+        // Idempotent — existing pages are never overwritten.
+        $this->call(CompliancePagesSeeder::class);
+
         // Bootstrap accounts only when their credentials are configured,
         // so `db:seed` does not hard-fail in environments without them.
         if (filled(config('rbac.owner_email')) && filled(config('rbac.owner_bootstrap_password'))) {

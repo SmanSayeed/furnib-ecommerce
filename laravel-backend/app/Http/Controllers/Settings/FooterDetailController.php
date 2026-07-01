@@ -21,7 +21,12 @@ class FooterDetailController extends Controller
 {
     private const GROUP = 'branding';
 
-    private const TEXT_KEYS = ['contact_phone', 'contact_email', 'contact_address'];
+    private const TEXT_KEYS = [
+        'contact_phone', 'contact_email', 'contact_address',
+        // Payment-gateway compliance fields.
+        'trade_license_no', 'registered_address',
+        'delivery_inside_dhaka', 'delivery_outside_dhaka',
+    ];
 
     public function __construct(
         private readonly SettingsService $settings,
@@ -30,13 +35,27 @@ class FooterDetailController extends Controller
 
     public function edit(): Response
     {
+        // Sensible defaults for the delivery-timeline compliance copy (#5).
+        $defaults = [
+            'delivery_inside_dhaka' => 'Inside Dhaka: 5 days',
+            'delivery_outside_dhaka' => 'Outside Dhaka: 10 days',
+        ];
+
         $data = [];
         foreach (self::TEXT_KEYS as $key) {
-            $data[$key] = (string) ($this->settings->get(self::GROUP, $key) ?? '');
+            $stored = $this->settings->get(self::GROUP, $key);
+            $data[$key] = is_string($stored) && $stored !== ''
+                ? $stored
+                : ($defaults[$key] ?? '');
         }
 
         $logo = $this->settings->get(self::GROUP, 'logo_footer');
         $data['logo_footer_url'] = is_string($logo) && $logo !== '' ? $this->storage->url($logo) : null;
+
+        $paymentBanner = $this->settings->get(self::GROUP, 'payment_banner');
+        $data['payment_banner_url'] = is_string($paymentBanner) && $paymentBanner !== ''
+            ? $this->storage->url($paymentBanner)
+            : null;
 
         $links = $this->settings->get(self::GROUP, 'about_links');
         $data['about_links'] = is_array($links) ? array_values($links) : [];
@@ -66,6 +85,17 @@ class FooterDetailController extends Controller
             $old = $this->settings->get(self::GROUP, 'logo_footer');
             $path = $this->storage->store($request->file('logo_footer'), self::GROUP);
             $this->settings->set(self::GROUP, 'logo_footer', $path);
+
+            if (is_string($old) && $old !== '' && $old !== $path) {
+                $this->storage->delete($old);
+            }
+        }
+
+        // Gateway "payment methods" banner (compliance #8).
+        if ($request->hasFile('payment_banner')) {
+            $old = $this->settings->get(self::GROUP, 'payment_banner');
+            $path = $this->storage->store($request->file('payment_banner'), self::GROUP);
+            $this->settings->set(self::GROUP, 'payment_banner', $path);
 
             if (is_string($old) && $old !== '' && $old !== $path) {
                 $this->storage->delete($old);

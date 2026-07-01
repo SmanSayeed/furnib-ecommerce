@@ -16,6 +16,12 @@ type FooterData = {
     contact_email: string;
     contact_address: string;
     about_links: FooterLink[];
+    // Payment-gateway compliance fields.
+    payment_banner_url: string | null;
+    trade_license_no: string;
+    registered_address: string;
+    delivery_inside_dhaka: string;
+    delivery_outside_dhaka: string;
 };
 
 export default function FooterDetails({
@@ -222,6 +228,99 @@ export default function FooterDetails({
                                             <Plus className="size-4" /> Add link
                                         </Button>
                                     )}
+                                </div>
+
+                                <div className="space-y-4 rounded-lg border border-border p-4">
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            Payment-gateway compliance
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Required by the payment gateway. Shown on the
+                                            storefront footer and policy pages.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="trade_license_no">
+                                            Trade licence no.
+                                        </Label>
+                                        <Input
+                                            id="trade_license_no"
+                                            name="trade_license_no"
+                                            defaultValue={footer.trade_license_no}
+                                            placeholder="e.g. TRAD/DNCC/012345/2026"
+                                        />
+                                        <InputError message={errs.trade_license_no} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="registered_address">
+                                            Registered address
+                                        </Label>
+                                        <textarea
+                                            id="registered_address"
+                                            name="registered_address"
+                                            defaultValue={footer.registered_address}
+                                            rows={3}
+                                            placeholder="House, Road, Area, Dhaka, Bangladesh"
+                                            className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+                                        />
+                                        <InputError message={errs.registered_address} />
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="delivery_inside_dhaka">
+                                                Delivery time — inside Dhaka
+                                            </Label>
+                                            <Input
+                                                id="delivery_inside_dhaka"
+                                                name="delivery_inside_dhaka"
+                                                defaultValue={footer.delivery_inside_dhaka}
+                                                placeholder="Inside Dhaka: 5 days"
+                                            />
+                                            <InputError message={errs.delivery_inside_dhaka} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="delivery_outside_dhaka">
+                                                Delivery time — outside Dhaka
+                                            </Label>
+                                            <Input
+                                                id="delivery_outside_dhaka"
+                                                name="delivery_outside_dhaka"
+                                                defaultValue={footer.delivery_outside_dhaka}
+                                                placeholder="Outside Dhaka: 10 days"
+                                            />
+                                            <InputError message={errs.delivery_outside_dhaka} />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="payment_banner">
+                                            Payment methods banner (PNG/JPG/WebP)
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            The gateway-provided image showing accepted cards /
+                                            mobile wallets. Max 20 MB.
+                                        </p>
+                                        {footer.payment_banner_url && (
+                                            <div className="flex items-center rounded-md border border-border bg-muted px-4 py-3">
+                                                <img
+                                                    src={footer.payment_banner_url}
+                                                    alt="Payment methods banner"
+                                                    className="h-10 w-auto"
+                                                />
+                                            </div>
+                                        )}
+                                        <Input
+                                            id="payment_banner"
+                                            type="file"
+                                            name="payment_banner"
+                                            accept="image/png,image/jpeg,image/webp"
+                                        />
+                                        <InputError message={errs.payment_banner} />
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-4">

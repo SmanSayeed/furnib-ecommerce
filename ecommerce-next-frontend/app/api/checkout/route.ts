@@ -33,6 +33,15 @@ export async function POST(request: NextRequest) {
   const gaClientId = ga ? ga.split(".").slice(-2).join(".") : undefined;
   const referer = request.headers.get("referer") ?? "";
 
+  // Compliance: the customer must accept the legal terms at checkout. We forward
+  // the whole body verbatim (so terms_accepted, items, customer, etc. all pass
+  // through) but pin terms_accepted explicitly so it can never be dropped —
+  // Laravel's StoreOrderRequest enforces it (rule `accepted`, 422 if missing).
+  const forwardedBody = {
+    ...body,
+    terms_accepted: body?.terms_accepted === true,
+  };
+
   const res = await fetch(`${config.apiBaseUrl}/orders`, {
     method: "POST",
     headers: {
@@ -46,7 +55,7 @@ export async function POST(request: NextRequest) {
       ...(ttclid ? { "X-Ttclid": ttclid } : {}),
       ...(gaClientId ? { "X-Ga-Client-Id": gaClientId } : {}),
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(forwardedBody),
     cache: "no-store",
   });
 

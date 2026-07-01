@@ -57,6 +57,19 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
     ([, url]) => typeof url === "string" && url !== "",
   );
 
+  // Payment-gateway compliance details — each rendered only when present.
+  const compliance = settings?.compliance ?? null;
+  const tradeLicenseNo = compliance?.trade_license_no || null;
+  const registeredAddress = compliance?.registered_address || null;
+  const deliveryInside = compliance?.delivery_inside_dhaka || null;
+  const deliveryOutside = compliance?.delivery_outside_dhaka || null;
+  const paymentBannerUrl = compliance?.payment_banner_url || null;
+  const hasComplianceInfo =
+    Boolean(tradeLicenseNo) ||
+    Boolean(registeredAddress) ||
+    Boolean(deliveryInside) ||
+    Boolean(deliveryOutside);
+
   return (
     <footer className="mt-20 bg-brand text-white">
       <Container className="py-14">
@@ -158,6 +171,48 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
           </div>
         </div>
 
+        {/* Legal / compliance details — Trade License (#6), Registered
+            Address (#4), Delivery time inside/outside Dhaka (#5). */}
+        {hasComplianceInfo && (
+          <dl className="mt-10 grid grid-cols-1 gap-4 border-t border-white/20 pt-8 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-4">
+            {tradeLicenseNo && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Trade License No.
+                </dt>
+                <dd className="mt-1">{tradeLicenseNo}</dd>
+              </div>
+            )}
+            {registeredAddress && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Registered Address
+                </dt>
+                <dd className="mt-1 whitespace-pre-line">{registeredAddress}</dd>
+              </div>
+            )}
+            {(deliveryInside || deliveryOutside) && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Delivery Time
+                </dt>
+                <dd className="mt-1 space-y-1">
+                  {deliveryInside && (
+                    <p>
+                      <span className="text-white/70">Inside Dhaka:</span> {deliveryInside}
+                    </p>
+                  )}
+                  {deliveryOutside && (
+                    <p>
+                      <span className="text-white/70">Outside Dhaka:</span> {deliveryOutside}
+                    </p>
+                  )}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+
         {/* Payment + copyright */}
         <div className="mt-12 flex flex-col items-center gap-4 border-t border-white/20 pt-8">
           <span className="text-xs uppercase tracking-wider text-white/70">
@@ -173,6 +228,16 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
               className="mx-auto h-auto w-full"
             />
           </div>
+
+          {/* Admin-managed payment methods banner (#8) — beside the gateway logo. */}
+          {paymentBannerUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={paymentBannerUrl}
+              alt="Accepted payment methods"
+              className="mx-auto h-auto w-full max-w-md rounded-lg sm:max-w-2xl lg:max-w-4xl"
+            />
+          )}
           <p className="text-xs text-white/70">
             © {settings?.site_name || config.siteName} — All rights reserved.
           </p>

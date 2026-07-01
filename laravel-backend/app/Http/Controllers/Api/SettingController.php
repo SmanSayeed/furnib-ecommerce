@@ -43,6 +43,15 @@ class SettingController extends Controller
                 ])),
                 'socials' => $this->socials($b),
                 'footer_links' => is_array($b['about_links'] ?? null) ? array_values($b['about_links']) : [],
+                // Payment-gateway compliance data (non-secret). Shown on the
+                // storefront footer / policy pages.
+                'compliance' => [
+                    'trade_license_no' => $b['trade_license_no'] ?? null,
+                    'registered_address' => $b['registered_address'] ?? null,
+                    'delivery_inside_dhaka' => $b['delivery_inside_dhaka'] ?? 'Inside Dhaka: 5 days',
+                    'delivery_outside_dhaka' => $b['delivery_outside_dhaka'] ?? 'Outside Dhaka: 10 days',
+                    'payment_banner_url' => $this->url($b['payment_banner'] ?? null),
+                ],
             ],
         ]);
     }

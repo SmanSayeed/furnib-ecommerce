@@ -34,6 +34,8 @@ class FooterDetailUpdateRequest extends FormRequest
             'logo_footer' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
 
             'contact_phone' => ['nullable', 'string', 'max:40'],
+            // Optional second phone shown beneath the first in the footer.
+            'contact_phone_2' => ['nullable', 'string', 'max:40'],
             'contact_email' => ['nullable', 'email', 'max:120'],
             'contact_address' => ['nullable', 'string', 'max:200'],
 

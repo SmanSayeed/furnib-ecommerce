@@ -17,6 +17,7 @@ type PageRow = {
 type FooterData = {
     logo_footer_url: string | null;
     contact_phone: string;
+    contact_phone_2: string;
     contact_email: string;
     contact_address: string;
     contact_hours: string;
@@ -204,9 +205,21 @@ export default function FooterDetails({
                                             id="contact_phone"
                                             name="contact_phone"
                                             defaultValue={footer.contact_phone}
-                                            placeholder="+880 1712-345678"
+                                            placeholder="01748870651"
                                         />
                                         <InputError message={errs.contact_phone} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="contact_phone_2">
+                                            Second phone (optional)
+                                        </Label>
+                                        <Input
+                                            id="contact_phone_2"
+                                            name="contact_phone_2"
+                                            defaultValue={footer.contact_phone_2}
+                                            placeholder="09638209209"
+                                        />
+                                        <InputError message={errs.contact_phone_2} />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="contact_email">Contact email</Label>

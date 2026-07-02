@@ -164,6 +164,7 @@ export type SiteSettings = {
   whatsapp: string | null;
   contact: {
     phone: string | null;
+    phone_2: string | null;
     email: string | null;
     address: string | null;
   };

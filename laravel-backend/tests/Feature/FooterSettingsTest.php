@@ -97,17 +97,24 @@ it('blocks footer details for users without settings.manage', function () {
     actingAs($user)->post('/settings/footer/details', [])->assertForbidden();
 });
 
-it('saves footer contact details', function () {
+it('saves footer contact details incl. the second phone and exposes them via the api', function () {
     actingAs(footerAdmin())
         ->post('/settings/footer/details', [
             'contact_email' => 'hi@furnib.com',
-            'contact_phone' => '+880 1712-345678',
+            'contact_phone' => '01748870651',
+            'contact_phone_2' => '09638209209',
         ])
         ->assertRedirect(route('footer-details.edit'));
 
     $settings = app(SettingsService::class);
     expect($settings->get('branding', 'contact_email'))->toBe('hi@furnib.com')
-        ->and($settings->get('branding', 'contact_phone'))->toBe('+880 1712-345678');
+        ->and($settings->get('branding', 'contact_phone'))->toBe('01748870651')
+        ->and($settings->get('branding', 'contact_phone_2'))->toBe('09638209209');
+
+    $this->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.contact.phone', '01748870651')
+        ->assertJsonPath('data.contact.phone_2', '09638209209');
 });
 
 // ---- Footer pages (auto-listed in the storefront footer) ----

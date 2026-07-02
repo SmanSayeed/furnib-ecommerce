@@ -31,6 +31,7 @@ class SettingController extends Controller
                 'whatsapp' => $b['whatsapp'] ?? null,
                 'contact' => [
                     'phone' => $b['contact_phone'] ?? null,
+                    'phone_2' => $b['contact_phone_2'] ?? null,
                     'email' => $b['contact_email'] ?? null,
                     'address' => $b['contact_address'] ?? null,
                 ],

@@ -22,7 +22,7 @@ class FooterDetailController extends Controller
     private const GROUP = 'branding';
 
     private const TEXT_KEYS = [
-        'contact_phone', 'contact_email', 'contact_address', 'contact_hours',
+        'contact_phone', 'contact_phone_2', 'contact_email', 'contact_address', 'contact_hours',
         // Payment-gateway compliance fields.
         'trade_license_no', 'registered_address',
         'delivery_inside_dhaka', 'delivery_outside_dhaka',

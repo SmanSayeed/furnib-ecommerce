@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { config } from "@/lib/config";
 import type { Badge, SiteSettings } from "@/lib/types";
 import { whatsappGeneral } from "@/lib/whatsapp";
@@ -29,6 +30,24 @@ const SOCIAL_ICONS: Record<string, React.ReactNode> = {
     <path d="M16.5 2h-3v13.1a2.5 2.5 0 1 1-2.1-2.5v-3a5.5 5.5 0 1 0 5.1 5.5V8.7a7 7 0 0 0 4 1.3V7a4 4 0 0 1-4-4Z" />
   ),
 };
+
+// Inline contact glyphs — inherit the surrounding text colour via currentColor,
+// so they always match the footer font (white / white-80) and hover states.
+function PhoneIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M6.62 10.79c1.44 2.83 3.76 5.15 6.59 6.59l2.2-2.2c.28-.28.68-.36 1.02-.25 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.07 21 3 13.93 3 5c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+    </svg>
+  );
+}
+
+function MailIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
+    </svg>
+  );
+}
 
 function SocialIcon({ href, name }: { href: string; name: string }) {
   return (
@@ -86,7 +105,9 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const name = settings?.site_name || config.contact.company;
   const address = settings?.contact.address || config.contact.address;
   const phone = settings?.contact.phone || config.contact.phone;
+  const phone2 = settings?.contact.phone_2 || null;
   const email = settings?.contact.email || config.contact.email;
+  const whatsappNumber = settings?.whatsapp || null;
   const socials = settings?.socials ?? {};
 
   // "About Us" column — every published, footer-visible page the admin left on,
@@ -131,24 +152,31 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
             <div className="mt-4 space-y-3 text-sm text-white/80">
               {address && <p className="leading-relaxed">{address}</p>}
               {phone && (
-                <p>
-                  <a
-                    href={`tel:${phone}`}
-                    className="transition hover:text-white hover:underline"
-                  >
-                    {phone}
-                  </a>
-                </p>
+                <a
+                  href={`tel:${phone}`}
+                  className="flex items-center gap-2.5 transition hover:text-white"
+                >
+                  <PhoneIcon className="size-4 shrink-0" />
+                  <span className="hover:underline">{phone}</span>
+                </a>
+              )}
+              {phone2 && (
+                <a
+                  href={`tel:${phone2}`}
+                  className="flex items-center gap-2.5 transition hover:text-white"
+                >
+                  <PhoneIcon className="size-4 shrink-0" />
+                  <span className="hover:underline">{phone2}</span>
+                </a>
               )}
               {email && (
-                <p>
-                  <a
-                    href={`mailto:${email}`}
-                    className="transition hover:text-white hover:underline"
-                  >
-                    {email}
-                  </a>
-                </p>
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-2.5 transition hover:text-white"
+                >
+                  <MailIcon className="size-4 shrink-0" />
+                  <span className="break-all hover:underline">{email}</span>
+                </a>
               )}
             </div>
           </div>
@@ -189,20 +217,22 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
                   Call Us
                 </a>
               )}
-              {phone && (
+              {whatsappNumber && (
                 <a
-                  href={`tel:${phone}`}
-                  className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:text-[#e85d1f]"
+                  href={whatsappGeneral(whatsappNumber)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:text-[#e85d1f]"
                 >
-                  {phone}
+                  <WhatsAppIcon size={16} />+{whatsappNumber}
                 </a>
               )}
-              <a
+              <Link
                 href="/"
                 className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:text-[#e85d1f]"
               >
                 {name}
-              </a>
+              </Link>
             </div>
           </div>
 

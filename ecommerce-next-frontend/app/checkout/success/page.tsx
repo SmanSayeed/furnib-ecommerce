@@ -30,9 +30,9 @@ export default function SuccessPage() {
     }
   }, [raw, loaded]);
 
-  // No purchase fires here. `place_order` already fired at checkout (order
-  // creation); the authoritative Meta Purchase is sent server-side when the
-  // admin confirms the order.
+  // No tracking fires here. The `purchase` conversion (browser dataLayer +
+  // server-side Meta CAPI / GA4 / TikTok) already fired at checkout, the moment
+  // the order was placed.
 
   async function pay(type: "full" | "partial") {
     if (!order) return;

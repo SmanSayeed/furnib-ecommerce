@@ -44,12 +44,14 @@ class OrderResource extends JsonResource
                 'qty' => $item->qty,
                 'line_total' => $this->money($item->line_total),
             ])->values()->all()),
-            // Ready-to-push GA4/Meta dataLayer payload for the storefront
-            // `place_order` event (fired on the checkout success path). The
-            // browser pushes this verbatim; no PII handling happens in JS.
+            // Ready-to-push GA4/Meta dataLayer `purchase` payload — the browser
+            // pushes it verbatim the moment the order is placed. It shares the
+            // `purchase.<order_no>` event_id with the server-side CAPI copy
+            // (fired in CheckoutController), so Meta de-duplicates the two into
+            // one counted sale. No PII handling happens in JS.
             'tracking' => [
-                'event' => 'place_order',
-                'event_id' => 'place_order.'.$this->order_no,
+                'event' => 'purchase',
+                'event_id' => 'purchase.'.$this->order_no,
                 ...OrderTrackingPayload::for($this->resource),
             ],
         ];

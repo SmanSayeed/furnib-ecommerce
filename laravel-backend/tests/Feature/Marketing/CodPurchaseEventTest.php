@@ -13,7 +13,7 @@ beforeEach(function () {
     $this->app->instance(ConversionApi::class, $this->capi);
 });
 
-it('does NOT fire a Purchase when an order is merely placed (an order is not a confirmed sale)', function () {
+it('fires exactly one Purchase when a COD order is placed (placement is the conversion point)', function () {
     $product = Product::factory()->create([
         'sku' => 'SOFA-9', 'price' => 1000, 'stock_amount' => 10,
         'stock_status' => true, 'product_status' => 'published',
@@ -27,7 +27,9 @@ it('does NOT fire a Purchase when an order is merely placed (an order is not a c
         'address' => 'House 1, Road 2, Dhaka',
     ])->assertStatus(201);
 
-    // The Purchase conversion fires only when the admin confirms the order
-    // (see Admin\OrderController::updateStatus) — never at placement.
-    expect($this->capi->ofType('Purchase'))->toHaveCount(0);
+    // The Purchase conversion now fires the moment an order is placed — the
+    // afterResponse dispatch runs on kernel terminate. Even a COD (unpaid) order
+    // counts as the sale here; admin status changes fire nothing.
+    $purchases = $this->capi->ofType('Purchase');
+    expect($purchases)->toHaveCount(1);
 });

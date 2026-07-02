@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Marketing\ConfirmOrderPurchase;
 use App\Actions\Orders\PlaceOrder;
 use App\Actions\Orders\SendOrderConfirmation;
 use App\DTOs\PlaceOrderData;
@@ -63,12 +64,21 @@ class CheckoutController extends Controller
 
         $this->sendConfirmation->handle($order);
 
-        // The Purchase conversion is NOT fired here. An order is not a confirmed
-        // sale — it fires once, server-side, when the admin sets the status to
-        // "confirmed" (see Admin\OrderController::updateStatus). The fbp/fbc
-        // captured above are persisted on the order so that later fire attributes
-        // to this customer rather than the admin's browser.
         $order->loadMissing(['items.product.category', 'customer', 'shippingZone']);
+
+        // The Purchase conversion fires here — the moment the order is placed —
+        // once, server-side (Meta CAPI + TikTok + GA4). The fbp/fbc captured
+        // above are persisted on the order so the fire attributes to this
+        // customer. It runs AFTER the response is flushed so three outbound
+        // marketing HTTP calls never slow the shopper's checkout; the
+        // idempotency stamp still guards against any later re-fire. The browser
+        // `purchase` dataLayer push (OrderResource `tracking`) shares the same
+        // `event_id`, so Meta de-duplicates the two into one counted sale. The
+        // closure captures only the order (a serializable model) and resolves
+        // the action fresh — never the controller, which isn't serializable.
+        dispatch(function () use ($order): void {
+            app(ConfirmOrderPurchase::class)->handle($order);
+        })->afterResponse();
 
         return (new OrderResource($order))->response()->setStatusCode(201);
     }

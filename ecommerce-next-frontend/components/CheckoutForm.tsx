@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { imageUrl } from "@/lib/image";
-import { trackPlaceOrder } from "@/lib/track";
+import { trackPurchase } from "@/lib/track";
 import type { PlacedOrder, Product, ProductShippingZone } from "@/lib/types";
 import { SafeImage } from "./SafeImage";
 
@@ -93,9 +93,10 @@ export function CheckoutForm({
 
       if (res.status === 201 && json?.data) {
         const placed = json.data as PlacedOrder;
-        // place_order fires here — the moment the order is created — using the
-        // rich dataLayer payload Laravel built for it.
-        if (placed.tracking) trackPlaceOrder(placed.tracking);
+        // purchase fires here — the moment the order is placed — using the rich
+        // dataLayer payload Laravel built for it. The server-side CAPI/GA4/TikTok
+        // copy fires at the same moment and dedupes by the shared event_id.
+        if (placed.tracking) trackPurchase(placed.tracking);
         sessionStorage.setItem("furnib:order", JSON.stringify(placed));
         router.push("/checkout/success");
         return;

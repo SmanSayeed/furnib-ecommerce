@@ -129,14 +129,15 @@ export function trackViewCategory(c: {
 }
 
 /**
- * `place_order` — fired when the order is created (checkout HTTP 201). The rich
+ * `purchase` — fired when the order is placed (checkout HTTP 201). The rich
  * payload (ecommerce + raw/hashed user_data + fbp/fbc/client_ip + order_info) is
  * built server-side by Laravel and pushed verbatim; no PII handling happens in
- * JS. This is a dataLayer-only signal (the marketer wires the GTM tags). The
- * authoritative Meta `Purchase` conversion is sent server-side later, when the
- * admin confirms the order — an order is not yet a confirmed sale.
+ * JS. This browser push and the server-side Meta CAPI / TikTok / GA4 copy (fired
+ * by Laravel at the same moment) share the `purchase.<order_no>` event_id, so
+ * Meta de-duplicates the two into one counted sale. This is the sole purchase
+ * conversion point — admin status changes fire nothing.
  */
-export function trackPlaceOrder(tracking: OrderTracking): void {
+export function trackPurchase(tracking: OrderTracking): void {
   const { event, ...rest } = tracking;
   clearEcommerce();
   pushEvent(event, rest);

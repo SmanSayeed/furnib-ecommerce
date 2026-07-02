@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Marketing\ConfirmOrderPurchase;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
 use App\Repositories\Eloquent\OrderRepository;
-use App\Support\Marketing\OrderTrackingPayload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +18,6 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OrderRepository $orders,
-        private readonly ConfirmOrderPurchase $confirmPurchase,
     ) {}
 
     public function index(Request $request): Response
@@ -105,18 +102,10 @@ class OrderController extends Controller
 
         $order->update(['status' => $status]);
 
-        // Confirming an order is the conversion point: fire the authoritative
-        // Meta Purchase server-side (once) and hand the rich GA4/Meta payload to
-        // the admin's browser to push to the dataLayer. PII in that payload is
-        // the customer's own data and reaches only this authenticated admin.
-        if ($status === 'confirmed' && $this->confirmPurchase->handle($order)) {
-            Inertia::flash('purchase', [
-                'event' => 'purchase',
-                'event_id' => 'purchase.'.$order->order_no,
-                ...OrderTrackingPayload::for($order),
-            ]);
-        }
-
+        // No marketing fires here. The Purchase conversion (server-side CAPI +
+        // GA4 + TikTok, and the browser dataLayer push) happens once at order
+        // placement (see Api\CheckoutController). Admin status changes are purely
+        // operational and carry no GTM/tracking.
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Order status updated.')]);
 
         return back();

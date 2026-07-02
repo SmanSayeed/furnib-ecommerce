@@ -13,7 +13,7 @@ beforeEach(function () {
     cache()->flush();
 });
 
-it('persists fbp/fbc on the order and returns a place_order tracking payload', function () {
+it('persists fbp/fbc on the order and returns a purchase tracking payload', function () {
     $category = Category::factory()->create(['title' => 'Sofas']);
     $product = Product::factory()->create([
         'category_id' => $category->id,
@@ -33,15 +33,15 @@ it('persists fbp/fbc on the order and returns a place_order tracking payload', f
 
     $order = Order::query()->latest('id')->firstOrFail();
 
-    // The first-party cookies are captured onto the order for the later
-    // admin-confirm Purchase attribution.
+    // The first-party cookies are captured onto the order so the purchase
+    // conversion (fired at placement) attributes to this customer.
     expect($order->fbp)->toBe('fb.1.123.abc')
         ->and($order->fbc)->toBe('fb.1.123.click');
 
     $t = $res->json('data.tracking');
 
-    expect($t['event'])->toBe('place_order')
-        ->and($t['event_id'])->toBe('place_order.'.$order->order_no)
+    expect($t['event'])->toBe('purchase')
+        ->and($t['event_id'])->toBe('purchase.'.$order->order_no)
         ->and($t['ecommerce']['currency'])->toBe('BDT')
         ->and((float) $t['ecommerce']['value'])->toBe($order->total->toDisplay())
         ->and($t['ecommerce']['payment_method'])->toBe('cod')

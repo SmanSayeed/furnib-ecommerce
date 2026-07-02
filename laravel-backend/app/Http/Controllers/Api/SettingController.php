@@ -40,10 +40,10 @@ class SettingController extends Controller
                 'favicon' => $this->url($b['favicon'] ?? null),
                 'banners' => $this->banners($b),
                 'socials' => $this->socials($b),
-                'footer_links' => is_array($b['about_links'] ?? null) ? array_values($b['about_links']) : [],
-                // Published system (legal) pages — the storefront footer renders
-                // these links automatically, no manual setup needed.
-                'legal_pages' => $this->legalPages(),
+                // Every published page marked "show in footer", in display order.
+                // The storefront footer "About Us" column renders these links
+                // automatically (→ /p/{slug}); no manual link setup needed.
+                'footer_pages' => $this->footerPages(),
                 // Payment-gateway compliance data (non-secret). Shown on the
                 // storefront footer / policy pages.
                 'compliance' => [
@@ -77,17 +77,16 @@ class SettingController extends Controller
     }
 
     /**
-     * Published system (legal) pages for the storefront footer, ordered by
-     * position: Terms & Conditions, Privacy Policy, Return & Refund Policy.
+     * Published, footer-visible pages for the storefront footer "About Us"
+     * column, in display order — both system (legal) pages and any custom
+     * published page the admin left visible.
      *
      * @return array<int, array{slug: string, title: string}>
      */
-    private function legalPages(): array
+    private function footerPages(): array
     {
         return Page::query()
-            ->published()
-            ->where('is_system', true)
-            ->orderBy('position')
+            ->inFooter()
             ->get(['slug', 'title'])
             ->map(fn (Page $p): array => ['slug' => $p->slug, 'title' => $p->title])
             ->all();

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Settings\SettingsService;
@@ -96,45 +97,64 @@ it('blocks footer details for users without settings.manage', function () {
     actingAs($user)->post('/settings/footer/details', [])->assertForbidden();
 });
 
-it('saves footer contact and quick links', function () {
+it('saves footer contact details', function () {
     actingAs(footerAdmin())
         ->post('/settings/footer/details', [
             'contact_email' => 'hi@furnib.com',
             'contact_phone' => '+880 1712-345678',
-            'about_links' => [
-                ['label' => 'About us', 'url' => '/p/about-us'],
-                ['label' => 'Blog', 'url' => 'https://furnib.com/blog'],
-            ],
         ])
         ->assertRedirect(route('footer-details.edit'));
 
     $settings = app(SettingsService::class);
     expect($settings->get('branding', 'contact_email'))->toBe('hi@furnib.com')
-        ->and($settings->get('branding', 'about_links'))->toBe([
-            ['label' => 'About us', 'url' => '/p/about-us'],
-            ['label' => 'Blog', 'url' => 'https://furnib.com/blog'],
-        ]);
+        ->and($settings->get('branding', 'contact_phone'))->toBe('+880 1712-345678');
 });
 
-it('exposes footer links via the public api', function () {
-    actingAs(footerAdmin())
-        ->post('/settings/footer/details', [
-            'about_links' => [['label' => 'Privacy', 'url' => '/p/privacy']],
-        ])
-        ->assertRedirect(route('footer-details.edit'));
+// ---- Footer pages (auto-listed in the storefront footer) ----
+
+it('exposes published footer pages via the api, in order, excluding drafts and hidden', function () {
+    Page::factory()->create(['title' => 'About Us', 'slug' => 'about-us', 'is_published' => true, 'position' => 1]);
+    Page::factory()->create(['title' => 'Company Profile', 'slug' => 'company-profile', 'is_published' => true, 'position' => 0]);
+    Page::factory()->create(['title' => 'Draft', 'slug' => 'draft', 'is_published' => false, 'position' => 2]);
+    Page::factory()->create(['title' => 'Hidden', 'slug' => 'hidden', 'is_published' => true, 'show_in_footer' => false, 'position' => 3]);
 
     $this->getJson('/api/v1/settings')
         ->assertOk()
-        ->assertJsonPath('data.footer_links.0.label', 'Privacy')
-        ->assertJsonPath('data.footer_links.0.url', '/p/privacy');
+        ->assertJsonCount(2, 'data.footer_pages')
+        ->assertJsonPath('data.footer_pages.0.slug', 'company-profile')
+        ->assertJsonPath('data.footer_pages.1.slug', 'about-us');
 });
 
-it('rejects a javascript: url in a footer link (xss guard)', function () {
+it('removes a non-system page from the footer and re-adds it', function () {
+    $page = Page::factory()->create(['is_published' => true, 'is_system' => false, 'show_in_footer' => true]);
+
     actingAs(footerAdmin())
-        ->post('/settings/footer/details', [
-            'about_links' => [['label' => 'Evil', 'url' => 'javascript:alert(1)']],
-        ])
-        ->assertSessionHasErrors('about_links.0.url');
+        ->patch("/settings/footer/pages/{$page->id}")
+        ->assertRedirect(route('footer-details.edit'));
+    expect($page->refresh()->show_in_footer)->toBeFalse();
+
+    actingAs(footerAdmin())
+        ->patch("/settings/footer/pages/{$page->id}")
+        ->assertRedirect(route('footer-details.edit'));
+    expect($page->refresh()->show_in_footer)->toBeTrue();
+});
+
+it('never hides a system (legal) page from the footer', function () {
+    $page = Page::factory()->create(['is_published' => true, 'is_system' => true, 'show_in_footer' => true]);
+
+    actingAs(footerAdmin())
+        ->patch("/settings/footer/pages/{$page->id}")
+        ->assertRedirect(route('footer-details.edit'));
+
+    expect($page->refresh()->show_in_footer)->toBeTrue();
+});
+
+it('blocks toggling a footer page for users without settings.manage', function () {
+    $page = Page::factory()->create();
+    $user = User::factory()->create();
+    $user->assignRole('editor');
+
+    actingAs($user)->patch("/settings/footer/pages/{$page->id}")->assertForbidden();
 });
 
 it('uploads the footer logo and exposes it via the public api', function () {

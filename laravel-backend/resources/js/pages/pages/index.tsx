@@ -12,6 +12,7 @@ type Page = {
     slug: string;
     is_published: boolean;
     is_system: boolean;
+    show_in_footer: boolean;
     position: number;
 };
 
@@ -67,15 +68,25 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
         </span>
     );
 
+    const HiddenBadge = () => (
+        <span
+            className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+            title="Published but hidden from the storefront footer"
+        >
+            Not in footer
+        </span>
+    );
+
     const columns: Column<Page>[] = [
         {
             key: 'title',
             header: 'Page',
             cell: (p) => (
                 <div>
-                    <div className="flex items-center gap-2 font-medium">
+                    <div className="flex flex-wrap items-center gap-2 font-medium">
                         {p.title}
                         {p.is_system && <SystemBadge />}
+                        {p.is_published && !p.show_in_footer && <HiddenBadge />}
                     </div>
                     <div className="text-xs text-muted-foreground">/p/{p.slug}</div>
                 </div>
@@ -109,6 +120,7 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <StatusBadge published={p.is_published} />
                     {p.is_system && <SystemBadge />}
+                    {p.is_published && !p.show_in_footer && <HiddenBadge />}
                     <span>/p/{p.slug}</span>
                 </div>
             </div>
@@ -155,8 +167,8 @@ export default function PagesIndex({ pages }: { pages: Page[] }) {
 
                 <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <ExternalLink className="size-3.5" />
-                    Add a published page to the footer from Settings → Site &amp; branding →
-                    Footer quick links, using the path <code>/p/your-slug</code>.
+                    Every published page shows in the storefront footer automatically. Hide or
+                    re-add individual pages from Settings → Footer details → Footer pages.
                 </p>
             </div>
         </>

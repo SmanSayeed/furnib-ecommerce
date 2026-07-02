@@ -29,6 +29,8 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::post('settings/footer/social', [FooterSocialController::class, 'update'])->name('footer-social.update');
     Route::get('settings/footer/details', [FooterDetailController::class, 'edit'])->name('footer-details.edit');
     Route::post('settings/footer/details', [FooterDetailController::class, 'update'])->name('footer-details.update');
+    // Toggle a published page in/out of the storefront footer.
+    Route::patch('settings/footer/pages/{page}', [FooterDetailController::class, 'togglePage'])->name('footer-details.toggle-page');
 
     // SMTP transport settings + deliverability test.
     Route::get('settings/smtp', [SmtpSettingController::class, 'edit'])->name('smtp-settings.edit');

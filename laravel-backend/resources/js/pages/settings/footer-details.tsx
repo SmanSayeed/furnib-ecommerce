@@ -1,14 +1,18 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { Plus, SquarePen, X } from 'lucide-react';
-import { useState } from 'react';
+import { Form, Head, Link, router } from '@inertiajs/react';
+import { Lock, Plus, SquarePen, X } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-type FooterLink = { label: string; url: string };
-type PageOption = { slug: string; title: string };
+type PageRow = {
+    id: number;
+    slug: string;
+    title: string;
+    is_system: boolean;
+    show_in_footer: boolean;
+};
 
 type FooterData = {
     logo_footer_url: string | null;
@@ -16,7 +20,6 @@ type FooterData = {
     contact_email: string;
     contact_address: string;
     contact_hours: string;
-    about_links: FooterLink[];
     // Payment-gateway compliance fields.
     payment_banner_url: string | null;
     trade_license_no: string;
@@ -39,28 +42,16 @@ export default function FooterDetails({
     pages,
 }: {
     footer: FooterData;
-    pages: PageOption[];
+    pages: PageRow[];
 }) {
-    const [links, setLinks] = useState<FooterLink[]>(footer.about_links ?? []);
-
-    const setLink = (index: number, field: keyof FooterLink, value: string) =>
-        setLinks((prev) => prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)));
-    const addLink = () => setLinks((prev) => [...prev, { label: '', url: '' }]);
-    const removeLink = (index: number) => setLinks((prev) => prev.filter((_, i) => i !== index));
-
-    // Append a footer page as a quick link (label = title, url = /p/slug).
-    const addPageLink = (slug: string) => {
-        const page = pages.find((p) => p.slug === slug);
-
-        if (!page) {
-            return;
-        }
-
-        const url = `/p/${page.slug}`;
-        setLinks((prev) =>
-            prev.some((l) => l.url === url) ? prev : [...prev, { label: page.title, url }],
+    // Add / remove a published page from the storefront footer. A partial-state
+    // visit keeps any unsaved edits in the contact form below intact.
+    const togglePage = (p: PageRow) =>
+        router.patch(
+            `/settings/footer/pages/${p.id}`,
+            {},
+            { preserveScroll: true, preserveState: true },
         );
-    };
 
     return (
         <>
@@ -71,8 +62,99 @@ export default function FooterDetails({
                 <Heading
                     variant="small"
                     title="Footer details"
-                    description="Contact block and the footer quick links (About us, Privacy, …) shown in the storefront footer."
+                    description="Contact block, footer pages and trust badges shown in the storefront footer."
                 />
+
+                {/* Footer pages — published pages shown in the storefront footer
+                    "About Us" column. Toggling is an independent action (not part
+                    of the contact form below). */}
+                <div className="space-y-4 rounded-lg border border-border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                            <p className="text-sm font-medium">Footer pages</p>
+                            <p className="text-xs text-muted-foreground">
+                                Every published page below shows in the footer &ldquo;About Us&rdquo;
+                                column. Remove one with{' '}
+                                <X className="inline size-3" aria-hidden />, or add it back. Legal
+                                (System) pages are always shown.
+                            </p>
+                        </div>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/admin/pages/create">
+                                <SquarePen className="size-4" /> Create footer page
+                            </Link>
+                        </Button>
+                    </div>
+
+                    {pages.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                            No published pages yet.{' '}
+                            <Link href="/admin/pages/create" className="underline">
+                                Create one
+                            </Link>{' '}
+                            to show it in the footer.
+                        </p>
+                    ) : (
+                        <ul className="divide-y divide-border rounded-md border border-border">
+                            {pages.map((p) => (
+                                <li
+                                    key={p.id}
+                                    className="flex items-center justify-between gap-3 px-3 py-2.5"
+                                >
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                                            <span className="truncate">{p.title}</span>
+                                            {p.is_system && (
+                                                <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                                                    <Lock className="size-3" /> System
+                                                </span>
+                                            )}
+                                            {!p.show_in_footer && (
+                                                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                    Hidden
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="truncate text-xs text-muted-foreground">
+                                            /p/{p.slug}
+                                        </div>
+                                    </div>
+
+                                    {p.is_system ? (
+                                        <span
+                                            className="shrink-0 p-2 text-muted-foreground"
+                                            title="Legal page — always shown in the footer"
+                                        >
+                                            <Lock className="size-4" />
+                                        </span>
+                                    ) : p.show_in_footer ? (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="shrink-0"
+                                            aria-label={`Remove ${p.title} from footer`}
+                                            title="Remove from footer"
+                                            onClick={() => togglePage(p)}
+                                        >
+                                            <X className="size-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="shrink-0"
+                                            onClick={() => togglePage(p)}
+                                        >
+                                            <Plus className="size-4" /> Add to footer
+                                        </Button>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
 
                 <Form
                     action="/settings/footer/details"
@@ -159,96 +241,6 @@ export default function FooterDetails({
                                         placeholder="Every Day 9 AM To 2 AM"
                                     />
                                     <InputError message={errs.contact_hours} />
-                                </div>
-
-                                <div className="space-y-4 rounded-lg border border-border p-4">
-                                    <div className="flex flex-wrap items-start justify-between gap-2">
-                                        <div>
-                                            <p className="text-sm font-medium">Footer quick links</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Add a Footer page below, or a custom link. URL must
-                                                be a full https:// link or a path starting with /.
-                                            </p>
-                                        </div>
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href="/admin/pages/create">
-                                                <SquarePen className="size-4" /> Create footer page
-                                            </Link>
-                                        </Button>
-                                    </div>
-
-                                    {/* Pick an existing page → adds it as a labelled link. */}
-                                    {pages.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <select
-                                                value=""
-                                                onChange={(e) => {
-                                                    addPageLink(e.target.value);
-                                                    e.target.value = '';
-                                                }}
-                                                className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
-                                            >
-                                                <option value="">+ Add a footer page…</option>
-                                                {pages.map((p) => (
-                                                    <option key={p.slug} value={p.slug}>
-                                                        {p.title} (/p/{p.slug})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <span className="text-xs text-muted-foreground">
-                                                picks a page link with its title as the label
-                                            </span>
-                                        </div>
-                                    )}
-                                    {links.map((link, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex flex-wrap items-start gap-2 sm:flex-nowrap"
-                                        >
-                                            <div className="grid flex-1 gap-1">
-                                                <Input
-                                                    name={`about_links[${i}][label]`}
-                                                    value={link.label}
-                                                    onChange={(e) => setLink(i, 'label', e.target.value)}
-                                                    placeholder="Label (e.g. About us)"
-                                                />
-                                                <InputError message={errs[`about_links.${i}.label`]} />
-                                            </div>
-                                            <div className="grid flex-1 gap-1">
-                                                <Input
-                                                    name={`about_links[${i}][url]`}
-                                                    value={link.url}
-                                                    onChange={(e) => setLink(i, 'url', e.target.value)}
-                                                    placeholder="/p/privacy-policy or https://…"
-                                                />
-                                                <InputError message={errs[`about_links.${i}.url`]} />
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                aria-label="Remove link"
-                                                onClick={() => removeLink(i)}
-                                            >
-                                                <X className="size-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                    {/* Marker so an empty list still submits the key and
-                                        clears previously saved links server-side. */}
-                                    {links.length === 0 && (
-                                        <input type="hidden" name="about_links" value="" />
-                                    )}
-                                    {links.length < 12 && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={addLink}
-                                        >
-                                            <Plus className="size-4" /> Add link
-                                        </Button>
-                                    )}
                                 </div>
 
                                 <div className="space-y-4 rounded-lg border border-border p-4">

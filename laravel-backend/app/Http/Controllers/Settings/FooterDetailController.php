@@ -77,15 +77,21 @@ class FooterDetailController extends Controller
             ? $this->storage->url($deliveryImage)
             : null;
 
-        $links = $this->settings->get(self::GROUP, 'about_links');
-        $data['about_links'] = is_array($links) ? array_values($links) : [];
-
-        // CMS pages offered in the "add a page link" picker.
+        // Published CMS pages + their footer visibility. The admin toggles each
+        // page in/out of the storefront footer here; system (legal) pages are
+        // always shown and cannot be hidden (gateway compliance).
         $pages = Page::query()
+            ->published()
             ->orderBy('position')
             ->orderBy('title')
-            ->get(['slug', 'title'])
-            ->map(fn (Page $p): array => ['slug' => $p->slug, 'title' => $p->title])
+            ->get(['id', 'slug', 'title', 'is_system', 'show_in_footer'])
+            ->map(fn (Page $p): array => [
+                'id' => $p->id,
+                'slug' => $p->slug,
+                'title' => $p->title,
+                'is_system' => $p->is_system,
+                'show_in_footer' => $p->show_in_footer,
+            ])
             ->all();
 
         return Inertia::render('settings/footer-details', [
@@ -148,12 +154,32 @@ class FooterDetailController extends Controller
             }
         }
 
-        // Re-keyed to a clean list; an empty submission clears saved links.
-        /** @var array<int, array{label:string, url:string}> $links */
-        $links = $request->validated('about_links') ?? [];
-        $this->settings->set(self::GROUP, 'about_links', array_values($links));
-
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Footer details updated.')]);
+
+        return to_route('footer-details.edit');
+    }
+
+    /**
+     * Toggle whether a published page shows in the storefront footer. System
+     * (legal) pages must always be present for payment-gateway compliance, so
+     * they can never be hidden.
+     */
+    public function togglePage(Page $page): RedirectResponse
+    {
+        if ($page->is_system && $page->show_in_footer) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Legal pages must stay in the footer.')]);
+
+            return to_route('footer-details.edit');
+        }
+
+        $page->update(['show_in_footer' => ! $page->show_in_footer]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $page->show_in_footer
+                ? __('Page added to the footer.')
+                : __('Page removed from the footer.'),
+        ]);
 
         return to_route('footer-details.edit');
     }

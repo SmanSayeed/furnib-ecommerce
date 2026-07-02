@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $body_html
  * @property bool $is_published
  * @property bool $is_system
+ * @property bool $show_in_footer
  * @property int $position
  */
 class Page extends Model
@@ -33,6 +34,7 @@ class Page extends Model
         'body_html',
         'is_published',
         'is_system',
+        'show_in_footer',
         'position',
     ];
 
@@ -41,6 +43,7 @@ class Page extends Model
         return [
             'is_published' => 'boolean',
             'is_system' => 'boolean',
+            'show_in_footer' => 'boolean',
             'position' => 'integer',
         ];
     }
@@ -49,5 +52,18 @@ class Page extends Model
     public function scopePublished(Builder $query): void
     {
         $query->where('is_published', true);
+    }
+
+    /**
+     * Published pages that appear in the storefront footer, in display order.
+     *
+     * @param  Builder<Page>  $query
+     */
+    public function scopeInFooter(Builder $query): void
+    {
+        $query->where('is_published', true)
+            ->where('show_in_footer', true)
+            ->orderBy('position')
+            ->orderBy('title');
     }
 }

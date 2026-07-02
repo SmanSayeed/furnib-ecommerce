@@ -40,12 +40,6 @@ class FooterDetailUpdateRequest extends FormRequest
             // Footer "opening hours" line, e.g. "Every Day 9 AM To 2 AM".
             'contact_hours' => ['nullable', 'string', 'max:200'],
 
-            // Footer quick links (label + url). URL must be absolute http(s) or a
-            // site-relative path starting with "/" — never a javascript: href.
-            'about_links' => ['nullable', 'array', 'max:12'],
-            'about_links.*.label' => ['required', 'string', 'max:60'],
-            'about_links.*.url' => ['required', 'string', 'max:200', 'regex:#^(https?://|/)#i'],
-
             // Payment-gateway compliance fields (owner fills the real values).
             'trade_license_no' => ['nullable', 'string', 'max:100'],
             'registered_address' => ['nullable', 'string', 'max:500'],
@@ -77,7 +71,6 @@ class FooterDetailUpdateRequest extends FormRequest
     {
         return [
             'logo_footer.mimes' => 'Footer logo must be PNG, JPG or WebP (SVG is not allowed).',
-            'about_links.*.url.regex' => 'Link must be an https:// URL or a path starting with /.',
             'payment_banner.mimes' => 'Payment banner must be PNG, JPG or WebP (SVG is not allowed).',
             'member_of_url.regex' => 'Link must be an https:// URL or a path starting with /.',
             'member_of_image.mimes' => "Member's Of image must be PNG, JPG or WebP (SVG is not allowed).",

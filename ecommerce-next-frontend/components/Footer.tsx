@@ -88,25 +88,13 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const phone = settings?.contact.phone || config.contact.phone;
   const email = settings?.contact.email || config.contact.email;
   const socials = settings?.socials ?? {};
-  const links = settings?.footer_links ?? [];
 
-  // "About Us" column — a single, deduped list of page links merging the
-  // admin-added footer links with the auto CMS/legal pages (→ /p/{slug}).
-  const aboutLinks: { label: string; url: string }[] = [];
-  const seenUrls = new Set<string>();
-  for (const link of links) {
-    if (link.url && !seenUrls.has(link.url)) {
-      seenUrls.add(link.url);
-      aboutLinks.push({ label: link.label, url: link.url });
-    }
-  }
-  for (const page of settings?.legal_pages ?? []) {
-    const url = `/p/${page.slug}`;
-    if (!seenUrls.has(url)) {
-      seenUrls.add(url);
-      aboutLinks.push({ label: page.title, url });
-    }
-  }
+  // "About Us" column — every published, footer-visible page the admin left on,
+  // in display order (→ /p/{slug}). Managed from admin Footer details.
+  const aboutLinks = (settings?.footer_pages ?? []).map((page) => ({
+    label: page.title,
+    url: `/p/${page.slug}`,
+  }));
 
   const socialEntries = Object.entries(socials).filter(
     ([, url]) => typeof url === "string" && url !== "",

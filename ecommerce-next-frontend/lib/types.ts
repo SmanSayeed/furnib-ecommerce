@@ -118,11 +118,6 @@ export type CategoryWithProducts = {
   meta: PageMeta;
 };
 
-export type FooterLink = {
-  label: string;
-  url: string;
-};
-
 export type SocialLinks = {
   facebook?: string;
   instagram?: string;
@@ -178,9 +173,8 @@ export type SiteSettings = {
   favicon: string | null;
   banners: Array<{ desktop: string; mobile: string }>;
   socials?: SocialLinks;
-  footer_links?: FooterLink[];
-  // Legal/CMS pages surfaced in the footer, each linking to /p/{slug}.
-  legal_pages?: Array<{ slug: string; title: string }>;
+  // Published pages shown in the footer "About Us" column, each → /p/{slug}.
+  footer_pages?: Array<{ slug: string; title: string }>;
   compliance?: SiteCompliance | null;
   footer_contact?: { hours: string | null } | null;
   footer_badges?: { member_of: Badge; delivery_partner: Badge } | null;

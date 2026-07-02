@@ -20,7 +20,7 @@ class PageController extends Controller
         $pages = Page::query()
             ->orderBy('position')
             ->orderBy('title')
-            ->get(['id', 'slug', 'title', 'is_published', 'is_system', 'position'])
+            ->get(['id', 'slug', 'title', 'is_published', 'is_system', 'show_in_footer', 'position'])
             ->all();
 
         return Inertia::render('pages/index', ['pages' => $pages]);

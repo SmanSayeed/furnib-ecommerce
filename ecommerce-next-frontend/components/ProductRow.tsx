@@ -11,11 +11,13 @@ export function ProductRow({
   product,
   categorySlug,
   whatsapp,
+  inquiryEnabled = true,
   brand,
 }: {
   product: Product;
   categorySlug: string;
   whatsapp?: string | null;
+  inquiryEnabled?: boolean;
   brand?: Brand;
 }) {
   const slides: Slide[] = [
@@ -95,6 +97,7 @@ export function ProductRow({
           product={product}
           categorySlug={categorySlug}
           whatsapp={whatsapp}
+          inquiryEnabled={inquiryEnabled}
         />
       </div>
     </article>

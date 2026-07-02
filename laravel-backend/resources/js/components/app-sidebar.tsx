@@ -8,6 +8,7 @@ import {
     LayoutGrid,
     Mail,
     Megaphone,
+    MessageCircle,
     Package,
     PanelBottom,
     ScrollText,
@@ -87,6 +88,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'settings.manage',
         items: [
             { title: 'Site & branding', href: '/settings/site', icon: Store },
+            { title: 'WhatsApp', href: '/settings/whatsapp', icon: MessageCircle },
             {
                 title: 'Footer settings',
                 icon: PanelBottom,

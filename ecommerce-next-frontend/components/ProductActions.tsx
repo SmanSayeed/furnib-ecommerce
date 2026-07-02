@@ -11,10 +11,12 @@ export function ProductActions({
   product,
   categorySlug,
   whatsapp,
+  inquiryEnabled = true,
 }: {
   product: Product;
   categorySlug?: string;
   whatsapp?: string | null;
+  inquiryEnabled?: boolean;
 }) {
   const productUrl = categorySlug
     ? `${config.siteUrl}/category/${categorySlug}`
@@ -57,34 +59,38 @@ export function ProductActions({
         </div>
 
         {/* Desktop Inquiry — solid WhatsApp green, white text (hidden on mobile) */}
-        <a
-          href={inquiryHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Inquiry on WhatsApp"
-          onClick={onInquiry}
-          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:brightness-110 sm:flex"
-        >
-          <WhatsAppIcon size={16} />
-          <span>Inquiry</span>
-        </a>
+        {inquiryEnabled && (
+          <a
+            href={inquiryHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Inquiry on WhatsApp"
+            onClick={onInquiry}
+            className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:brightness-110 sm:flex"
+          >
+            <WhatsAppIcon size={16} />
+            <span>Inquiry</span>
+          </a>
+        )}
       </div>
 
       {/* Right cluster: on mobile a solid green Inquiry sits beside Order;
           on desktop only Order shows here (Inquiry lives on the left). */}
       <div className="flex shrink-0 items-center gap-2">
         {/* Mobile Inquiry — same pill shape as Order, WhatsApp green (hidden from sm) */}
-        <a
-          href={inquiryHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Inquiry on WhatsApp"
-          onClick={onInquiry}
-          className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:brightness-110 sm:hidden"
-        >
-          <WhatsAppIcon size={16} />
-          <span>Inquiry</span>
-        </a>
+        {inquiryEnabled && (
+          <a
+            href={inquiryHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Inquiry on WhatsApp"
+            onClick={onInquiry}
+            className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:brightness-110 sm:hidden"
+          >
+            <WhatsAppIcon size={16} />
+            <span>Inquiry</span>
+          </a>
+        )}
 
         {/* Order — straight to the checkout page (no modal) */}
         <Link

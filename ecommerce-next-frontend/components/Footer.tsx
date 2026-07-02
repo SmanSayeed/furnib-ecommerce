@@ -107,7 +107,10 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const phone = settings?.contact.phone || config.contact.phone;
   const phone2 = settings?.contact.phone_2 || null;
   const email = settings?.contact.email || config.contact.email;
-  const whatsappNumber = settings?.whatsapp || null;
+  // Single WhatsApp number, shared with the floating button — falls back to the
+  // build config when the admin hasn't set one yet, so the link is never empty.
+  const whatsappNumber = settings?.whatsapp || config.whatsapp;
+  const showWhatsapp = settings?.whatsapp_buttons?.footer ?? true;
   const socials = settings?.socials ?? {};
 
   // "About Us" column — every published, footer-visible page the admin left on,
@@ -217,7 +220,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
                   Call Us
                 </a>
               )}
-              {whatsappNumber && (
+              {showWhatsapp && (
                 <a
                   href={whatsappGeneral(whatsappNumber)}
                   target="_blank"
@@ -254,15 +257,6 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
             <div className="mt-4">
               <NewsletterForm />
             </div>
-            <a
-              href={whatsappGeneral(settings?.whatsapp)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-            >
-              <WhatsAppIcon size={16} />
-              WhatsApp us
-            </a>
           </div>
         </div>
 

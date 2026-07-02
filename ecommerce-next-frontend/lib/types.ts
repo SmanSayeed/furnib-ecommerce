@@ -162,6 +162,12 @@ export type SiteSettings = {
   site_name: string | null;
   tagline: string | null;
   whatsapp: string | null;
+  // Per-button show/hide for the single WhatsApp number (admin-managed).
+  whatsapp_buttons?: {
+    floating: boolean;
+    inquiry: boolean;
+    footer: boolean;
+  };
   contact: {
     phone: string | null;
     phone_2: string | null;

@@ -82,6 +82,7 @@ export default async function CategoryPage({
           initial={products}
           meta={meta}
           whatsapp={settings?.whatsapp}
+          inquiryEnabled={settings?.whatsapp_buttons?.inquiry ?? true}
           brand={{
             name: settings?.site_name ?? "Furnib.com",
             avatar: imageUrl(settings?.favicon),

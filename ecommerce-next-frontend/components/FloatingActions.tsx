@@ -10,7 +10,13 @@ import { WhatsAppIcon } from "./WhatsAppIcon";
  *   - bottom-right: WhatsApp chat
  * Hidden on mobile (the bottom tab bar covers those there).
  */
-export function FloatingActions({ whatsapp }: { whatsapp?: string | null }) {
+export function FloatingActions({
+  whatsapp,
+  show = true,
+}: {
+  whatsapp?: string | null;
+  show?: boolean;
+}) {
   return (
     <>
       <button
@@ -26,15 +32,17 @@ export function FloatingActions({ whatsapp }: { whatsapp?: string | null }) {
         </svg>
       </button>
 
-      <a
-        href={whatsappGeneral(whatsapp)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat on WhatsApp"
-        className="fixed bottom-5 right-5 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 transition hover:bg-[#1ebe5b] md:flex"
-      >
-        <WhatsAppIcon size={26} />
-      </a>
+      {show && (
+        <a
+          href={whatsappGeneral(whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Chat on WhatsApp"
+          className="fixed bottom-5 right-5 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 transition hover:bg-[#1ebe5b] md:flex"
+        >
+          <WhatsAppIcon size={26} />
+        </a>
+      )}
     </>
   );
 }

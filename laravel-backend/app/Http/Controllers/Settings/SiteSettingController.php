@@ -26,7 +26,6 @@ class SiteSettingController extends Controller
     private const TEXT_KEYS = [
         'site_name',
         'tagline',
-        'whatsapp',
     ];
 
     /** Uploadable file fields. */

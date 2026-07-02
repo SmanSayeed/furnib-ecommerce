@@ -9,6 +9,7 @@ use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SiteSettingController;
 use App\Http\Controllers\Settings\SmtpSettingController;
 use App\Http\Controllers\Settings\StorageSettingController;
+use App\Http\Controllers\Settings\WhatsAppSettingController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,10 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::post('settings/footer/details', [FooterDetailController::class, 'update'])->name('footer-details.update');
     // Toggle a published page in/out of the storefront footer.
     Route::patch('settings/footer/pages/{page}', [FooterDetailController::class, 'togglePage'])->name('footer-details.toggle-page');
+
+    // WhatsApp — one number + per-button show/hide toggles.
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'edit'])->name('whatsapp-settings.edit');
+    Route::post('settings/whatsapp', [WhatsAppSettingController::class, 'update'])->name('whatsapp-settings.update');
 
     // SMTP transport settings + deliverability test.
     Route::get('settings/smtp', [SmtpSettingController::class, 'edit'])->name('smtp-settings.edit');

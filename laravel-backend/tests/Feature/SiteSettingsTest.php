@@ -37,14 +37,13 @@ it('saves branding text settings', function () {
         ->post('/settings/site', [
             'site_name' => 'Furnib BD',
             'tagline' => 'Comfort first',
-            'whatsapp' => '8801711112222',
         ])
         ->assertRedirect(route('site-settings.edit'));
 
     expect(Setting::where('group', 'branding')->where('key', 'site_name')->value('value'))
         ->toBe('Furnib BD');
-    expect(Setting::where('group', 'branding')->where('key', 'whatsapp')->value('value'))
-        ->toBe('8801711112222');
+    expect(Setting::where('group', 'branding')->where('key', 'tagline')->value('value'))
+        ->toBe('Comfort first');
 });
 
 it('uploads a logo and stores its path', function () {
@@ -94,15 +93,6 @@ it('rejects an svg logo upload', function () {
             'logo_light' => UploadedFile::fake()->create('logo.svg', 5, 'image/svg+xml'),
         ])
         ->assertSessionHasErrors('logo_light');
-});
-
-it('rejects a non-numeric whatsapp number', function () {
-    actingAs(adminUser())
-        ->post('/settings/site', [
-            'site_name' => 'Furnib BD',
-            'whatsapp' => '+88 017-bad',
-        ])
-        ->assertSessionHasErrors('whatsapp');
 });
 
 it('exposes public branding via the api', function () {

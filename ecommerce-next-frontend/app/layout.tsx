@@ -69,8 +69,14 @@ export default async function RootLayout({
             logoLight={settings?.logo_light}
             logoDark={settings?.logo_dark}
           />
-          <MobileTabBar whatsapp={settings?.whatsapp} />
-          <FloatingActions whatsapp={settings?.whatsapp} />
+          <MobileTabBar
+            whatsapp={settings?.whatsapp}
+            show={settings?.whatsapp_buttons?.floating ?? true}
+          />
+          <FloatingActions
+            whatsapp={settings?.whatsapp}
+            show={settings?.whatsapp_buttons?.floating ?? true}
+          />
         </ThemeProvider>
       </body>
     </html>

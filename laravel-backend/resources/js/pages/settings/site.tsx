@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 type Branding = {
     site_name: string;
     tagline: string;
-    whatsapp: string;
     logo_light_url: string | null;
     logo_dark_url: string | null;
     logo_invoice_url: string | null;
@@ -48,7 +47,7 @@ export default function Site({ branding }: { branding: Branding }) {
                 <Heading
                     variant="small"
                     title="Site & branding"
-                    description="Store name, WhatsApp number, header/invoice logos and favicon. The footer logo, social links and footer details live under Footer settings."
+                    description="Store name, tagline, header/invoice logos and favicon. WhatsApp lives under its own menu; footer logo, social links and details under Footer settings."
                 />
 
                 <Form
@@ -80,20 +79,6 @@ export default function Site({ branding }: { branding: Branding }) {
                                     placeholder="Feel the Comfort"
                                 />
                                 <InputError message={errors.tagline} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="whatsapp">
-                                    WhatsApp number (digits only, with country code)
-                                </Label>
-                                <Input
-                                    id="whatsapp"
-                                    name="whatsapp"
-                                    defaultValue={branding.whatsapp}
-                                    inputMode="numeric"
-                                    placeholder="8801712345678"
-                                />
-                                <InputError message={errors.whatsapp} />
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">

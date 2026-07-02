@@ -109,7 +109,11 @@ export default async function ProductPage({
             <p className="text-sm leading-relaxed text-muted">{product.details}</p>
           )}
 
-          <ProductActions product={product} whatsapp={settings?.whatsapp} />
+          <ProductActions
+            product={product}
+            whatsapp={settings?.whatsapp}
+            inquiryEnabled={settings?.whatsapp_buttons?.inquiry ?? true}
+          />
         </div>
       </article>
     </div>

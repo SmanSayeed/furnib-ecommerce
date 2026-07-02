@@ -24,7 +24,6 @@ class SiteSettingsUpdateRequest extends FormRequest
         return [
             'site_name' => ['required', 'string', 'max:120'],
             'tagline' => ['nullable', 'string', 'max:200'],
-            'whatsapp' => ['nullable', 'string', 'max:20', 'regex:/^[0-9]+$/'],
 
             'logo_light' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
             'logo_dark' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
@@ -45,7 +44,6 @@ class SiteSettingsUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'whatsapp.regex' => 'WhatsApp number must contain digits only (with country code, no +).',
             'logo_light.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'logo_dark.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',
             'logo_invoice.mimes' => 'Logo must be PNG, JPG or WebP (SVG is not allowed).',

@@ -9,7 +9,13 @@ import { WhatsAppIcon } from "./WhatsAppIcon";
 const item =
   "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium text-muted transition hover:text-foreground";
 
-export function MobileTabBar({ whatsapp }: { whatsapp?: string | null }) {
+export function MobileTabBar({
+  whatsapp,
+  show = true,
+}: {
+  whatsapp?: string | null;
+  show?: boolean;
+}) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
 
@@ -50,15 +56,17 @@ export function MobileTabBar({ whatsapp }: { whatsapp?: string | null }) {
         Home
       </Link>
 
-      <a
-        href={whatsappGeneral(whatsapp)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${item} text-[#25D366] hover:text-[#1ebe5b]`}
-      >
-        <WhatsAppIcon size={22} />
-        WhatsApp
-      </a>
+      {show && (
+        <a
+          href={whatsappGeneral(whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${item} text-[#25D366] hover:text-[#1ebe5b]`}
+        >
+          <WhatsAppIcon size={22} />
+          WhatsApp
+        </a>
+      )}
     </nav>
   );
 }

@@ -9,12 +9,14 @@ export function InfiniteProducts({
   initial,
   meta,
   whatsapp,
+  inquiryEnabled = true,
   brand,
 }: {
   slug: string;
   initial: Product[];
   meta: PageMeta;
   whatsapp?: string | null;
+  inquiryEnabled?: boolean;
   brand?: Brand;
 }) {
   const [products, setProducts] = useState<Product[]>(initial);
@@ -69,6 +71,7 @@ export function InfiniteProducts({
             product={p}
             categorySlug={slug}
             whatsapp={whatsapp}
+            inquiryEnabled={inquiryEnabled}
             brand={brand}
           />
         ))}

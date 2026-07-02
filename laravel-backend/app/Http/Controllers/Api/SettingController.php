@@ -28,7 +28,15 @@ class SettingController extends Controller
             'data' => [
                 'site_name' => $b['site_name'] ?? null,
                 'tagline' => $b['tagline'] ?? null,
+                // One WhatsApp number used everywhere, plus per-button show/hide
+                // flags (managed from the dedicated WhatsApp settings page). A
+                // button shows unless explicitly turned off.
                 'whatsapp' => $b['whatsapp'] ?? null,
+                'whatsapp_buttons' => [
+                    'floating' => ($b['whatsapp_floating_enabled'] ?? '1') !== '0',
+                    'inquiry' => ($b['whatsapp_inquiry_enabled'] ?? '1') !== '0',
+                    'footer' => ($b['whatsapp_footer_enabled'] ?? '1') !== '0',
+                ],
                 'contact' => [
                     'phone' => $b['contact_phone'] ?? null,
                     'phone_2' => $b['contact_phone_2'] ?? null,

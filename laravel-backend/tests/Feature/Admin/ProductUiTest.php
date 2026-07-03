@@ -237,3 +237,43 @@ it('permanently deletes a trashed product and its gallery rows', function () {
     expect(Product::withTrashed()->find($product->id))->toBeNull();
     expect(ProductImage::query()->find($image->id))->toBeNull();
 });
+
+it('stores a fixed-amount advance in whole-taka paisa (admin enters taka)', function () {
+    $category = Category::factory()->create();
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Advance Sofa',
+            'price' => '5000',
+            'product_status' => 'published',
+            'is_advance_payment' => true,
+            'advance_payment_type' => 'partial',
+            'partial_amount_type' => 'amount',
+            'partial_amount' => '500', // ৳500 → stored as 50000 paisa
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product = Product::query()->where('title', 'Advance Sofa')->firstOrFail();
+    expect($product->partial_amount)->toBe(50000);
+});
+
+it('keeps a percentage advance as its raw percent value', function () {
+    $category = Category::factory()->create();
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Percent Bed',
+            'price' => '5000',
+            'product_status' => 'published',
+            'is_advance_payment' => true,
+            'advance_payment_type' => 'partial',
+            'partial_amount_type' => 'percentage',
+            'partial_amount' => '50', // stays 50 (percent), not multiplied
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product = Product::query()->where('title', 'Percent Bed')->firstOrFail();
+    expect($product->partial_amount)->toBe(50);
+});

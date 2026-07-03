@@ -43,12 +43,15 @@ final class RecordPayment
             // VALID transaction settled in another currency can't be accepted.
             $currencyMatches = strtoupper((string) ($validated['currency'] ?? '')) === 'BDT';
 
+            $accepted = $statusOk && $tranMatches && $amountMatches && $currencyMatches;
+
             $payment->forceFill([
                 'val_id' => $validated['val_id'] ?? null,
                 'raw_payload' => $validated,
-                'status' => ($statusOk && $tranMatches && $amountMatches && $currencyMatches)
-                    ? Payment::STATUS_SUCCESS
-                    : Payment::STATUS_FAILED,
+                'status' => $accepted ? Payment::STATUS_SUCCESS : Payment::STATUS_FAILED,
+                // Auto reason on rejection so support can see WHY a gateway-side
+                // "success" was not accepted (never PII, never asked of the buyer).
+                'note' => $accepted ? null : $this->rejectionNote($statusOk, $tranMatches, $amountMatches, $currencyMatches),
             ])->save();
 
             if ($payment->status === Payment::STATUS_SUCCESS) {
@@ -57,6 +60,21 @@ final class RecordPayment
 
             return $payment;
         });
+    }
+
+    /**
+     * A short, non-sensitive reason a gateway-returned transaction was NOT
+     * accepted. Auto-derived from the server-side validation checks.
+     */
+    private function rejectionNote(bool $statusOk, bool $tranMatches, bool $amountMatches, bool $currencyMatches): string
+    {
+        return match (true) {
+            ! $statusOk => 'Payment rejected: gateway did not return a VALID status.',
+            ! $tranMatches => 'Payment rejected: transaction id mismatch.',
+            ! $amountMatches => 'Payment rejected: paid amount did not match the expected amount.',
+            ! $currencyMatches => 'Payment rejected: currency was not BDT.',
+            default => 'Payment rejected by server-side validation.',
+        };
     }
 
     private function reconcileOrder(Payment $payment): void

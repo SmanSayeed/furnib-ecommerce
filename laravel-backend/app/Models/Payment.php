@@ -25,6 +25,7 @@ use Spatie\Activitylog\LogOptions;
  * @property string $tran_id
  * @property string|null $val_id
  * @property string $status
+ * @property string|null $note
  * @property array<string, mixed>|null $raw_payload
  */
 class Payment extends Model
@@ -46,8 +47,20 @@ class Payment extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    // The customer backed out at the gateway — distinct from a genuine failure
+    // (bank decline, timeout) so support can tell "changed their mind" apart from
+    // "payment broke".
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const STATUSES = [
+        self::STATUS_PENDING,
+        self::STATUS_SUCCESS,
+        self::STATUS_FAILED,
+        self::STATUS_CANCELLED,
+    ];
+
     protected $fillable = [
-        'order_id', 'gateway', 'amount', 'type', 'tran_id', 'val_id', 'status', 'raw_payload',
+        'order_id', 'gateway', 'amount', 'type', 'tran_id', 'val_id', 'status', 'note', 'raw_payload',
     ];
 
     protected function casts(): array
@@ -64,7 +77,7 @@ class Payment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['order_id', 'gateway', 'amount', 'type', 'tran_id', 'val_id', 'status'])
+            ->logOnly(['order_id', 'gateway', 'amount', 'type', 'tran_id', 'val_id', 'status', 'note'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('Payment');

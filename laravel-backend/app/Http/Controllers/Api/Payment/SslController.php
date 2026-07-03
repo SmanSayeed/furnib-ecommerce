@@ -64,7 +64,10 @@ class SslController extends Controller
         try {
             $gatewayUrl = $this->gateway->initSession($order, $amount, $payment->tran_id);
         } catch (RuntimeException $e) {
-            $payment->update(['status' => Payment::STATUS_FAILED]);
+            $payment->update([
+                'status' => Payment::STATUS_FAILED,
+                'note' => 'Online payment could not be started (gateway unavailable).',
+            ]);
             report($e);
 
             return $this->error(
@@ -98,12 +101,12 @@ class SslController extends Controller
 
     public function fail(Request $request): Response
     {
-        return $this->markFailed($request, 'failed');
+        return $this->markUnpaid($request, Payment::STATUS_FAILED, 'failed');
     }
 
     public function cancel(Request $request): Response
     {
-        return $this->markFailed($request, 'cancelled');
+        return $this->markUnpaid($request, Payment::STATUS_CANCELLED, 'cancelled');
     }
 
     /**
@@ -149,7 +152,13 @@ class SslController extends Controller
         );
     }
 
-    private function markFailed(Request $request, string $resultStatus): Response
+    /**
+     * Record a non-successful outcome — the customer cancelled at the gateway,
+     * or the gateway/bank declined — against the pending payment, with an
+     * auto-generated reason note. The customer is NEVER asked for the reason;
+     * the server derives it from the callback.
+     */
+    private function markUnpaid(Request $request, string $status, string $resultStatus): Response
     {
         $tranId = (string) $request->input('tran_id', '');
 
@@ -157,16 +166,38 @@ class SslController extends Controller
         $payment?->loadMissing('order');
 
         if ($payment !== null && $payment->status === Payment::STATUS_PENDING) {
-            $payment->update(['status' => Payment::STATUS_FAILED]);
+            $payment->update([
+                'status' => $status,
+                'note' => $this->outcomeNote($status, $request),
+            ]);
         }
 
         return $this->respondOk(
             $request,
             forceJson: false,
-            json: ['status' => Payment::STATUS_FAILED],
+            json: ['status' => $status],
             resultStatus: $resultStatus,
             orderNo: $payment?->order?->order_no ?? $this->orderNoFrom($request),
         );
+    }
+
+    /**
+     * A short, non-sensitive reason for a cancelled/failed payment, auto-derived
+     * from the gateway callback. Never PII, never asked of the customer.
+     */
+    private function outcomeNote(string $status, Request $request): string
+    {
+        if ($status === Payment::STATUS_CANCELLED) {
+            return 'Cancelled by customer at the payment gateway.';
+        }
+
+        // SSLCommerz echoes a human reason on failures via `error` (occasionally
+        // `failedreason`). Keep it short and safe.
+        $reason = trim((string) ($request->input('error') ?: $request->input('failedreason', '')));
+
+        return $reason !== ''
+            ? 'Payment failed at the gateway: '.Str::limit($reason, 180)
+            : 'Payment failed at the payment gateway.';
     }
 
     /**

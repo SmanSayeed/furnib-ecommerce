@@ -75,7 +75,16 @@ export default function ProductForm({
         is_advance_payment: product?.is_advance_payment ?? false,
         advance_payment_type: product?.advance_payment_type ?? '',
         partial_amount_type: product?.partial_amount_type ?? '',
-        partial_amount: product?.partial_amount != null ? String(product.partial_amount) : '',
+        // "amount" is persisted as whole-taka paisa; show it back in taka. A
+        // "percentage" keeps its raw percent value.
+        partial_amount:
+            product?.partial_amount != null
+                ? String(
+                      product.partial_amount_type === 'amount'
+                          ? Math.round(product.partial_amount / 100)
+                          : product.partial_amount,
+                  )
+                : '',
         is_featured: product?.is_featured ?? false,
         is_new: product?.is_new ?? false,
         position_order: String(product?.position_order ?? 0),
@@ -507,11 +516,16 @@ setMainPreview(URL.createObjectURL(file));
                                     </select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="partial_amount">Partial value</Label>
+                                    <Label htmlFor="partial_amount">
+                                        Partial value
+                                        {data.partial_amount_type === 'percentage' && ' (%)'}
+                                        {data.partial_amount_type === 'amount' && ' (৳, whole taka)'}
+                                    </Label>
                                     <Input
                                         id="partial_amount"
                                         type="number"
                                         min={0}
+                                        step={1}
                                         value={
                                             data.partial_amount_type === 'shipping'
                                                 ? ''
@@ -523,6 +537,18 @@ setMainPreview(URL.createObjectURL(file));
                                         }
                                         onChange={(e) => setData('partial_amount', e.target.value)}
                                     />
+                                    {data.partial_amount_type === 'percentage' && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Advance = this % of the product price, rounded to the
+                                            nearest whole taka (no poysha).
+                                        </p>
+                                    )}
+                                    {data.partial_amount_type === 'amount' && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Fixed advance in whole taka (৳), capped at the order
+                                            total.
+                                        </p>
+                                    )}
                                     {data.partial_amount_type === 'shipping' && (
                                         <p className="text-xs text-muted-foreground">
                                             Advance = the customer&apos;s selected delivery

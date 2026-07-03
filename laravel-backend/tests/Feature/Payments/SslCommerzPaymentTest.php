@@ -240,17 +240,28 @@ it('redirects the browser to the storefront result page on a genuine success', f
     expect($order->fresh()->payment_status)->toBe('paid');
 });
 
-it('redirects the browser to the result page on fail and cancel', function () {
+it('marks a failed payment with an auto reason note', function () {
     $order = payableOrder();
     $tranId = initPayment($this, $order);
 
-    $this->post('/api/v1/payment/ssl/fail', ['tran_id' => $tranId])
+    $this->post('/api/v1/payment/ssl/fail', ['tran_id' => $tranId, 'error' => 'Insufficient funds'])
         ->assertRedirectContains('/checkout/result?status=failed');
+
+    $payment = Payment::query()->where('tran_id', $tranId)->first();
+    expect($payment->status)->toBe('failed')
+        ->and($payment->note)->toContain('Insufficient funds');
+});
+
+it('marks a customer-cancelled payment distinctly, with an auto note', function () {
+    $order = payableOrder();
+    $tranId = initPayment($this, $order);
 
     $this->post('/api/v1/payment/ssl/cancel', ['tran_id' => $tranId])
         ->assertRedirectContains('/checkout/result?status=cancelled');
 
-    expect(Payment::query()->where('tran_id', $tranId)->first()->status)->toBe('failed');
+    $payment = Payment::query()->where('tran_id', $tranId)->first();
+    expect($payment->status)->toBe('cancelled')
+        ->and($payment->note)->toBe('Cancelled by customer at the payment gateway.');
 });
 
 it('keeps gateway secret credentials out of any client response', function () {

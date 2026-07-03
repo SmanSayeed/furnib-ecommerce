@@ -29,6 +29,7 @@ class PaymentController extends Controller
                 'amount' => $p->amount->format('৳'),
                 'type' => $p->type,
                 'status' => $p->status,
+                'note' => $p->note,
                 'tran_id' => $p->tran_id,
                 'val_id' => $p->val_id,
                 'at' => $p->created_at?->toDateTimeString(),

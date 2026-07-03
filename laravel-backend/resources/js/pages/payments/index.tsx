@@ -12,6 +12,7 @@ type Payment = {
     amount: string;
     type: string;
     status: string;
+    note: string | null;
     tran_id: string;
     val_id: string | null;
     at: string | null;
@@ -23,7 +24,9 @@ function StatusBadge({ status }: { status: string }) {
             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
             : status === 'failed'
               ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-              : 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
+              : status === 'cancelled'
+                ? 'bg-slate-500/15 text-slate-600 dark:text-slate-300'
+                : 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
 
     return (
         <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${tone}`}>
@@ -42,7 +45,16 @@ export default function PaymentsIndex({ payments }: { payments: Payment[] }) {
         { key: 'gateway', header: 'Gateway', cell: (p) => <span className="capitalize">{p.gateway}</span> },
         { key: 'amount', header: 'Amount', cell: (p) => <span className="font-medium">{p.amount}</span> },
         { key: 'type', header: 'Type', cell: (p) => <span className="capitalize text-muted-foreground">{p.type}</span> },
-        { key: 'status', header: 'Status', cell: (p) => <StatusBadge status={p.status} /> },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (p) => (
+                <div className="space-y-1">
+                    <StatusBadge status={p.status} />
+                    {p.note && <p className="max-w-[16rem] text-[11px] text-muted-foreground">{p.note}</p>}
+                </div>
+            ),
+        },
         {
             key: 'tran_id',
             header: 'Transaction ID',
@@ -61,6 +73,7 @@ export default function PaymentsIndex({ payments }: { payments: Payment[] }) {
                 <span className="capitalize">{p.gateway} · {p.type}</span>
                 <span className="font-medium text-foreground">{p.amount}</span>
             </div>
+            {p.note && <div className="text-[11px] text-muted-foreground">{p.note}</div>}
             <div className="font-mono text-[11px] text-muted-foreground">{p.tran_id}</div>
             <div className="text-xs text-muted-foreground">{p.at}</div>
         </div>

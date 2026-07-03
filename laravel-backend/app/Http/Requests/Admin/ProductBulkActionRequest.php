@@ -29,6 +29,14 @@ class ProductBulkActionRequest extends FormRequest
             'all_matching' => $this->boolean('all_matching'),
             'is_advance_payment' => $this->boolean('is_advance_payment'),
         ]);
+
+        // A "fixed amount" advance is entered in whole taka but stored as paisa,
+        // matching the single-product form (and what the storefront consumes).
+        if ($this->input('partial_amount_type') === 'amount' && $this->input('partial_amount') !== null) {
+            $this->merge([
+                'partial_amount' => (int) round((float) $this->input('partial_amount')) * 100,
+            ]);
+        }
     }
 
     /**

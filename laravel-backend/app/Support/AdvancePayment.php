@@ -11,8 +11,10 @@ namespace App\Support;
  *  - full                            → the whole line total (PlaceOrder also adds
  *                                       the order's shipping, so a full advance =
  *                                       the entire order total)
- *  - partial / percentage            → lineTotal × (partial_amount %)
- *  - partial / amount                → fixed partial_amount (paisa), capped at lineTotal
+ *  - partial / percentage            → lineTotal × (partial_amount %), rounded to
+ *                                       the nearest whole taka (no poysha, half-up)
+ *  - partial / amount                → fixed partial_amount (whole-taka paisa),
+ *                                       capped at lineTotal
  *  - partial / shipping              → 0 here; resolved at ORDER level (= the
  *                                       selected delivery zone's cost) in PlaceOrder,
  *                                       since shipping is per-order, not per-line.
@@ -40,10 +42,16 @@ final class AdvancePayment
         if ($partialType === 'percentage') {
             $pct = max(0, min(100, (int) $partialAmount));
 
-            return Money::fromMinor(intdiv($lineTotal->toMinor() * $pct, 100));
+            // Advances carry NO poysha — round to the nearest whole taka
+            // (half-up: ৳1470.50 → ৳1471), then express back as paisa.
+            $wholeTaka = (int) round(($lineTotal->toMinor() * $pct) / 10000);
+
+            return Money::fromMinor($wholeTaka * 100);
         }
 
         if ($partialType === 'amount') {
+            // Stored as whole-taka paisa (admin enters taka; the FormRequest
+            // multiplies by 100), so it is already poysha-free.
             $fixed = max(0, (int) $partialAmount);
 
             return Money::fromMinor(min($fixed, $lineTotal->toMinor()));

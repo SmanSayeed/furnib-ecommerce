@@ -95,6 +95,18 @@ class ProductFormRequest extends FormRequest
                 'partial_amount_type' => null,
                 'partial_amount' => null,
             ]);
+
+            return;
+        }
+
+        // A "fixed amount" advance is entered in whole taka by the admin but is
+        // stored (and consumed by the storefront) as paisa — convert × 100 so the
+        // units match Price/discount. "percentage" keeps its raw percent value;
+        // "shipping" carries no amount.
+        if ($this->input('partial_amount_type') === 'amount' && $this->input('partial_amount') !== null) {
+            $this->merge([
+                'partial_amount' => (int) round((float) $this->input('partial_amount')) * 100,
+            ]);
         }
     }
 }

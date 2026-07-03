@@ -202,6 +202,33 @@ it('computes a percentage advance_amount from the subtotal', function () {
     expect($order->advance_amount->toMinor())->toBe(60000); // 30% of 2000.00
 });
 
+it('rounds a percentage advance to the nearest whole taka (no poysha, half-up)', function () {
+    // 50% of ৳2941 = ৳1470.50 → rounds up to ৳1471 (147100 paisa), never poysha.
+    $product = Product::factory()->create([
+        'price' => 2941, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'partial',
+        'partial_amount_type' => 'percentage', 'partial_amount' => 50,
+    ]);
+
+    $order = $this->action->handle(placeOrderData([['product_id' => $product->id, 'qty' => 1]]));
+
+    expect($order->advance_amount->toMinor())->toBe(147100)
+        ->and($order->advance_amount->toMinor() % 100)->toBe(0); // whole taka
+});
+
+it('treats a fixed-amount advance as whole-taka paisa, capped at the line total', function () {
+    // partial_amount is stored as paisa (৳500 → 50000) by the FormRequest.
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'partial',
+        'partial_amount_type' => 'amount', 'partial_amount' => 50000,
+    ]);
+
+    $order = $this->action->handle(placeOrderData([['product_id' => $product->id, 'qty' => 1]]));
+
+    expect($order->advance_amount->toMinor())->toBe(50000); // ৳500 of the ৳1000 line
+});
+
 it('requires a delivery area when the product takes its advance as shipping', function () {
     $product = Product::factory()->create([
         'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,

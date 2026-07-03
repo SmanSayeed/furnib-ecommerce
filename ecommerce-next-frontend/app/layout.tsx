@@ -59,6 +59,8 @@ export default async function RootLayout({
           <Header
             logoLight={settings?.logo_light}
             logoDark={settings?.logo_dark}
+            whatsapp={settings?.whatsapp}
+            inquiryEnabled={settings?.whatsapp_buttons?.inquiry ?? true}
           />
           <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-16 sm:px-6 lg:px-8 md:pb-0">
             {children}

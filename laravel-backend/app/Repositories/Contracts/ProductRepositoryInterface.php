@@ -16,6 +16,14 @@ interface ProductRepositoryInterface extends RepositoryInterface
 
     public function findPublishedBySlug(string $slug): ?Product;
 
+    /**
+     * Storefront typeahead: published products whose title/sku/slug match the
+     * term, newest-relevant first, capped at $limit.
+     *
+     * @return Collection<int, Product>
+     */
+    public function searchPublished(string $term, int $limit): Collection;
+
     /** @return LengthAwarePaginator<int, Product> */
     public function paginatePublishedForCategory(int $categoryId, int $perPage = 12): LengthAwarePaginator;
 

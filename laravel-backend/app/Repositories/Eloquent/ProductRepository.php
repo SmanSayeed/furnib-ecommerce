@@ -33,6 +33,28 @@ final class ProductRepository extends BaseRepository implements ProductRepositor
             ->first();
     }
 
+    /**
+     * @return Collection<int, Product>
+     */
+    public function searchPublished(string $term, int $limit): Collection
+    {
+        // Parameter-bound LIKE (Eloquent escapes the binding); we only escape the
+        // LIKE wildcards so a user-typed % or _ is treated literally.
+        $like = '%'.addcslashes($term, '%_\\').'%';
+
+        return Product::query()
+            ->where('product_status', 'published')
+            ->where(function (Builder $q) use ($like): void {
+                $q->where('title', 'like', $like)
+                    ->orWhere('sku', 'like', $like)
+                    ->orWhere('slug', 'like', $like);
+            })
+            ->orderByDesc('is_featured')
+            ->orderBy('title')
+            ->limit($limit)
+            ->get();
+    }
+
     /** @return LengthAwarePaginator<int, Product> */
     public function paginatePublishedForCategory(int $categoryId, int $perPage = 12): LengthAwarePaginator
     {

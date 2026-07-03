@@ -48,6 +48,8 @@ Route::prefix('v1')->group(function () {
     // Storefront catalog (read-only)
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/{slug}', [CategoryController::class, 'show']);
+    // Header typeahead — rate-limited; specific route before the {slug} wildcard.
+    Route::middleware('throttle:60,1')->get('products', [ProductController::class, 'search']);
     Route::get('products/{slug}', [ProductController::class, 'show']);
     // Per-product shipping zones (base + this product's per-unit extra).
     Route::get('products/{slug}/shipping-zones', [ProductShippingZoneController::class, 'index']);

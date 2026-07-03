@@ -44,6 +44,17 @@ arrives even if the shopper closes the tab. `success_url` is the browser return
 (nice UX) but must never be the only path — both run through the same validated
 `finalize()`, and the idempotency guard means the double-fire counts once.
 
+### Two payment entry points
+
+| Product needs an advance? | Where payment starts | Payment is |
+|---|---|---|
+| **Yes** (`advance_amount > 0`) | **Checkout page** — on "Place order & pay advance", the order is created then the browser goes straight to SSLCommerz | **Mandatory** (charges `type=partial` = the order's `advance_amount`) |
+| **No** | **Success page** — "Pay online" button | **Optional** (full amount; COD otherwise) |
+
+The decision uses the server-computed `advance_amount` on the placed order
+(`CheckoutForm.startAdvancePayment`). If the gateway can't open, the shopper is
+sent to the success page to retry — the order is already saved.
+
 ---
 
 ## 3. Security guarantees

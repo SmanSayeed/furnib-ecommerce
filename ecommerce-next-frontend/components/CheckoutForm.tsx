@@ -55,6 +55,7 @@ export function CheckoutForm({
   // Live advance preview — mirrors the server's AdvancePayment rule so the
   // customer sees exactly what they'll be asked to prepay now.
   const adv = product.advance;
+  const advanceRequired = adv?.required ?? false;
   let advanceMinor = 0;
   if (adv?.required && adv.type) {
     if (adv.type === "full") {
@@ -68,7 +69,34 @@ export function CheckoutForm({
     }
     advanceMinor = Math.min(advanceMinor, totalMinor);
   }
-  const showAdvance = advanceMinor > 0 && advanceMinor < totalMinor;
+  // Show the "payable now" line whenever an advance applies (partial OR full).
+  const showAdvance = advanceRequired && advanceMinor > 0;
+
+  // Opens an SSLCommerz session for the required advance and navigates the
+  // browser to the gateway. Returns false if the session couldn't be started.
+  async function startAdvancePayment(orderNo: string): Promise<boolean> {
+    try {
+      const res = await fetch("/api/payment/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // `partial` charges the order's advance_amount — the correct amount for
+        // both partial and full-advance products (server resolves it).
+        body: JSON.stringify({ order_no: orderNo, type: "partial" }),
+      });
+      const json = await res.json();
+      if (res.ok && json?.gateway_url) {
+        window.location.href = json.gateway_url;
+        return true;
+      }
+      setGeneralError(
+        json?.error?.message ?? "Could not start the advance payment. Please try again.",
+      );
+      return false;
+    } catch {
+      setGeneralError("Network error starting payment. Please try again.");
+      return false;
+    }
+  }
 
   async function placeOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -98,6 +126,20 @@ export function CheckoutForm({
         // copy fires at the same moment and dedupes by the shared event_id.
         if (placed.tracking) trackPurchase(placed.tracking);
         sessionStorage.setItem("furnib:order", JSON.stringify(placed));
+
+        // Advance/partial payment is MANDATORY: go straight to the gateway.
+        // `advance_amount` (server truth) drives this — for a "full" advance it
+        // equals the payable amount, for a partial it's the required prepay.
+        if (placed.advance_amount.minor > 0) {
+          const started = await startAdvancePayment(placed.order_no);
+          if (started) return; // browser is navigating to SSLCommerz
+          // Couldn't open the gateway — send them to the success page where the
+          // "Pay advance" button lets them retry (order is already saved).
+          router.push("/checkout/success");
+          return;
+        }
+
+        // No advance required — order stands; paying online is optional there.
         router.push("/checkout/success");
         return;
       }
@@ -286,7 +328,13 @@ export function CheckoutForm({
         disabled={submitting || blockedNoZone}
         className="mt-6 w-full rounded-xl bg-accent px-6 py-3.5 text-center font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {submitting ? "Placing order…" : "Place order"}
+        {submitting
+          ? advanceRequired
+            ? "Starting payment…"
+            : "Placing order…"
+          : advanceRequired
+            ? `Place order & pay advance — ${taka(advanceMinor)}`
+            : "Place order"}
       </button>
 
       {/* Passive acceptance — clicking Place Order counts as agreement (backend
@@ -323,7 +371,9 @@ export function CheckoutForm({
       </p>
 
       <p className="mt-3 text-center text-xs text-muted">
-        Cash on delivery or online payment — choose on the next step.
+        {advanceRequired
+          ? "This item needs an advance payment. You'll pay it securely now to confirm your order."
+          : "Cash on delivery or online payment — choose on the next step."}
       </p>
     </form>
   );

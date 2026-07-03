@@ -206,6 +206,51 @@ it('returns 404 for a callback on an unknown transaction', function () {
         ->assertJsonPath('error.code', 'unknown_transaction');
 });
 
+it('rejects a callback whose verify_sign signature does not match', function () {
+    $order = payableOrder();
+    $tranId = initPayment($this, $order);
+
+    // Genuine-looking validation, but the cheap signature pre-check fails first.
+    $this->gateway->callbackValid = false;
+    $this->gateway->fakeValidation([
+        'status' => 'VALID', 'tran_id' => $tranId, 'amount' => $order->total->toDisplay(), 'val_id' => 'v-ok',
+    ]);
+
+    $this->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v-ok'])
+        ->assertStatus(422)
+        ->assertJsonPath('error.code', 'invalid_signature');
+
+    expect($order->fresh()->payment_status)->toBe('unpaid');
+});
+
+it('redirects the browser to the storefront result page on a genuine success', function () {
+    $order = payableOrder();
+    $tranId = initPayment($this, $order);
+
+    $this->gateway->fakeValidation([
+        'status' => 'VALID', 'tran_id' => $tranId, 'amount' => $order->total->toDisplay(), 'val_id' => 'v-ok',
+    ]);
+
+    // A browser POST (no Accept: application/json) → 302 to the storefront.
+    $this->post('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v-ok'])
+        ->assertRedirectContains('/checkout/result?status=success');
+
+    expect($order->fresh()->payment_status)->toBe('paid');
+});
+
+it('redirects the browser to the result page on fail and cancel', function () {
+    $order = payableOrder();
+    $tranId = initPayment($this, $order);
+
+    $this->post('/api/v1/payment/ssl/fail', ['tran_id' => $tranId])
+        ->assertRedirectContains('/checkout/result?status=failed');
+
+    $this->post('/api/v1/payment/ssl/cancel', ['tran_id' => $tranId])
+        ->assertRedirectContains('/checkout/result?status=cancelled');
+
+    expect(Payment::query()->where('tran_id', $tranId)->first()->status)->toBe('failed');
+});
+
 it('keeps gateway secret credentials out of any client response', function () {
     $settings = app(SettingsService::class);
     $settings->set('sslcommerz', 'store_id', 'furnib_store', false);

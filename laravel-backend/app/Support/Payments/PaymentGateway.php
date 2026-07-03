@@ -30,4 +30,16 @@ interface PaymentGateway
      * @return array<string, mixed>
      */
     public function validatePayment(string $valId): array;
+
+    /**
+     * Cheap authenticity check on a callback/IPN payload BEFORE any outbound
+     * call — proves the POST really came from the gateway (e.g. SSLCommerz'
+     * verify_sign hash). Returns true when the signature is valid OR when the
+     * gateway sent no signature fields (in which case the authoritative
+     * validatePayment() call remains the real gate). Returns false only when a
+     * signature is present but does not match.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function verifyCallback(array $payload): bool;
 }

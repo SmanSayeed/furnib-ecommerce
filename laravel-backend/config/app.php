@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Storefront (Next.js) URL
+    |--------------------------------------------------------------------------
+    |
+    | The public storefront base URL. Server-side payment callbacks (SSLCommerz
+    | success/fail/cancel) redirect the shopper's browser back here to a nice
+    | result page. This is a trusted, server-controlled value — never built from
+    | user input — so it can't be abused as an open redirect.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost:3000')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

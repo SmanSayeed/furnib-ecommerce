@@ -44,6 +44,19 @@ final class FakePaymentGateway implements PaymentGateway
     }
 
     /**
+     * Tests exercise the real security gate (validatePayment), so the cheap
+     * signature pre-check is a no-op here unless a test scripts otherwise.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function verifyCallback(array $payload): bool
+    {
+        return $this->callbackValid;
+    }
+
+    public bool $callbackValid = true;
+
+    /**
      * Script the next validatePayment() result.
      *
      * @param  array<string, mixed>  $data

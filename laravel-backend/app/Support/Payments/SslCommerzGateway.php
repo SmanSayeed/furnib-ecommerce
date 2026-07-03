@@ -24,6 +24,18 @@ final class SslCommerzGateway implements PaymentGateway
     {
         [$storeId, $storePassword] = $this->credentials();
 
+        $order->loadMissing(['customer', 'shippingZone']);
+
+        $customerName = (string) ($order->customer->name ?? 'Customer');
+        $city = (string) ($order->shippingZone->name ?? 'Dhaka');
+        $itemCount = max(1, (int) $order->items()->sum('qty'));
+
+        // Every field SSLCommerz v4 marks MANDATORY is sent. cus_email is
+        // required but our COD orders have none, so we fall back to the store's
+        // own contact inbox (a real address, so the gateway receipt never
+        // bounces). shipping_method='YES' means the ship_* block is required —
+        // we derive it from the order. value_a echoes the order_no back on every
+        // callback, giving us a reliable handle even before validation.
         $response = Http::asForm()->post($this->baseUrl().'/gwprocess/v4/api.php', [
             'store_id' => $storeId,
             'store_passwd' => $storePassword,
@@ -34,15 +46,27 @@ final class SslCommerzGateway implements PaymentGateway
             'fail_url' => route('api.payment.ssl.fail'),
             'cancel_url' => route('api.payment.ssl.cancel'),
             'ipn_url' => route('api.payment.ssl.ipn'),
-            'shipping_method' => 'Courier',
+            // Product (mandatory).
             'product_name' => 'Furnib order '.$order->order_no,
             'product_category' => 'Furniture',
             'product_profile' => 'physical-goods',
-            'cus_name' => (string) ($order->customer->name ?? 'Customer'),
+            // Customer (mandatory: name, email, phone).
+            'cus_name' => $customerName,
+            'cus_email' => $this->customerEmail($order),
             'cus_phone' => (string) ($order->customer->mobile ?? ''),
             'cus_add1' => $order->address,
-            'cus_city' => 'Dhaka',
+            'cus_city' => $city,
             'cus_country' => 'Bangladesh',
+            // Shipping (mandatory when shipping_method !== 'NO').
+            'shipping_method' => 'YES',
+            'num_of_item' => $itemCount,
+            'ship_name' => $customerName,
+            'ship_add1' => $order->address,
+            'ship_city' => $city,
+            'ship_postcode' => '1200',
+            'ship_country' => 'Bangladesh',
+            // Echoed back verbatim on every callback/IPN.
+            'value_a' => $order->order_no,
         ]);
 
         $data = $response->json();
@@ -74,6 +98,61 @@ final class SslCommerzGateway implements PaymentGateway
             'currency' => (string) ($data['currency'] ?? 'BDT'),
             'val_id' => (string) ($data['val_id'] ?? $valId),
         ];
+    }
+
+    /**
+     * Verify SSLCommerz' verify_sign hash: md5 of the alphabetically-sorted
+     * verify_key fields plus md5(store_passwd), as key=value&… . Proves the POST
+     * genuinely came from SSLCommerz. Absent signature → true (validatePayment
+     * stays the authoritative gate); present-but-wrong → false.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function verifyCallback(array $payload): bool
+    {
+        $sign = $payload['verify_sign'] ?? null;
+        $keyList = $payload['verify_key'] ?? null;
+
+        if (! is_string($sign) || $sign === '' || ! is_string($keyList) || $keyList === '') {
+            return true;
+        }
+
+        [, $storePassword] = $this->credentials();
+
+        $fields = [];
+        foreach (explode(',', $keyList) as $key) {
+            $fields[$key] = (string) ($payload[$key] ?? '');
+        }
+        $fields['store_passwd'] = md5($storePassword);
+        ksort($fields);
+
+        $pairs = [];
+        foreach ($fields as $key => $value) {
+            $pairs[] = $key.'='.$value;
+        }
+
+        return hash_equals(md5(implode('&', $pairs)), $sign);
+    }
+
+    /**
+     * SSLCommerz requires a customer email. Our phone-first COD orders rarely
+     * have one, so fall back to the store's own contact inbox (a real, owned
+     * address) and finally to a safe no-reply on the app domain.
+     */
+    private function customerEmail(Order $order): string
+    {
+        $email = $order->customer->email ?? null;
+
+        if (blank($email)) {
+            $email = $this->settings->get('branding', 'contact_email');
+        }
+
+        if (blank($email)) {
+            $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'furnib.com';
+            $email = 'orders@'.$host;
+        }
+
+        return (string) $email;
     }
 
     /**

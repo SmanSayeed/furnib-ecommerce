@@ -8,7 +8,8 @@ import type { PlacedOrder, Product, ProductShippingZone } from "@/lib/types";
 import { SafeImage } from "./SafeImage";
 
 function taka(minor: number): string {
-  return `৳${(minor / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+  // Whole taka only — round to the nearest, no decimals.
+  return `৳${Math.round(minor / 100).toLocaleString("en-US")}`;
 }
 
 export function CheckoutForm({

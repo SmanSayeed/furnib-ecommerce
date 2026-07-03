@@ -36,14 +36,14 @@ export function whatsappOrder(
   number?: string | null,
 ): string {
   const unit = product.discount_price ?? product.price;
-  const total = (unit.minor * qty) / 100;
+  const total = Math.round((unit.minor * qty) / 100);
   const lines = [
     `*Order — ${config.siteName}*`,
     `Product: ${product.title}`,
     `SKU: ${product.sku}`,
     `Quantity: ${qty}`,
     `Unit price: ${unit.formatted}`,
-    `Total: ৳${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+    `Total: ৳${total.toLocaleString("en-US")}`,
     `\n${productUrl}`,
   ];
   return link(lines.join("\n"), number);

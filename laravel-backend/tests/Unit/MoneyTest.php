@@ -31,6 +31,8 @@ it('rejects non-numeric display input', function () {
     Money::fromDisplay('not-a-number');
 })->throws(InvalidArgumentException::class);
 
-it('formats with a currency symbol', function () {
-    expect(Money::fromMinor(123456)->format('৳'))->toBe('৳1,234.56');
+it('formats with a currency symbol and no decimals (rounded)', function () {
+    expect(Money::fromMinor(123456)->format('৳'))->toBe('৳1,235')
+        ->and(Money::fromMinor(120000)->format('৳'))->toBe('৳1,200')
+        ->and(Money::fromMinor(50)->format('৳'))->toBe('৳1');
 });

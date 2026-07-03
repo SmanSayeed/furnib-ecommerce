@@ -41,7 +41,7 @@ it('shows order count and total spent (paid + partial only)', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('customers/index')
             ->where('customers.0.orders_count', 3)
-            ->where('customers.0.total_spent', '৳300.00'));
+            ->where('customers.0.total_spent', '৳300'));
 });
 
 it('searches customers by mobile', function () {

@@ -61,8 +61,13 @@ final class Money
         return $this->minorUnits === $other->minorUnits;
     }
 
+    /**
+     * Human display string with the currency symbol and NO decimals — amounts
+     * are rounded to the nearest taka (e.g. 123456 minor -> "৳1,235"). Money is
+     * still stored/compared in exact minor units; this only affects display.
+     */
     public function format(string $symbol = '৳'): string
     {
-        return $symbol.number_format($this->minorUnits / 100, 2);
+        return $symbol.number_format($this->minorUnits / 100, 0);
     }
 }

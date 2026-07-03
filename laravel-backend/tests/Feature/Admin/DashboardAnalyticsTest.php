@@ -41,7 +41,7 @@ it('counts revenue only from paid orders', function () {
     actingAs(dashboardUser())
         ->get('/dashboard?range=this_month')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('orderStats.revenue', '৳100.00'));
+        ->assertInertia(fn (Assert $page) => $page->where('orderStats.revenue', '৳100'));
 });
 
 it('computes average order value as revenue over paid count', function () {
@@ -52,8 +52,8 @@ it('computes average order value as revenue over paid count', function () {
         ->get('/dashboard?range=this_month')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('orderStats.revenue', '৳400.00')
-            ->where('orderStats.aov', '৳200.00'));
+            ->where('orderStats.revenue', '৳400')
+            ->where('orderStats.aov', '৳200'));
 });
 
 it('returns a daily series spanning the last 7 days', function () {

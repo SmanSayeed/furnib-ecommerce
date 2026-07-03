@@ -63,8 +63,10 @@ export function CheckoutForm({
       // Full advance = the whole order (product + shipping), not just the product.
       advanceMinor = totalMinor;
     } else if (adv.partial_type === "percentage") {
-      advanceMinor = Math.floor((subtotalMinor * (adv.partial_amount ?? 0)) / 100);
+      // Mirror the server: round to the nearest whole taka (half-up), no poysha.
+      advanceMinor = Math.round((subtotalMinor * (adv.partial_amount ?? 0)) / 10000) * 100;
     } else if (adv.partial_type === "amount") {
+      // partial_amount is whole-taka paisa on the server.
       advanceMinor = Math.min(adv.partial_amount ?? 0, subtotalMinor);
     } else if (adv.partial_type === "shipping") {
       advanceMinor = shippingMinor;
@@ -73,6 +75,8 @@ export function CheckoutForm({
   }
   // Show the "payable now" line whenever an advance applies (partial OR full).
   const showAdvance = advanceRequired && advanceMinor > 0;
+  // The rest is collected as cash on delivery.
+  const dueMinor = Math.max(0, totalMinor - advanceMinor);
 
   // Opens an SSLCommerz session for the required advance and navigates the
   // browser to the gateway. Returns false if the session couldn't be started.
@@ -128,6 +132,9 @@ export function CheckoutForm({
         // copy fires at the same moment and dedupes by the shared event_id.
         if (placed.tracking) trackPurchase(placed.tracking);
         sessionStorage.setItem("furnib:order", JSON.stringify(placed));
+        // Stash the shopper's own mobile so the success page can fetch the live
+        // paid/due state (the endpoint verifies order_no + this mobile).
+        sessionStorage.setItem("furnib:order_mobile", mobile);
 
         // Advance/partial payment is MANDATORY: go straight to the gateway.
         // `advance_amount` (server truth) drives this — for a "full" advance it
@@ -315,12 +322,20 @@ export function CheckoutForm({
           <span className="text-accent">{taka(totalMinor)}</span>
         </div>
         {showAdvance && (
-          <div className="flex justify-between border-t border-border pt-2 text-sm">
-            <span className="font-medium">
-              Advance payable now
-              {adv?.partial_type === "shipping" ? " (shipping charge)" : ""}
-            </span>
-            <span className="font-semibold text-accent">{taka(advanceMinor)}</span>
+          <div className="mt-1 space-y-1 border-t border-border pt-2 text-sm">
+            <div className="flex justify-between">
+              <span className="font-medium">
+                Pay now online (advance)
+                {adv?.partial_type === "shipping" ? " · shipping" : ""}
+              </span>
+              <span className="font-semibold text-accent">{taka(advanceMinor)}</span>
+            </div>
+            {dueMinor > 0 && (
+              <div className="flex justify-between text-muted">
+                <span>Cash on delivery (due)</span>
+                <span className="font-medium">{taka(dueMinor)}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -105,6 +105,19 @@ export type PlacedOrder = {
   tracking?: OrderTracking;
 };
 
+// Live paid/due snapshot for a placed order (Laravel OrderStatusController),
+// fetched after returning from the gateway so the success page shows the truth.
+export type OrderStatus = {
+  order_no: string;
+  status: string;
+  payment_status: string;
+  total: Money;
+  advance_amount: Money;
+  advance_paid: Money;
+  due: Money;
+  advance_required: boolean;
+};
+
 export type PageMeta = {
   current_page: number;
   last_page: number;

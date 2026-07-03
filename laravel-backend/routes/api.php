@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CollectController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\NewsletterController;
+use App\Http\Controllers\Api\OrderStatusController;
 use App\Http\Controllers\Api\PageController as ApiPageController;
 use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
@@ -60,6 +61,11 @@ Route::prefix('v1')->group(function () {
     // Storefront checkout
     Route::get('shipping-zones', [ShippingZoneController::class, 'index']);
     Route::middleware('throttle:orders')->post('orders', [CheckoutController::class, 'store']);
+
+    // "What do I still owe?" — a shopper checks their own order's paid/due state
+    // after returning from the gateway. Guarded by order_no + their mobile (no
+    // IDOR), rate-limited. Read-only, money fields only.
+    Route::middleware('throttle:30,1')->post('orders/{order_no}/status', [OrderStatusController::class, 'show']);
 
     Route::middleware('auth:sanctum')->get('me', fn (Request $request) => response()->json([
         'id' => $request->user()->id,

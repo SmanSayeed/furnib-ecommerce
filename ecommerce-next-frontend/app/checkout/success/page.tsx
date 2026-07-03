@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
-import type { PlacedOrder } from "@/lib/types";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import type { OrderStatus, PlacedOrder } from "@/lib/types";
 
 const SERVER_SNAPSHOT = "__server__";
 
@@ -13,6 +13,7 @@ function readOrder(): string | null {
 export default function SuccessPage() {
   const [paying, setPaying] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
+  const [live, setLive] = useState<OrderStatus | null>(null);
 
   // Read the placed order from sessionStorage without setState-in-effect.
   const raw = useSyncExternalStore(
@@ -29,6 +30,32 @@ export default function SuccessPage() {
       return null;
     }
   }, [raw, loaded]);
+
+  // Fetch the LIVE paid/due state — the sessionStorage snapshot was captured
+  // before any gateway payment, so advance_paid there is always 0. The endpoint
+  // verifies order_no + the shopper's own mobile.
+  useEffect(() => {
+    if (!order) return;
+    const mobile = sessionStorage.getItem("furnib:order_mobile") ?? "";
+    if (mobile === "") return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/order-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_no: order.order_no, mobile }),
+        });
+        const json = await res.json();
+        if (alive && res.ok && json?.data) setLive(json.data as OrderStatus);
+      } catch {
+        // Non-fatal — fall back to the placed-order snapshot below.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [order]);
 
   // No tracking fires here. The `purchase` conversion (browser dataLayer +
   // server-side Meta CAPI / GA4 / TikTok) already fired at checkout, the moment
@@ -79,8 +106,14 @@ export default function SuccessPage() {
     );
   }
 
-  const hasAdvance =
-    order.advance_amount.minor > 0 && order.advance_amount.minor < order.total.minor;
+  // An advance (full or partial) was mandatory and was collected at checkout via
+  // the gateway — so the success page must NOT offer to pay again. Only a
+  // pure-COD order (no advance) shows the optional "pay online" button.
+  const advanceRequired = live?.advance_required ?? order.advance_amount.minor > 0;
+  const advancePaid = live?.advance_paid ?? order.advance_paid;
+  const dueFormatted =
+    live?.due.formatted ??
+    `৳${Math.round((order.total.minor - order.advance_amount.minor) / 100).toLocaleString("en-US")}`;
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-8 sm:py-12">
@@ -127,11 +160,17 @@ export default function SuccessPage() {
             <span>Total</span>
             <span className="text-accent">{order.total.formatted}</span>
           </div>
-          {hasAdvance && (
-            <div className="flex justify-between pt-1 text-xs text-muted">
-              <span>Advance required</span>
-              <span>{order.advance_amount.formatted}</span>
-            </div>
+          {advanceRequired && (
+            <>
+              <div className="flex justify-between pt-1 text-xs text-green-600 dark:text-green-400">
+                <span>Advance paid online</span>
+                <span className="font-semibold">{advancePaid.formatted}</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted">
+                <span>Due (cash on delivery)</span>
+                <span className="font-medium">{dueFormatted}</span>
+              </div>
+            </>
           )}
         </div>
 
@@ -146,23 +185,19 @@ export default function SuccessPage() {
 
       {/* Payment + invoice */}
       <div className="mt-5 space-y-3">
-        <button
-          type="button"
-          onClick={() => pay("full")}
-          disabled={paying !== null}
-          className="w-full rounded-xl bg-accent px-6 py-3.5 font-semibold text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
-        >
-          {paying === "full" ? "Starting payment…" : `Pay online — ${order.total.formatted}`}
-        </button>
-
-        {hasAdvance && (
+        {advanceRequired ? (
+          <p className="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-center text-sm text-green-700 dark:text-green-400">
+            Advance received — {advancePaid.formatted} paid online. The balance of {dueFormatted} is
+            collected on delivery.
+          </p>
+        ) : (
           <button
             type="button"
-            onClick={() => pay("partial")}
+            onClick={() => pay("full")}
             disabled={paying !== null}
-            className="w-full rounded-xl border border-accent px-6 py-3.5 font-semibold text-accent transition hover:bg-accent/5 disabled:opacity-60"
+            className="w-full rounded-xl bg-accent px-6 py-3.5 font-semibold text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
           >
-            {paying === "partial" ? "Starting payment…" : `Pay advance — ${order.advance_amount.formatted}`}
+            {paying === "full" ? "Starting payment…" : `Pay online — ${order.total.formatted}`}
           </button>
         )}
 
@@ -175,9 +210,11 @@ export default function SuccessPage() {
           Download invoice (PDF)
         </a>
 
-        <p className="text-center text-xs text-muted">
-          Prefer cash on delivery? No payment needed now — we’ll collect on delivery.
-        </p>
+        {!advanceRequired && (
+          <p className="text-center text-xs text-muted">
+            Prefer cash on delivery? No payment needed now — we’ll collect on delivery.
+          </p>
+        )}
 
         <Link
           href="/"

@@ -56,7 +56,7 @@ function SocialIcon({ href, name }: { href: string; name: string }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={name}
-      className="flex size-9 items-center justify-center rounded-full border border-white/40 text-white transition hover:border-white hover:bg-white hover:font-bold hover:text-[#e85d1f]"
+      className="flex size-9 items-center justify-center rounded-full border border-white/40 text-white transition hover:border-white hover:bg-white hover:font-bold hover:text-[#e85d1f]!"
     >
       <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden="true">
         {SOCIAL_ICONS[name]}
@@ -215,7 +215,7 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
               {phone && (
                 <a
                   href={`tel:${phone}`}
-                  className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:font-bold hover:text-[#e85d1f]"
+                  className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:font-bold hover:text-[#e85d1f]!"
                 >
                   Call Us
                 </a>
@@ -225,14 +225,14 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
                   href={whatsappGeneral(whatsappNumber)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:font-bold hover:text-[#e85d1f]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:font-bold hover:text-[#e85d1f]!"
                 >
                   <WhatsAppIcon size={16} />+{whatsappNumber}
                 </a>
               )}
               <Link
                 href="/"
-                className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:font-bold hover:text-[#e85d1f]"
+                className="rounded-full border border-white/40 px-5 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white hover:font-bold hover:text-[#e85d1f]!"
               >
                 {name}
               </Link>

@@ -8,7 +8,9 @@ namespace App\Support;
  * Computes the advance amount required for a single order line, per the
  * product's advance-payment rule (MASTER-PLAN §3 / M3):
  *  - not an advance product          → 0
- *  - full                            → the whole line total
+ *  - full                            → the whole line total (PlaceOrder also adds
+ *                                       the order's shipping, so a full advance =
+ *                                       the entire order total)
  *  - partial / percentage            → lineTotal × (partial_amount %)
  *  - partial / amount                → fixed partial_amount (paisa), capped at lineTotal
  *  - partial / shipping              → 0 here; resolved at ORDER level (= the

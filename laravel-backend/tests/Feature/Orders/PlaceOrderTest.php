@@ -53,6 +53,40 @@ it('persists an order with snapshotted items and computes totals', function () {
     expect(OrderNumber::matchesFormat($order->order_no))->toBeTrue();
 });
 
+it('sets a full advance_amount to the whole order total including shipping', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'full',
+        'partial_amount_type' => null, 'partial_amount' => null,
+    ]);
+    $zone = ShippingZone::factory()->create(['cost' => 80]);
+
+    $order = $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 2]],
+        ['shipping_zone_id' => $zone->id],
+    ));
+
+    // Full advance = subtotal (2000) + shipping (80) = the order total, not just
+    // the product price.
+    expect($order->advance_amount->toMinor())->toBe(208000)
+        ->and($order->advance_amount->toMinor())->toBe($order->total->toMinor());
+});
+
+it('falls back to the subtotal for a full advance when no zone is selected', function () {
+    $product = Product::factory()->create([
+        'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,
+        'is_advance_payment' => true, 'advance_payment_type' => 'full',
+    ]);
+
+    $order = $this->action->handle(placeOrderData(
+        [['product_id' => $product->id, 'qty' => 1]],
+    ));
+
+    // No zone → shipping is 0, so the full advance equals the subtotal (= total).
+    expect($order->advance_amount->toMinor())->toBe(100000)
+        ->and($order->advance_amount->toMinor())->toBe($order->total->toMinor());
+});
+
 it('sets advance_amount to the selected delivery charge for a shipping-advance product', function () {
     $product = Product::factory()->create([
         'price' => 1000, 'stock_amount' => 10, 'stock_status' => true,

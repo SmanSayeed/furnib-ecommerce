@@ -49,6 +49,7 @@ final class PlaceOrder
             $subtotalMinor = 0;
             $advanceMinor = 0;
             $needsShippingAdvance = false;
+            $fullAdvanceInOrder = false;
             $lines = [];
 
             foreach ($data->items as $item) {
@@ -89,6 +90,12 @@ final class PlaceOrder
                     $needsShippingAdvance = true;
                 }
 
+                // A FULL advance prepays the entire order, so it must include the
+                // delivery charge too (not just the product price).
+                if ($product->is_advance_payment && $product->advance_payment_type === 'full') {
+                    $fullAdvanceInOrder = true;
+                }
+
                 $lines[] = [
                     'product_id' => $product->id,
                     'title' => $product->title,
@@ -123,12 +130,16 @@ final class PlaceOrder
                 }
             }
 
-            // Shipping-charge advance: the customer must prepay the delivery fee
-            // of the zone they selected. A zone is therefore required.
+            // Shipping-charge advance (partial → shipping): the customer prepays
+            // the delivery fee of the zone they selected, so a zone is required.
+            // A FULL advance also prepays delivery — the whole order is paid up
+            // front — but it does not force a zone (0 shipping if none is chosen).
             if ($needsShippingAdvance) {
                 if ($zone === null) {
                     throw new DomainException('Please select a delivery area for this order.');
                 }
+                $advanceMinor += $shippingMinor;
+            } elseif ($fullAdvanceInOrder) {
                 $advanceMinor += $shippingMinor;
             }
 

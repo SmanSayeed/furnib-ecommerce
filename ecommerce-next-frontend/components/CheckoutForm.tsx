@@ -60,7 +60,8 @@ export function CheckoutForm({
   let advanceMinor = 0;
   if (adv?.required && adv.type) {
     if (adv.type === "full") {
-      advanceMinor = subtotalMinor;
+      // Full advance = the whole order (product + shipping), not just the product.
+      advanceMinor = totalMinor;
     } else if (adv.partial_type === "percentage") {
       advanceMinor = Math.floor((subtotalMinor * (adv.partial_amount ?? 0)) / 100);
     } else if (adv.partial_type === "amount") {

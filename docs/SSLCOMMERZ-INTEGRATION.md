@@ -35,7 +35,8 @@ Shopper clicks "Pay online"  (checkout/success)
       1. verifyCallback()  — verify_sign hash (cheap authenticity pre-check)
       2. validatePayment(val_id) — SERVER-SIDE call to SSLCommerz validation API
       3. RecordPayment — reconcile amount + currency + tran_id, idempotent
-      4. Order → payment_status = paid/partial, status → confirmed
+      4. Order → payment_status = paid/partial. The order stays **pending** —
+         payment never auto-confirms it; an admin confirms manually.
   → Browser lands on storefront /checkout/result?status=…&order=…
 ```
 

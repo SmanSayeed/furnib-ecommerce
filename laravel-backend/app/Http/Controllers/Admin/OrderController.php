@@ -53,9 +53,13 @@ class OrderController extends Controller
                 'range' => $listQuery->dateRange->preset,
                 'from' => (string) $request->query('from', ''),
                 'to' => (string) $request->query('to', ''),
+                'per_page' => (string) $listQuery->perPage,
             ],
             'statuses' => Order::STATUSES,
             'paymentStatuses' => Order::PAYMENT_STATUSES,
+            // Legal next statuses per current status — drives the inline per-row
+            // status dropdown (the server still re-validates every transition).
+            'transitions' => Order::TRANSITIONS,
         ]);
     }
 

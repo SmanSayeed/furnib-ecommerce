@@ -39,6 +39,7 @@ type Filters = {
     range: DatePreset;
     from: string;
     to: string;
+    per_page: string;
 };
 
 type Props = {
@@ -47,7 +48,10 @@ type Props = {
     filters: Filters;
     statuses: string[];
     paymentStatuses: string[];
+    transitions: Record<string, string[]>;
 };
+
+const PER_PAGE_OPTIONS = ['20', '50', '100'];
 
 const STATUS_STYLES: Record<string, string> = {
     pending: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
@@ -86,7 +90,7 @@ function OrderBulkBar({
     const inputClass = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs';
 
     return (
-        <div className="sticky bottom-4 z-20 mt-4 flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky top-4 z-20 mb-3 flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-sm">
                 <span className="font-medium">{count} selected</span>
                 <Button variant="ghost" size="sm" onClick={onClear} aria-label="Clear selection">
@@ -125,7 +129,86 @@ function OrderBulkBar({
     );
 }
 
-export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses }: Props) {
+function RowStatus({ row, transitions }: { row: OrderRow; transitions: Record<string, string[]> }) {
+    const options = transitions[row.status] ?? [];
+    const [next, setNext] = useState('');
+    const [saving, setSaving] = useState(false);
+    const inputClass = 'h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-xs';
+
+    const save = () => {
+        if (!next) {
+            return;
+        }
+
+        setSaving(true);
+        router.put(
+            `/admin/orders/${row.id}/status`,
+            { status: next },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setSaving(false);
+                    setNext('');
+                },
+            },
+        );
+    };
+
+    return (
+        <div className="flex flex-col items-start gap-1">
+            <StatusBadge status={row.status} />
+            {row.pending_reason && (
+                <span className="text-xs text-muted-foreground">
+                    {PENDING_REASON_LABELS[row.pending_reason] ?? row.pending_reason}
+                </span>
+            )}
+            {options.length > 0 && (
+                <div className="mt-0.5 flex items-center gap-1">
+                    <select
+                        aria-label={`Change status for ${row.order_no}`}
+                        value={next}
+                        onChange={(e) => setNext(e.target.value)}
+                        className={`${inputClass} capitalize`}
+                    >
+                        <option value="">Change…</option>
+                        {options.map((s) => (
+                            <option key={s} value={s} className="capitalize">
+                                {s}
+                            </option>
+                        ))}
+                    </select>
+                    <Button size="sm" className="h-8 px-2 text-xs" disabled={!next || saving} onClick={save}>
+                        Save
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RowActions({ row }: { row: OrderRow }) {
+    return (
+        <div className="flex justify-end gap-0.5">
+            <Button variant="ghost" size="icon" asChild aria-label="View order">
+                <Link href={`/admin/orders/${row.id}`}>
+                    <Eye className="size-4" />
+                </Link>
+            </Button>
+            <Button variant="ghost" size="icon" asChild aria-label="Download invoice">
+                <a href={`/admin/orders/${row.id}/invoice`} target="_blank" rel="noopener noreferrer">
+                    <FileText className="size-4" />
+                </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild aria-label="Download shipping label">
+                <a href={`/admin/orders/${row.id}/label`} target="_blank" rel="noopener noreferrer">
+                    <Ticket className="size-4" />
+                </a>
+            </Button>
+        </div>
+    );
+}
+
+export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses, transitions }: Props) {
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [selected, setSelected] = useState<Set<string | number>>(new Set());
     const [allMatching, setAllMatching] = useState(false);
@@ -201,6 +284,10 @@ params.to = extra.to;
                     params.to = merged.to;
                 }
             }
+        }
+
+        if (merged.per_page && merged.per_page !== '20') {
+            params.per_page = merged.per_page;
         }
 
         if (next.page && next.page > 1) {
@@ -283,16 +370,6 @@ params.to = extra.to;
         window.location.href = `/admin/orders/bulk/${path}?${qs}`;
     };
 
-    const ViewButton = ({ row }: { row: OrderRow }) => (
-        <div className="flex justify-end">
-            <Button variant="ghost" size="icon" asChild aria-label="View order">
-                <Link href={`/admin/orders/${row.id}`}>
-                    <Eye className="size-4" />
-                </Link>
-            </Button>
-        </div>
-    );
-
     const columns: Column<OrderRow>[] = [
         {
             key: 'order_no',
@@ -320,23 +397,14 @@ params.to = extra.to;
             key: 'status',
             header: 'Status',
             sortKey: 'status',
-            cell: (row) => (
-                <div className="flex flex-col items-start gap-1">
-                    <StatusBadge status={row.status} />
-                    {row.pending_reason && (
-                        <span className="text-xs text-muted-foreground">
-                            {PENDING_REASON_LABELS[row.pending_reason] ?? row.pending_reason}
-                        </span>
-                    )}
-                </div>
-            ),
+            cell: (row) => <RowStatus row={row} transitions={transitions} />,
         },
         {
             key: 'payment_status',
             header: 'Payment',
             cell: (row) => <span className="text-muted-foreground capitalize">{row.payment_status}</span>,
         },
-        { key: 'actions', header: 'Actions', align: 'right', cell: (row) => <ViewButton row={row} /> },
+        { key: 'actions', header: 'Actions', align: 'right', cell: (row) => <RowActions row={row} /> },
     ];
 
     const mobileCard = (row: OrderRow) => (
@@ -410,6 +478,16 @@ params.to = extra.to;
                     />
                 ) : (
                     <>
+                        {effectiveCount > 0 && (
+                            <OrderBulkBar
+                                count={effectiveCount}
+                                statuses={statuses}
+                                onStatus={bulkStatus}
+                                onDownload={bulkDownload}
+                                onClear={clearSelection}
+                            />
+                        )}
+
                         {(allPageSelected || allMatching) && meta.total > orders.length && (
                             <div className="mb-3 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/5 px-4 py-2 text-sm">
                                 {allMatching ? (
@@ -452,21 +530,29 @@ params.to = extra.to;
                             selection={{ selected, onToggle: toggleRow, onToggleAll: toggleAll }}
                         />
 
-                        {effectiveCount > 0 && (
-                            <OrderBulkBar
-                                count={effectiveCount}
-                                statuses={statuses}
-                                onStatus={bulkStatus}
-                                onDownload={bulkDownload}
-                                onClear={clearSelection}
-                            />
-                        )}
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                                <span>Rows</span>
+                                <select
+                                    aria-label="Orders per page"
+                                    value={filters.per_page}
+                                    onChange={(e) => apply({ per_page: e.target.value, page: 1 })}
+                                    className={inputClass}
+                                >
+                                    {PER_PAGE_OPTIONS.map((n) => (
+                                        <option key={n} value={n}>
+                                            {n} / page
+                                        </option>
+                                    ))}
+                                </select>
+                                {meta.last_page > 1 && (
+                                    <span>
+                                        · Page {meta.current_page} of {meta.last_page}
+                                    </span>
+                                )}
+                            </div>
 
-                        {meta.last_page > 1 && (
-                            <div className="mt-4 flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                    Page {meta.current_page} of {meta.last_page}
-                                </span>
+                            {meta.last_page > 1 && (
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
@@ -485,8 +571,8 @@ params.to = extra.to;
                                         Next
                                     </Button>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </>
                 )}
             </div>

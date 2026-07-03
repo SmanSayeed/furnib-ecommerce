@@ -1,5 +1,6 @@
 @php
-    $codMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
+    $advancePaidMinor = $order->advance_paid->toMinor();
+    $codMinor = max(0, $order->total->toMinor() - $advancePaidMinor);
     $courier = $order->shipment?->courier;
 @endphp
 
@@ -48,9 +49,18 @@
 
     <table class="cod-row">
         <tr>
-            <td class="cod">COD AMOUNT: <strong>Tk {{ number_format($codMinor / 100, 0) }}</strong></td>
+            <td class="cod">COD (collect): <strong>Tk {{ number_format($codMinor / 100, 0) }}</strong></td>
             <td class="courier">COURIER: <strong>{{ $courier ?: '—' }}</strong></td>
         </tr>
+        @if ($advancePaidMinor > 0)
+            <tr>
+                <td class="paid" colspan="2">
+                    Total Tk {{ number_format($order->total->toMinor() / 100, 0) }}
+                    · Advance paid Tk {{ number_format($advancePaidMinor / 100, 0) }}
+                    (collect only the COD balance above)
+                </td>
+            </tr>
+        @endif
     </table>
 
     <div class="ret">

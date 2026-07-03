@@ -1,8 +1,15 @@
 @php
     $tk = static fn ($money) => number_format($money->toDisplay(), 0) . 'Tk.';
-    $payableMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
+    $tkMinor = static fn (int $minor) => number_format($minor / 100, 0) . 'Tk.';
+    $advancePaidMinor = $order->advance_paid->toMinor();
+    $dueMinor = max(0, $order->total->toMinor() - $advancePaidMinor);
     $courier = $order->shipment?->courier;
     $zone = $order->shippingZone?->name;
+    $payMethod = match ($order->payment_status) {
+        'paid' => 'PAID ONLINE',
+        'partial' => 'PARTIAL — ADVANCE PAID',
+        default => 'CASH ON DELIVERY',
+    };
 @endphp
 
 <div class="inv">
@@ -37,7 +44,7 @@
                 <div><strong>Name:</strong> {{ $order->customer?->name ?? '—' }}</div>
                 <div><strong>Phone:</strong> {{ $order->customer?->mobile ?? '—' }}</div>
                 <div><strong>Address:</strong> {{ $order->address }}</div>
-                <div><strong>Payment method:</strong> {{ strtoupper($order->payment_status === 'paid' ? 'PAID' : 'COD') }}</div>
+                <div><strong>Payment:</strong> {{ $payMethod }}</div>
             </td>
             <td class="info-col">
                 <div class="info-h">Shipping Information</div>
@@ -86,10 +93,11 @@
                     <tr><td>Sub Total:</td><td class="right">{{ $tk($order->subtotal) }}</td></tr>
                     <tr><td>Delivery:</td><td class="right">{{ $tk($order->shipping_cost) }}</td></tr>
                     <tr><td>Discount:</td><td class="right">0Tk.</td></tr>
-                    <tr><td>Advance:</td><td class="right">{{ $tk($order->advance_paid) }}</td></tr>
+                    <tr><td>Total:</td><td class="right">{{ $tk($order->total) }}</td></tr>
+                    <tr><td>Advance Paid:</td><td class="right">{{ $tkMinor($advancePaidMinor) }}</td></tr>
                     <tr class="payable">
-                        <td>Payable:</td>
-                        <td class="right">{{ number_format($payableMinor / 100, 0) }} Tk.</td>
+                        <td>Due (COD):</td>
+                        <td class="right">{{ $tkMinor($dueMinor) }}</td>
                     </tr>
                 </table>
             </td>

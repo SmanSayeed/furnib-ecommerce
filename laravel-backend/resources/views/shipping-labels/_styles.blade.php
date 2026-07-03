@@ -24,6 +24,7 @@
     .cod-row td { padding: 11px 18px; border-bottom: 1px solid #d1d5db; font-size: 13px; }
     .cod { color: #374151; }
     .courier { text-align: right; color: #374151; }
+    .paid { font-size: 10px !important; color: #6b7280; padding-top: 6px !important; padding-bottom: 6px !important; }
     .ret { padding: 10px 18px; }
     .ret .h { font-weight: bold; font-size: 10px; text-transform: uppercase; color: #374151; letter-spacing: 0.4px; }
     .ret .l { color: #6b7280; font-size: 11px; margin-top: 2px; }

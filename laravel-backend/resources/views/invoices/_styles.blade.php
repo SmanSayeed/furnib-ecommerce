@@ -27,5 +27,27 @@
     .totals td { border: 1px solid #d1d5db; padding: 5px 8px; font-size: 11px; }
     .totals td:first-child { text-align: right; font-weight: bold; width: 58%; }
     .totals .payable td { font-weight: bold; font-size: 13px; }
-    .sep { border: 0; border-top: 2px dashed #9ca3af; margin: 20px 40px; }
+    .sep { border: 0; border-top: 2px dashed #9ca3af; margin: 10px 40px; }
+    /* Bulk: force a new A4 page after every second invoice (2 per page). */
+    .page-break { page-break-after: always; height: 0; }
+
+    /* --- Two-up bulk invoices: compress each invoice to fit half an A4 page so
+       exactly two print per sheet. Fonts/paddings are tightened; the layout is
+       identical to the single invoice. --- */
+    .two-up .half { page-break-inside: avoid; }
+    .two-up .inv { padding: 12px 24px; }
+    .two-up .inv-title { font-size: 14px; margin-bottom: 4px; }
+    .two-up .ono { font-size: 13px; }
+    .two-up .web { margin: 1px 0 3px; }
+    .two-up .logo { max-height: 34px; }
+    .two-up .brand { font-size: 16px; }
+    .two-up .info { margin-top: 8px; }
+    .two-up .info-col { line-height: 1.35; font-size: 10px; }
+    .two-up .info-h { font-size: 11px; margin-bottom: 1px; }
+    .two-up .items { margin-top: 8px; }
+    .two-up .items th, .two-up .items td { padding: 3px 6px; font-size: 10px; }
+    .two-up .foot { margin-top: 8px; }
+    .two-up .foot-note { font-size: 10px; }
+    .two-up .totals td { padding: 3px 6px; font-size: 10px; }
+    .two-up .totals .payable td { font-size: 11px; }
 </style>

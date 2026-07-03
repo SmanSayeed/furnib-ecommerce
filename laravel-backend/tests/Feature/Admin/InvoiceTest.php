@@ -42,6 +42,7 @@ it('embeds the configured logo in the invoice template', function () {
         'order' => $order,
         'siteName' => 'Furnib',
         'logoUrl' => 'https://cdn.example.com/furnib-invoice.png',
+        'company' => ['name' => 'Furnib', 'website' => 'https://furnib.com', 'address' => null, 'phone' => null, 'email' => null],
     ])->render();
 
     expect($html)->toContain('https://cdn.example.com/furnib-invoice.png')
@@ -55,9 +56,12 @@ it('omits the invoice logo img when none is configured', function () {
         'order' => $order,
         'siteName' => 'Furnib',
         'logoUrl' => null,
+        'company' => ['name' => 'Furnib', 'website' => 'https://furnib.com', 'address' => null, 'phone' => null, 'email' => null],
     ])->render();
 
-    expect($html)->not->toContain('<img');
+    // No logo → the brand name is printed as text instead of an <img>.
+    expect($html)->not->toContain('<img')
+        ->and($html)->toContain('Furnib');
 });
 
 it('returns 404 for a missing order invoice', function () {

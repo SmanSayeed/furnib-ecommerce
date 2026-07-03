@@ -29,6 +29,13 @@ class InvoiceController extends Controller
         return $pdf->download("invoice-{$order->order_no}.pdf");
     }
 
+    public function shippingLabel(Order $order): Response
+    {
+        $pdf = $this->generator->shippingLabel($order);
+
+        return $pdf->download("label-{$order->order_no}.pdf");
+    }
+
     /**
      * Chained A4 invoices (one order per page) for a selection of orders.
      */
@@ -42,15 +49,15 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Compact courier payslips (three per A4) for a selection of orders.
+     * Courier shipping labels (one order per page) for a selection of orders.
      */
-    public function payslips(Request $request): Response
+    public function shippingLabels(Request $request): Response
     {
         $orders = $this->resolveOrders($request);
         abort_if($orders->isEmpty(), 404);
 
-        return $this->generator->payslips($orders)
-            ->download('payslips-'.now()->format('Ymd-His').'.pdf');
+        return $this->generator->shippingLabels($orders)
+            ->download('shipping-labels-'.now()->format('Ymd-His').'.pdf');
     }
 
     /**

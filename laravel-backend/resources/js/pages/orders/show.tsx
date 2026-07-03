@@ -1,5 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import {  DataTable } from '@/components/admin/data-table';
 import type {Column} from '@/components/admin/data-table';
@@ -88,6 +88,11 @@ export default function OrderShow({
                             <Button variant="outline" asChild>
                                 <a href={`/admin/orders/${order.id}/invoice`}>
                                     <FileText className="size-4" /> Invoice PDF
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a href={`/admin/orders/${order.id}/label`}>
+                                    <Ticket className="size-4" /> Shipping label
                                 </a>
                             </Button>
                             <Button variant="outline" asChild>

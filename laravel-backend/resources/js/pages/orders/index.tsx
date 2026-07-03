@@ -79,7 +79,7 @@ function OrderBulkBar({
     count: number;
     statuses: string[];
     onStatus: (status: string) => void;
-    onDownload: (kind: 'invoices' | 'payslips') => void;
+    onDownload: (kind: 'invoices' | 'labels') => void;
     onClear: () => void;
 }) {
     const [status, setStatus] = useState('');
@@ -117,8 +117,8 @@ function OrderBulkBar({
                 <Button variant="outline" onClick={() => onDownload('invoices')}>
                     <FileText className="size-4" /> Invoices
                 </Button>
-                <Button variant="outline" onClick={() => onDownload('payslips')}>
-                    <Ticket className="size-4" /> Payslips
+                <Button variant="outline" onClick={() => onDownload('labels')}>
+                    <Ticket className="size-4" /> Shipping labels
                 </Button>
             </div>
         </div>
@@ -277,9 +277,10 @@ params.to = extra.to;
 
     // Downloads are plain GET navigations (the response is a PDF attachment), so
     // the page stays put while the browser saves the file.
-    const bulkDownload = (kind: 'invoices' | 'payslips') => {
+    const bulkDownload = (kind: 'invoices' | 'labels') => {
+        const path = kind === 'labels' ? 'shipping-labels' : 'invoices';
         const qs = new URLSearchParams(selectionParams()).toString();
-        window.location.href = `/admin/orders/bulk/${kind}?${qs}`;
+        window.location.href = `/admin/orders/bulk/${path}?${qs}`;
     };
 
     const ViewButton = ({ row }: { row: OrderRow }) => (

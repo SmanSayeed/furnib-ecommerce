@@ -92,15 +92,15 @@ it('downloads chained invoices for the selected orders as one PDF', function () 
         ->and($response->headers->get('content-disposition'))->toContain('invoices-');
 });
 
-it('downloads courier payslips for the selected orders as one PDF', function () {
+it('downloads courier shipping labels for the selected orders as one PDF', function () {
     $orders = Order::factory()->count(4)->has(OrderItem::factory()->count(1), 'items')->create();
     $ids = $orders->pluck('id')->implode(',');
 
-    $response = actingAs(orderBulkViewer())->get("/admin/orders/bulk/payslips?ids={$ids}");
+    $response = actingAs(orderBulkViewer())->get("/admin/orders/bulk/shipping-labels?ids={$ids}");
 
     $response->assertOk();
     expect($response->headers->get('content-type'))->toContain('application/pdf')
-        ->and($response->headers->get('content-disposition'))->toContain('payslips-');
+        ->and($response->headers->get('content-disposition'))->toContain('shipping-labels-');
 });
 
 it('returns 404 when no orders are selected for a download', function () {
@@ -109,18 +109,29 @@ it('returns 404 when no orders are selected for a download', function () {
         ->assertNotFound();
 });
 
-it('renders three payslips per A4 page from the batch view', function () {
-    $orders = Order::factory()->count(4)->has(OrderItem::factory()->count(1), 'items')->create();
+it('renders one shipping label per page from the batch view', function () {
+    $orders = Order::factory()->count(3)->has(OrderItem::factory()->count(1), 'items')->create();
 
-    $html = view('invoices.payslips', [
-        'orders' => $orders->load('items', 'customer'),
+    $html = view('shipping-labels.bulk', [
+        'orders' => $orders->load('items', 'customer', 'shippingZone', 'shipment'),
         'siteName' => 'Furnib',
         'logoUrl' => null,
+        'company' => ['name' => 'Furnib', 'website' => 'https://furnib.com', 'address' => 'Dhaka', 'phone' => '01700000000', 'email' => 'hi@furnib.com'],
     ])->render();
 
-    // 4 orders → 2 A4 pages (3 + 1). Each order_no appears once.
-    expect(substr_count($html, 'class="page"'))->toBe(2);
+    // One .label-page per order, and each order number is printed on its label.
+    expect(substr_count($html, 'class="label-page"'))->toBe(3);
     foreach ($orders as $order) {
         expect($html)->toContain($order->order_no);
     }
+});
+
+it('downloads a single order shipping label', function () {
+    $order = Order::factory()->has(OrderItem::factory()->count(1), 'items')->create();
+
+    $response = actingAs(orderBulkViewer())->get("/admin/orders/{$order->id}/label");
+
+    $response->assertOk();
+    expect($response->headers->get('content-type'))->toContain('application/pdf')
+        ->and($response->headers->get('content-disposition'))->toContain($order->order_no);
 });

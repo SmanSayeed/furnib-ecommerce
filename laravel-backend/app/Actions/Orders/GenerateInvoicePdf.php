@@ -12,12 +12,18 @@ use Barryvdh\DomPDF\PDF as DomPdf;
 use Illuminate\Support\Collection;
 
 /**
- * Renders an order's invoice to a PDF from the order's snapshot data, branded
- * with the site name and logo from settings. Also renders batched documents:
- * chained A4 invoices (one order per page) and courier payslips (three per A4).
+ * Renders order documents to branded PDFs from the order's snapshot data: the
+ * invoice (single + chained A4 batch) and the courier shipping label (single +
+ * one-per-page batch). Company name, logo and contact details come from
+ * settings so the templates stay tenant-agnostic.
+ *
+ * The item relation is loaded with its product so a variation/attribute can be
+ * shown when available.
  */
 final class GenerateInvoicePdf
 {
+    private const RELATIONS = ['items', 'customer', 'shippingZone', 'shipment'];
+
     public function __construct(
         private readonly SettingsService $settings,
         private readonly StorageRepository $storage,
@@ -25,33 +31,36 @@ final class GenerateInvoicePdf
 
     public function handle(Order $order): DomPdf
     {
-        $order->loadMissing(['items', 'customer', 'shippingZone']);
-
-        return $this->render('invoices.order', ['order' => $order]);
+        return $this->render('invoices.order', ['order' => $order->loadMissing(self::RELATIONS)]);
     }
 
     /**
-     * One A4 invoice per order, chained into a single PDF (page break between).
+     * One A4 invoice per order, chained into a single PDF (dashed separator).
      *
      * @param  Collection<int, Order>  $orders
      */
     public function bulkInvoices(Collection $orders): DomPdf
     {
-        $orders->loadMissing(['items', 'customer', 'shippingZone']);
+        $orders->loadMissing(self::RELATIONS);
 
         return $this->render('invoices.bulk', ['orders' => $orders]);
     }
 
+    public function shippingLabel(Order $order): DomPdf
+    {
+        return $this->render('shipping-labels.single', ['order' => $order->loadMissing(self::RELATIONS)]);
+    }
+
     /**
-     * Compact courier payslips, three to an A4 page.
+     * Courier shipping labels, one order per page.
      *
      * @param  Collection<int, Order>  $orders
      */
-    public function payslips(Collection $orders): DomPdf
+    public function shippingLabels(Collection $orders): DomPdf
     {
-        $orders->loadMissing(['items', 'customer', 'shippingZone']);
+        $orders->loadMissing(self::RELATIONS);
 
-        return $this->render('invoices.payslips', ['orders' => $orders]);
+        return $this->render('shipping-labels.bulk', ['orders' => $orders]);
     }
 
     /**
@@ -68,9 +77,18 @@ final class GenerateInvoicePdf
         $logoPath = ($branding['logo_invoice'] ?? null) ?: ($branding['logo_light'] ?? null);
         $logoUrl = is_string($logoPath) && $logoPath !== '' ? $this->resolveUrl($logoPath) : null;
 
+        $siteName = ($branding['site_name'] ?? null) ?: config('app.name');
+
         $pdf = Pdf::loadView($view, array_merge($data, [
-            'siteName' => ($branding['site_name'] ?? null) ?: config('app.name'),
+            'siteName' => $siteName,
             'logoUrl' => $logoUrl,
+            'company' => [
+                'name' => $siteName,
+                'website' => rtrim((string) config('app.frontend_url'), '/'),
+                'address' => ($branding['contact_address'] ?? null) ?: ($branding['registered_address'] ?? null),
+                'phone' => $branding['contact_phone'] ?? null,
+                'email' => $branding['contact_email'] ?? null,
+            ],
         ]));
 
         if ($logoUrl !== null) {

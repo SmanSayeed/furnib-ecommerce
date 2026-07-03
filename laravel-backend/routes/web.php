@@ -123,8 +123,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // (id list / filter in the query); the status change is a guarded mutation.
     Route::get('orders/bulk/invoices', [InvoiceController::class, 'bulkInvoices'])
         ->middleware('permission:orders.view')->name('orders.bulk.invoices');
-    Route::get('orders/bulk/payslips', [InvoiceController::class, 'payslips'])
-        ->middleware('permission:orders.view')->name('orders.bulk.payslips');
+    Route::get('orders/bulk/shipping-labels', [InvoiceController::class, 'shippingLabels'])
+        ->middleware('permission:orders.view')->name('orders.bulk.labels');
     Route::post('orders/bulk/status', [OrderController::class, 'bulkStatus'])
         ->middleware('permission:orders.manage')->name('orders.bulk.status');
 
@@ -132,6 +132,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:orders.view')->name('orders.show');
     Route::get('orders/{order}/invoice', [InvoiceController::class, 'show'])
         ->middleware('permission:orders.view')->name('orders.invoice');
+    Route::get('orders/{order}/label', [InvoiceController::class, 'shippingLabel'])
+        ->middleware('permission:orders.view')->name('orders.label');
     Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])
         ->middleware('permission:orders.manage')->name('orders.status');
     Route::put('orders/{order}/pending', [OrderController::class, 'updatePending'])

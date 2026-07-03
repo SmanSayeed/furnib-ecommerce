@@ -118,6 +118,16 @@ Route::middleware(['auth', 'permission:settings.manage'])->prefix('admin')->name
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('orders', [OrderController::class, 'index'])
         ->middleware('permission:orders.view')->name('orders.index');
+
+    // Bulk actions — declared before the {order} wildcard. Downloads are GET
+    // (id list / filter in the query); the status change is a guarded mutation.
+    Route::get('orders/bulk/invoices', [InvoiceController::class, 'bulkInvoices'])
+        ->middleware('permission:orders.view')->name('orders.bulk.invoices');
+    Route::get('orders/bulk/payslips', [InvoiceController::class, 'payslips'])
+        ->middleware('permission:orders.view')->name('orders.bulk.payslips');
+    Route::post('orders/bulk/status', [OrderController::class, 'bulkStatus'])
+        ->middleware('permission:orders.manage')->name('orders.bulk.status');
+
     Route::get('orders/{order}', [OrderController::class, 'show'])
         ->middleware('permission:orders.view')->name('orders.show');
     Route::get('orders/{order}/invoice', [InvoiceController::class, 'show'])

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\OrderBulkStatusRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Order;
@@ -120,6 +121,56 @@ class OrderController extends Controller
         // placement (see Api\CheckoutController). Admin status changes are purely
         // operational and carry no GTM/tracking.
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Order status updated.')]);
+
+        return back();
+    }
+
+    /**
+     * Move many orders to a new status at once. Each order is transitioned only
+     * if the change is legal for its current status (illegal ones are skipped,
+     * not forced), so a mixed selection stays consistent. Targets are explicit
+     * ids or every order matching the current filters; the batch is one audit
+     * entry.
+     */
+    public function bulkStatus(OrderBulkStatusRequest $request): RedirectResponse
+    {
+        $status = (string) $request->validated()['status'];
+
+        // For "all matching", the list filters arrive under a separate `filters`
+        // key so they can't collide with the target `status`. Resolve them
+        // through a synthetic request so the same whitelist/queryFrom applies.
+        $ids = $request->boolean('all_matching')
+            ? $this->orders->idsMatching($this->orders->queryFrom(
+                Request::create('/', 'GET', (array) $request->input('filters', []))
+            ))
+            : array_values(array_unique(array_map('intval', $request->validated()['ids'] ?? [])));
+
+        $orders = Order::query()->whereIn('id', $ids)->get();
+        $changed = 0;
+        $skipped = 0;
+
+        foreach ($orders as $order) {
+            if (! $order->canTransitionTo($status)) {
+                $skipped++;
+
+                continue;
+            }
+
+            $attributes = ['status' => $status];
+
+            if ($status !== 'pending') {
+                $attributes['pending_note'] = null;
+            }
+
+            $order->update($attributes);
+            $changed++;
+        }
+
+        $message = $skipped > 0
+            ? __(':changed updated, :skipped skipped (illegal transition).', ['changed' => $changed, 'skipped' => $skipped])
+            : __(':changed orders updated.', ['changed' => $changed]);
+
+        Inertia::flash('toast', ['type' => $changed > 0 ? 'success' : 'warning', 'message' => $message]);
 
         return back();
     }

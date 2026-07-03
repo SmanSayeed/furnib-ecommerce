@@ -52,4 +52,21 @@ final class OrderRepository
             ->paginate($query->perPage)
             ->withQueryString();
     }
+
+    /**
+     * Primary keys of every order matching the list filters (no pagination),
+     * capped so a "select all matching" bulk/print action stays bounded. Uses
+     * the same injection-safe whitelist as the list.
+     *
+     * @return list<int>
+     */
+    public function idsMatching(ListQuery $query, int $cap = 500): array
+    {
+        return Order::query()
+            ->applyList($query)
+            ->limit($cap)
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+    }
 }

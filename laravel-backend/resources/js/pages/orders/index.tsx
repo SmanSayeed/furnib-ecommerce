@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, ShoppingCart } from 'lucide-react';
-import { useRef } from 'react';
+import { Eye, FileText, ShoppingCart, Ticket, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import {  DataTable } from '@/components/admin/data-table';
 import type {Column, SortDir} from '@/components/admin/data-table';
 import { DateRangeFilter } from '@/components/admin/date-range-filter';
@@ -69,10 +69,106 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
+function OrderBulkBar({
+    count,
+    statuses,
+    onStatus,
+    onDownload,
+    onClear,
+}: {
+    count: number;
+    statuses: string[];
+    onStatus: (status: string) => void;
+    onDownload: (kind: 'invoices' | 'payslips') => void;
+    onClear: () => void;
+}) {
+    const [status, setStatus] = useState('');
+    const inputClass = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs';
+
+    return (
+        <div className="sticky bottom-4 z-20 mt-4 flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium">{count} selected</span>
+                <Button variant="ghost" size="sm" onClick={onClear} aria-label="Clear selection">
+                    <X className="size-4" /> Clear
+                </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+                <select
+                    aria-label="Bulk status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className={inputClass}
+                >
+                    <option value="">Set status…</option>
+                    {statuses.map((s) => (
+                        <option key={s} value={s} className="capitalize">
+                            {s}
+                        </option>
+                    ))}
+                </select>
+                <Button onClick={() => status && onStatus(status)} disabled={!status}>
+                    Apply
+                </Button>
+
+                <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
+
+                <Button variant="outline" onClick={() => onDownload('invoices')}>
+                    <FileText className="size-4" /> Invoices
+                </Button>
+                <Button variant="outline" onClick={() => onDownload('payslips')}>
+                    <Ticket className="size-4" /> Payslips
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses }: Props) {
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [selected, setSelected] = useState<Set<string | number>>(new Set());
+    const [allMatching, setAllMatching] = useState(false);
+
+    const clearSelection = () => {
+        setSelected(new Set());
+        setAllMatching(false);
+    };
+
+    const buildParams = (extra: Filters): Record<string, string> => {
+        const params: Record<string, string> = {};
+
+        if (extra.search) {
+params.search = extra.search;
+}
+
+        if (extra.status) {
+params.status = extra.status;
+}
+
+        if (extra.payment_status) {
+params.payment_status = extra.payment_status;
+}
+
+        if (extra.range && extra.range !== 'all') {
+            params.range = extra.range;
+
+            if (extra.range === 'custom') {
+                if (extra.from) {
+params.from = extra.from;
+}
+
+                if (extra.to) {
+params.to = extra.to;
+}
+            }
+        }
+
+        return params;
+    };
 
     const apply = (next: Partial<Filters> & { page?: number }) => {
+        clearSelection();
         const params: Record<string, string | number> = {};
         const merged = { ...filters, ...next };
 
@@ -130,6 +226,60 @@ export default function OrdersIndex({ orders, meta, filters, statuses, paymentSt
         const dir: SortDir =
             filters.sort === sortKey && filters.dir === 'desc' ? 'asc' : 'desc';
         apply({ sort: sortKey, dir, page: 1 });
+    };
+
+    const toggleRow = (key: string | number) => {
+        setAllMatching(false);
+        setSelected((prev) => {
+            const nextSet = new Set(prev);
+
+            if (nextSet.has(key)) {
+                nextSet.delete(key);
+            } else {
+                nextSet.add(key);
+            }
+
+            return nextSet;
+        });
+    };
+
+    const toggleAll = (keys: Array<string | number>) => {
+        setAllMatching(false);
+        setSelected((prev) => {
+            const allOn = keys.length > 0 && keys.every((k) => prev.has(k));
+            const nextSet = new Set(prev);
+            keys.forEach((k) => (allOn ? nextSet.delete(k) : nextSet.add(k)));
+
+            return nextSet;
+        });
+    };
+
+    const pageSelectedCount = orders.filter((o) => selected.has(o.id)).length;
+    const allPageSelected = orders.length > 0 && pageSelectedCount === orders.length;
+    const effectiveCount = allMatching ? meta.total : selected.size;
+
+    // Shared selection payload for both the status mutation and the downloads.
+    const selectionParams = (): Record<string, string> =>
+        allMatching
+            ? { all_matching: '1', ...buildParams(filters) }
+            : { ids: Array.from(selected).join(',') };
+
+    const bulkStatus = (status: string) => {
+        const base = allMatching
+            ? { all_matching: true, filters: buildParams(filters) }
+            : { ids: Array.from(selected) };
+        router.post(
+            '/admin/orders/bulk/status',
+            { status, ...base },
+            { preserveScroll: true, onSuccess: clearSelection },
+        );
+    };
+
+    // Downloads are plain GET navigations (the response is a PDF attachment), so
+    // the page stays put while the browser saves the file.
+    const bulkDownload = (kind: 'invoices' | 'payslips') => {
+        const qs = new URLSearchParams(selectionParams()).toString();
+        window.location.href = `/admin/orders/bulk/${kind}?${qs}`;
     };
 
     const ViewButton = ({ row }: { row: OrderRow }) => (
@@ -259,6 +409,37 @@ export default function OrdersIndex({ orders, meta, filters, statuses, paymentSt
                     />
                 ) : (
                     <>
+                        {(allPageSelected || allMatching) && meta.total > orders.length && (
+                            <div className="mb-3 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/5 px-4 py-2 text-sm">
+                                {allMatching ? (
+                                    <>
+                                        <span>
+                                            All <strong>{meta.total}</strong> orders matching the
+                                            current filters are selected.
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={clearSelection}
+                                            className="font-medium text-accent underline-offset-2 hover:underline"
+                                        >
+                                            Clear selection
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>All {orders.length} on this page selected.</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAllMatching(true)}
+                                            className="font-medium text-accent underline-offset-2 hover:underline"
+                                        >
+                                            Select all {meta.total} matching filters
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
                         <DataTable
                             columns={columns}
                             rows={orders}
@@ -267,7 +448,18 @@ export default function OrdersIndex({ orders, meta, filters, statuses, paymentSt
                             sort={filters.sort}
                             dir={filters.dir}
                             onSort={onSort}
+                            selection={{ selected, onToggle: toggleRow, onToggleAll: toggleAll }}
                         />
+
+                        {effectiveCount > 0 && (
+                            <OrderBulkBar
+                                count={effectiveCount}
+                                statuses={statuses}
+                                onStatus={bulkStatus}
+                                onDownload={bulkDownload}
+                                onClear={clearSelection}
+                            />
+                        )}
 
                         {meta.last_page > 1 && (
                             <div className="mt-4 flex items-center justify-between text-sm">

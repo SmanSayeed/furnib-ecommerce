@@ -99,6 +99,18 @@ final class ProductRepository extends BaseRepository implements ProductRepositor
         return $this->applyFilters(Product::query(), $filters)->get();
     }
 
+    /**
+     * @param  array<string,mixed>  $filters
+     * @return list<int>
+     */
+    public function idsMatching(array $filters): array
+    {
+        return $this->applyFilters(Product::query(), $filters)
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+    }
+
     /** @return LengthAwarePaginator<int, Product> */
     public function trashedPaginate(int $perPage = 20): LengthAwarePaginator
     {

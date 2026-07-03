@@ -93,6 +93,7 @@ Route::middleware('auth')->prefix('admin/catalog')->name('admin.')->group(functi
         ->middleware('permission:catalog.view')->name('products.trashed');
 
     Route::middleware('permission:catalog.manage')->group(function () {
+        Route::post('products/bulk', [ProductUiController::class, 'bulk'])->name('products.bulk');
         Route::get('products/create', [ProductUiController::class, 'create'])->name('products.create');
         Route::post('products', [ProductUiController::class, 'store'])->name('products.store');
         Route::get('products/{product}/edit', [ProductUiController::class, 'edit'])->name('products.edit');

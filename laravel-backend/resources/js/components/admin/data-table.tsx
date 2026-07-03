@@ -22,6 +22,18 @@ export type Column<T> = {
     sortKey?: string;
 };
 
+/**
+ * Row-selection wiring for bulk actions. When present, the table renders a
+ * leading checkbox column (header = select/clear all rows on the page). The
+ * parent owns the selected-key set so selection can persist across pages.
+ */
+export type TableSelection = {
+    selected: Set<string | number>;
+    onToggle: (key: string | number) => void;
+    /** Select every row on the current page, or clear them if all are selected. */
+    onToggleAll: (keys: Array<string | number>) => void;
+};
+
 type Props<T> = {
     columns: Column<T>[];
     rows: T[];
@@ -39,6 +51,8 @@ type Props<T> = {
     dir?: SortDir;
     /** Called with a column's `sortKey` when its header is clicked. */
     onSort?: (sortKey: string) => void;
+    /** Enable the leading checkbox column for bulk selection. */
+    selection?: TableSelection;
 };
 
 function SortIcon({ active, dir }: { active: boolean; dir?: SortDir }) {
@@ -67,15 +81,31 @@ export function DataTable<T>({
     sort,
     dir,
     onSort,
+    selection,
 }: Props<T>) {
     const value = (col: Column<T>, row: T): ReactNode =>
         col.cell ? col.cell(row) : ((row as Record<string, unknown>)[col.key] as ReactNode);
+
+    const pageKeys = rows.map(rowKey);
+    const allOnPageSelected =
+        pageKeys.length > 0 && pageKeys.every((k) => selection?.selected.has(k));
 
     return (
         <div className={`rounded-xl border bg-card ${className ?? ''}`}>
             <table className="hidden w-full text-sm md:table">
                 <thead>
                     <tr className="border-b text-left text-xs text-muted-foreground">
+                        {selection && (
+                            <th className="w-10 px-4 py-2">
+                                <input
+                                    type="checkbox"
+                                    aria-label="Select all rows on this page"
+                                    className="size-4 cursor-pointer rounded border-input align-middle"
+                                    checked={allOnPageSelected}
+                                    onChange={() => selection.onToggleAll(pageKeys)}
+                                />
+                            </th>
+                        )}
                         {columns.map((c) => {
                             const sortable = Boolean(c.sortKey && onSort);
 
@@ -109,8 +139,22 @@ export function DataTable<T>({
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row) => (
-                        <tr key={rowKey(row)} className="border-b last:border-0">
+                    {rows.map((row) => {
+                        const key = rowKey(row);
+
+                        return (
+                        <tr key={key} className="border-b last:border-0">
+                            {selection && (
+                                <td className="px-4 py-3">
+                                    <input
+                                        type="checkbox"
+                                        aria-label="Select row"
+                                        className="size-4 cursor-pointer rounded border-input align-middle"
+                                        checked={selection.selected.has(key)}
+                                        onChange={() => selection.onToggle(key)}
+                                    />
+                                </td>
+                            )}
                             {columns.map((c) => (
                                 <td
                                     key={c.key}
@@ -120,13 +164,27 @@ export function DataTable<T>({
                                 </td>
                             ))}
                         </tr>
-                    ))}
+                        );
+                    })}
                 </tbody>
             </table>
 
             <div className="divide-y md:hidden">
-                {rows.map((row) => (
-                    <div key={rowKey(row)} className="p-4">
+                {rows.map((row) => {
+                    const key = rowKey(row);
+
+                    return (
+                    <div key={key} className="flex items-start gap-3 p-4">
+                        {selection && (
+                            <input
+                                type="checkbox"
+                                aria-label="Select row"
+                                className="mt-1 size-4 shrink-0 cursor-pointer rounded border-input"
+                                checked={selection.selected.has(key)}
+                                onChange={() => selection.onToggle(key)}
+                            />
+                        )}
+                        <div className="min-w-0 flex-1">
                         {renderMobileCard ? (
                             renderMobileCard(row)
                         ) : (
@@ -146,8 +204,10 @@ export function DataTable<T>({
                                 ))}
                             </dl>
                         )}
+                        </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

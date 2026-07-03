@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Catalog;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ProductBulkActionRequest;
 use App\Http\Requests\Admin\ProductFormRequest;
 use App\Models\Category;
 use App\Models\Product;
@@ -126,6 +127,100 @@ class ProductUiController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product moved to recycle bin.')]);
 
         return to_route('admin.products.index');
+    }
+
+    /**
+     * Apply one edit (advance payment, status, or category) to many products at
+     * once. Targets are either the explicitly-ticked ids or every product
+     * matching the current filters ("select all matching"), resolved server-side
+     * through the same whitelist as the list. The update runs as a single query
+     * per chunk (scales to a large catalog) and is captured as one audit entry.
+     */
+    public function bulk(ProductBulkActionRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+
+        $ids = $request->boolean('all_matching')
+            ? $this->products->idsMatching(is_array($data['filters'] ?? null) ? $data['filters'] : [])
+            : array_values(array_unique(array_map('intval', $data['ids'] ?? [])));
+
+        if ($ids === []) {
+            Inertia::flash('toast', ['type' => 'warning', 'message' => __('No products selected.')]);
+
+            return to_route('admin.products.index');
+        }
+
+        $changes = $this->bulkChanges($data);
+        $affected = 0;
+
+        // Chunk the id set so the IN clause and row-lock footprint stay bounded
+        // even for a whole-catalog selection.
+        foreach (array_chunk($ids, 500) as $chunk) {
+            $affected += Product::query()->whereIn('id', $chunk)->update($changes);
+        }
+
+        // Bulk writes bypass per-model events, so record one explicit audit entry
+        // (who, which action, how many, and the values applied).
+        activity()
+            ->useLog('Product')
+            ->causedBy($request->user())
+            ->withProperties([
+                'action' => $data['action'],
+                'count' => $affected,
+                'changes' => $changes,
+            ])
+            ->log('bulk_update');
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __(':count products updated.', ['count' => $affected]),
+        ]);
+
+        return to_route('admin.products.index');
+    }
+
+    /**
+     * Translate a validated bulk request into the exact column changes to write.
+     * Mirrors the single-form rules: partial fields only survive a "partial"
+     * advance; turning advance off clears the partial config.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function bulkChanges(array $data): array
+    {
+        return match ($data['action']) {
+            'status' => ['product_status' => $data['product_status']],
+            'category' => ['category_id' => (int) $data['category_id']],
+            'advance' => $this->advanceChanges($data),
+            default => [],
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function advanceChanges(array $data): array
+    {
+        $isAdvance = (bool) ($data['is_advance_payment'] ?? false);
+
+        if (! $isAdvance) {
+            return [
+                'is_advance_payment' => false,
+                'partial_amount_type' => null,
+                'partial_amount' => null,
+            ];
+        }
+
+        $type = $data['advance_payment_type'] ?? 'full';
+
+        return [
+            'is_advance_payment' => true,
+            'advance_payment_type' => $type,
+            'partial_amount_type' => $type === 'partial' ? ($data['partial_amount_type'] ?? null) : null,
+            'partial_amount' => $type === 'partial' ? ($data['partial_amount'] ?? null) : null,
+        ];
     }
 
     public function trashed(): Response

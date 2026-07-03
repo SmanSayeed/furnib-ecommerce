@@ -34,6 +34,15 @@ interface ProductRepositoryInterface extends RepositoryInterface
      */
     public function allMatching(array $filters): Collection;
 
+    /**
+     * Primary keys of every product matching the given list filters (no
+     * pagination). Used to resolve a "select all matching" bulk action.
+     *
+     * @param  array<string,mixed>  $filters
+     * @return list<int>
+     */
+    public function idsMatching(array $filters): array;
+
     /** @return LengthAwarePaginator<int, Product> */
     public function trashedPaginate(int $perPage = 20): LengthAwarePaginator;
 

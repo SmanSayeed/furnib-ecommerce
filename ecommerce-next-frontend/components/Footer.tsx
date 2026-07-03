@@ -252,7 +252,8 @@ export function Footer({ settings }: { settings?: SiteSettings | null }) {
               </div>
             )}
             <p className="mt-4 text-sm text-white/80">
-              Subscribe and be the first to get great deals!
+              Yes! Send me exclusive offers, unique gift ideas, and
+              personalised tips for shopping on Furnib.
             </p>
             <div className="mt-4">
               <NewsletterForm />

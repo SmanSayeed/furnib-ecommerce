@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Marketing\ConfirmOrderPurchase;
 use App\Models\Order;
 use App\Services\Settings\SettingsService;
 use App\Support\Capi\CapiEvents;
@@ -19,27 +20,12 @@ beforeEach(function () {
     $this->app->instance(ConversionApi::class, $this->capi);
 });
 
-function paidOrderViaGateway($test, Order $order): void
-{
-    $tranId = $test->postJson('/api/v1/payment/ssl/init', [
-        'order_no' => $order->order_no,
-        'type' => 'full',
-    ])->json('tran_id');
-
-    $test->gateway->fakeValidation([
-        'status' => 'VALID',
-        'tran_id' => $tranId,
-        'amount' => $order->total->toDisplay(),
-        'val_id' => 'v-ok',
-    ]);
-
-    $test->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v-ok'])->assertOk();
-}
-
-it('sends a server-side Purchase event when an order becomes paid', function () {
+it('sends a server-side Purchase event when the order is placed', function () {
+    // Purchase fires once at order placement (Api\CheckoutController →
+    // ConfirmOrderPurchase), NOT on payment — a paid order never auto-confirms.
     $order = Order::factory()->create(['total' => 5000, 'advance_paid' => 0, 'payment_status' => 'unpaid']);
 
-    paidOrderViaGateway($this, $order);
+    app(ConfirmOrderPurchase::class)->handle($order);
 
     $purchases = $this->capi->ofType('Purchase');
     expect($purchases)->toHaveCount(1)
@@ -47,14 +33,12 @@ it('sends a server-side Purchase event when an order becomes paid', function () 
         ->and($purchases[0]->customData['order_id'])->toBe($order->order_no);
 });
 
-it('does not double-fire the Purchase event on a duplicate callback', function () {
+it('does not double-fire the Purchase event on repeat confirmation', function () {
     $order = Order::factory()->create(['total' => 5000, 'advance_paid' => 0, 'payment_status' => 'unpaid']);
 
-    $tranId = $this->postJson('/api/v1/payment/ssl/init', ['order_no' => $order->order_no, 'type' => 'full'])->json('tran_id');
-    $this->gateway->fakeValidation(['status' => 'VALID', 'tran_id' => $tranId, 'amount' => $order->total->toDisplay(), 'val_id' => 'v']);
-
-    $this->postJson('/api/v1/payment/ssl/success', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
-    $this->postJson('/api/v1/payment/ssl/ipn', ['tran_id' => $tranId, 'val_id' => 'v'])->assertOk();
+    // The idempotency stamp (marketing_purchase_sent_at) guards a second call.
+    app(ConfirmOrderPurchase::class)->handle($order);
+    app(ConfirmOrderPurchase::class)->handle($order->refresh());
 
     expect($this->capi->ofType('Purchase'))->toHaveCount(1);
 });

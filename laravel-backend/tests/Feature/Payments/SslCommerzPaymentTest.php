@@ -103,7 +103,7 @@ it('rejects a VALID transaction in the wrong currency', function () {
     expect($order->fresh()->payment_status)->toBe('unpaid');
 });
 
-it('accepts a genuine full payment and marks the order paid + confirmed', function () {
+it('accepts a genuine full payment and marks the order paid but keeps it pending', function () {
     $order = payableOrder();
     $tranId = initPayment($this, $order);
 
@@ -119,10 +119,12 @@ it('accepts a genuine full payment and marks the order paid + confirmed', functi
         ->assertJsonPath('status', 'success')
         ->assertJsonPath('payment_status', 'paid');
 
+    // Payment is recorded, but the order never auto-confirms — an admin must
+    // manually confirm it. Paying only clears the money, not the workflow.
     $order->refresh();
     expect($order->payment_status)->toBe('paid')
         ->and($order->advance_paid->toMinor())->toBe($order->total->toMinor())
-        ->and($order->status)->toBe('confirmed');
+        ->and($order->status)->toBe('pending');
 });
 
 it('is idempotent — a duplicate IPN/return records the money only once', function () {

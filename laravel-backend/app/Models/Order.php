@@ -22,6 +22,8 @@ use Illuminate\Support\Carbon;
  * @property string $order_no
  * @property int $customer_id
  * @property string $status
+ * @property string $pending_reason
+ * @property string|null $pending_note
  * @property string $payment_status
  * @property Money $subtotal
  * @property Money $shipping_cost
@@ -53,13 +55,23 @@ class Order extends Model
     public const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'];
 
     /**
+     * Why a pending order is still open. A paid order never auto-confirms — it
+     * stays pending (usually `payment_pending` cleared → still needs a human)
+     * until an admin confirms it. `other` pairs with a free-text pending_note.
+     */
+    public const PENDING_REASONS = [
+        'new_order', 'call_waiting', 'payment_pending', 'need_expert_call', 'other',
+    ];
+
+    /**
      * Allowed status transitions (forward flow + cancel/return rules).
+     * `confirmed → pending` lets an admin revert a mistaken confirm.
      *
      * @var array<string, array<int, string>>
      */
     public const TRANSITIONS = [
         'pending' => ['confirmed', 'cancelled'],
-        'confirmed' => ['processing', 'cancelled'],
+        'confirmed' => ['pending', 'processing', 'cancelled'],
         'processing' => ['shipped', 'cancelled'],
         'shipped' => ['delivered', 'returned'],
         'delivered' => ['returned'],
@@ -68,7 +80,7 @@ class Order extends Model
     ];
 
     protected $fillable = [
-        'order_no', 'customer_id', 'status', 'payment_status',
+        'order_no', 'customer_id', 'status', 'pending_reason', 'pending_note', 'payment_status',
         'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes',
         'fbp', 'fbc', 'ttp', 'ttclid', 'ga_client_id', 'marketing_purchase_sent_at',

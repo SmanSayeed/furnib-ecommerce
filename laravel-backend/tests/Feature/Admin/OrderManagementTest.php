@@ -82,3 +82,55 @@ it('blocks orders.view-only staff from changing status', function () {
         ->put("/admin/orders/{$order->id}/status", ['status' => 'confirmed'])
         ->assertForbidden();
 });
+
+it('allows reverting a confirmed order back to pending', function () {
+    $order = Order::factory()->create(['status' => 'confirmed']);
+
+    actingAs(orderManagerUser())
+        ->put("/admin/orders/{$order->id}/status", ['status' => 'pending'])
+        ->assertRedirect();
+
+    expect($order->refresh()->status)->toBe('pending');
+});
+
+it('sets a pending reason with a note for the other reason', function () {
+    $order = Order::factory()->create(['status' => 'pending']);
+
+    actingAs(orderManagerUser())
+        ->put("/admin/orders/{$order->id}/pending", [
+            'pending_reason' => 'other',
+            'pending_note' => 'Customer asked to hold for a week.',
+        ])->assertRedirect();
+
+    $order->refresh();
+    expect($order->pending_reason)->toBe('other')
+        ->and($order->pending_note)->toBe('Customer asked to hold for a week.');
+});
+
+it('clears the note when a non-other reason is chosen', function () {
+    $order = Order::factory()->create(['status' => 'pending', 'pending_reason' => 'other', 'pending_note' => 'old']);
+
+    actingAs(orderManagerUser())
+        ->put("/admin/orders/{$order->id}/pending", ['pending_reason' => 'call_waiting'])
+        ->assertRedirect();
+
+    $order->refresh();
+    expect($order->pending_reason)->toBe('call_waiting')
+        ->and($order->pending_note)->toBeNull();
+});
+
+it('requires a note when the reason is other', function () {
+    $order = Order::factory()->create(['status' => 'pending']);
+
+    actingAs(orderManagerUser())
+        ->put("/admin/orders/{$order->id}/pending", ['pending_reason' => 'other'])
+        ->assertSessionHasErrors('pending_note');
+});
+
+it('rejects setting a pending reason on a non-pending order', function () {
+    $order = Order::factory()->create(['status' => 'confirmed']);
+
+    actingAs(orderManagerUser())
+        ->put("/admin/orders/{$order->id}/pending", ['pending_reason' => 'call_waiting'])
+        ->assertSessionHasErrors('pending_reason');
+});

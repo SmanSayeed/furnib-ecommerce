@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Payments;
 
-use App\Actions\Marketing\ConfirmOrderPurchase;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Support\Money;
@@ -20,8 +19,6 @@ use Illuminate\Support\Facades\DB;
  */
 final class RecordPayment
 {
-    public function __construct(private readonly ConfirmOrderPurchase $confirmPurchase) {}
-
     /**
      * @param  array<string, mixed>  $validated  Normalized result from PaymentGateway::validatePayment().
      */
@@ -75,17 +72,13 @@ final class RecordPayment
             default => 'unpaid',
         };
 
+        // Record the money only — never auto-confirm. Even a fully paid order
+        // stays `pending` until an admin manually confirms it (business rule:
+        // payment ≠ confirmation). The Purchase conversion already fired once at
+        // order placement (Api\CheckoutController), so nothing marketing here.
         $order->update([
             'advance_paid' => Money::fromMinor($paidMinor),
             'payment_status' => $paymentStatus,
-            'status' => $order->status === 'pending' ? 'confirmed' : $order->status,
         ]);
-
-        // A confirmed order is a real sale — fire the Purchase conversion exactly
-        // once. The same firing happens on a manual admin confirm; the
-        // idempotency stamp ensures Meta counts the sale only one time.
-        if ($order->status === 'confirmed') {
-            $this->confirmPurchase->handle($order);
-        }
     }
 }

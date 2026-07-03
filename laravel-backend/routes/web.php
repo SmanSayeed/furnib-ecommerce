@@ -123,6 +123,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:orders.view')->name('orders.invoice');
     Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])
         ->middleware('permission:orders.manage')->name('orders.status');
+    Route::put('orders/{order}/pending', [OrderController::class, 'updatePending'])
+        ->middleware('permission:orders.manage')->name('orders.pending');
 
     // Customer directory (read-only) — reuses the orders.view permission.
     Route::get('customers', [CustomerController::class, 'index'])

@@ -17,8 +17,17 @@ type OrderRow = {
     mobile: string | null;
     total: string;
     status: string;
+    pending_reason: string | null;
     payment_status: string;
     created_at: string | null;
+};
+
+const PENDING_REASON_LABELS: Record<string, string> = {
+    new_order: 'New order',
+    call_waiting: 'Call waiting',
+    payment_pending: 'Payment pending',
+    need_expert_call: 'Need expert call',
+    other: 'Other',
 };
 
 type Filters = {
@@ -156,7 +165,21 @@ export default function OrdersIndex({ orders, meta, filters, statuses, paymentSt
             ),
         },
         { key: 'total', header: 'Total', sortKey: 'total', cell: (row) => <span className="font-medium whitespace-nowrap">{row.total}</span> },
-        { key: 'status', header: 'Status', sortKey: 'status', cell: (row) => <StatusBadge status={row.status} /> },
+        {
+            key: 'status',
+            header: 'Status',
+            sortKey: 'status',
+            cell: (row) => (
+                <div className="flex flex-col items-start gap-1">
+                    <StatusBadge status={row.status} />
+                    {row.pending_reason && (
+                        <span className="text-xs text-muted-foreground">
+                            {PENDING_REASON_LABELS[row.pending_reason] ?? row.pending_reason}
+                        </span>
+                    )}
+                </div>
+            ),
+        },
         {
             key: 'payment_status',
             header: 'Payment',

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
+use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Order;
 use App\Repositories\Eloquent\OrderRepository;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +34,7 @@ class OrderController extends Controller
                 'mobile' => $o->customer?->mobile,
                 'total' => $o->total->format(),
                 'status' => $o->status,
+                'pending_reason' => $o->status === 'pending' ? $o->pending_reason : null,
                 'payment_status' => $o->payment_status,
                 'created_at' => $o->created_at?->toDateTimeString(),
             ])->all(),
@@ -65,6 +67,8 @@ class OrderController extends Controller
                 'id' => $order->id,
                 'order_no' => $order->order_no,
                 'status' => $order->status,
+                'pending_reason' => $order->pending_reason,
+                'pending_note' => $order->pending_note,
                 'payment_status' => $order->payment_status,
                 'subtotal' => $order->subtotal->format(),
                 'shipping_cost' => $order->shipping_cost->format(),
@@ -87,6 +91,7 @@ class OrderController extends Controller
                 ])->all(),
             ],
             'nextStatuses' => Order::TRANSITIONS[$order->status] ?? [],
+            'pendingReasons' => Order::PENDING_REASONS,
         ]);
     }
 
@@ -100,13 +105,46 @@ class OrderController extends Controller
             ]);
         }
 
-        $order->update(['status' => $status]);
+        // Reverting to (or staying) pending keeps the existing reason; moving
+        // forward clears the operational note so a stale reason doesn't linger.
+        $attributes = ['status' => $status];
+
+        if ($status !== 'pending') {
+            $attributes['pending_note'] = null;
+        }
+
+        $order->update($attributes);
 
         // No marketing fires here. The Purchase conversion (server-side CAPI +
         // GA4 + TikTok, and the browser dataLayer push) happens once at order
         // placement (see Api\CheckoutController). Admin status changes are purely
         // operational and carry no GTM/tracking.
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Order status updated.')]);
+
+        return back();
+    }
+
+    /**
+     * Set the reason a pending order is still open (and an optional note for the
+     * "other" reason). Only meaningful while the order is pending; once it moves
+     * forward the reason is ignored.
+     */
+    public function updatePending(UpdatePendingReasonRequest $request, Order $order): RedirectResponse
+    {
+        if ($order->status !== 'pending') {
+            throw ValidationException::withMessages([
+                'pending_reason' => 'Only a pending order can have its reason set.',
+            ]);
+        }
+
+        $data = $request->validated();
+
+        $order->update([
+            'pending_reason' => $data['pending_reason'],
+            'pending_note' => $data['pending_reason'] === 'other' ? ($data['pending_note'] ?? null) : null,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Pending reason updated.')]);
 
         return back();
     }

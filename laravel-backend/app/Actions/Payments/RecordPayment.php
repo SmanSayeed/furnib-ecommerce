@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Payments;
 
-use App\Models\Order;
 use App\Models\Payment;
+use App\Services\Payments\OrderPaymentReconciler;
 use App\Support\Money;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class RecordPayment
 {
+    public function __construct(private readonly OrderPaymentReconciler $reconciler) {}
+
     /**
      * @param  array<string, mixed>  $validated  Normalized result from PaymentGateway::validatePayment().
      */
@@ -55,7 +57,8 @@ final class RecordPayment
             ])->save();
 
             if ($payment->status === Payment::STATUS_SUCCESS) {
-                $this->reconcileOrder($payment);
+                $order = $payment->order()->lockForUpdate()->firstOrFail();
+                $this->reconciler->reconcile($order);
             }
 
             return $payment;
@@ -75,28 +78,5 @@ final class RecordPayment
             ! $currencyMatches => 'Payment rejected: currency was not BDT.',
             default => 'Payment rejected by server-side validation.',
         };
-    }
-
-    private function reconcileOrder(Payment $payment): void
-    {
-        $order = Order::query()->whereKey($payment->order_id)->lockForUpdate()->firstOrFail();
-
-        $paidMinor = (int) $order->payments()->where('status', Payment::STATUS_SUCCESS)->sum('amount');
-        $totalMinor = $order->total->toMinor();
-
-        $paymentStatus = match (true) {
-            $paidMinor >= $totalMinor => 'paid',
-            $paidMinor > 0 => 'partial',
-            default => 'unpaid',
-        };
-
-        // Record the money only — never auto-confirm. Even a fully paid order
-        // stays `pending` until an admin manually confirms it (business rule:
-        // payment ≠ confirmation). The Purchase conversion already fired once at
-        // order placement (Api\CheckoutController), so nothing marketing here.
-        $order->update([
-            'advance_paid' => Money::fromMinor($paidMinor),
-            'payment_status' => $paymentStatus,
-        ]);
     }
 }

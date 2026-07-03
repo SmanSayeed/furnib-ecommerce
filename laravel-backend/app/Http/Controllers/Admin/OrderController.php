@@ -9,7 +9,9 @@ use App\Http\Requests\Admin\OrderBulkStatusRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Repositories\Eloquent\OrderRepository;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -63,9 +65,11 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Order $order): Response
+    public function show(Request $request, Order $order): Response
     {
-        $order->load(['items', 'customer', 'shippingZone']);
+        $order->load(['items', 'customer', 'shippingZone', 'payments' => fn ($q) => $q->latest('id')]);
+
+        $dueMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
 
         return Inertia::render('orders/show', [
             'order' => [
@@ -78,6 +82,8 @@ class OrderController extends Controller
                 'subtotal' => $order->subtotal->format(),
                 'shipping_cost' => $order->shipping_cost->format(),
                 'total' => $order->total->format(),
+                'advance_paid' => $order->advance_paid->format(),
+                'due' => Money::fromMinor($dueMinor)->format(),
                 'address' => $order->address,
                 'notes' => $order->notes,
                 'created_at' => $order->created_at?->toDateTimeString(),
@@ -94,9 +100,22 @@ class OrderController extends Controller
                     'qty' => $i->qty,
                     'line_total' => $i->line_total->format(),
                 ])->all(),
+                // Payment ledger — gateway + manual entries. Never exposes the
+                // encrypted gateway payload, only non-sensitive summary fields.
+                'payments' => $order->payments->map(fn (Payment $p): array => [
+                    'id' => $p->id,
+                    'gateway' => $p->gateway,
+                    'amount' => $p->amount->format('৳'),
+                    'type' => $p->type,
+                    'direction' => $p->direction,
+                    'status' => $p->status,
+                    'note' => $p->note,
+                    'at' => $p->created_at?->toDateTimeString(),
+                ])->all(),
             ],
             'nextStatuses' => Order::TRANSITIONS[$order->status] ?? [],
             'pendingReasons' => Order::PENDING_REASONS,
+            'canManagePayments' => $request->user()?->can('orders.manage') ?? false,
         ]);
     }
 

@@ -23,6 +23,17 @@ type Item = {
     line_total: string;
 };
 
+type PaymentRow = {
+    id: number;
+    gateway: string;
+    amount: string;
+    type: string;
+    direction: string;
+    status: string;
+    note: string | null;
+    at: string | null;
+};
+
 type Order = {
     id: number;
     order_no: string;
@@ -33,12 +44,15 @@ type Order = {
     subtotal: string;
     shipping_cost: string;
     total: string;
+    advance_paid: string;
+    due: string;
     address: string;
     notes: string | null;
     created_at: string | null;
     customer: { name: string | null; mobile: string | null; email: string | null };
     shipping_zone: string | null;
     items: Item[];
+    payments: PaymentRow[];
 };
 
 function Row({ label, value }: { label: string; value: string | null }) {
@@ -50,16 +64,119 @@ function Row({ label, value }: { label: string; value: string | null }) {
     );
 }
 
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+    success: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    failed: 'bg-red-500/15 text-red-600 dark:text-red-400',
+    cancelled: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
+    pending: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+};
+
+function PaymentsCard({
+    order,
+    canManage,
+    direction,
+    setDirection,
+}: {
+    order: Order;
+    canManage: boolean;
+    direction: string;
+    setDirection: (d: string) => void;
+}) {
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-3 text-sm font-medium text-muted-foreground">Payments</h2>
+
+            {order.payments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
+            ) : (
+                <ul className="space-y-2">
+                    {order.payments.map((p) => (
+                        <li key={p.id} className="flex items-start justify-between gap-3 border-b pb-2 text-sm last:border-0">
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium">
+                                        {p.direction === 'debit' ? '− ' : '+ '}
+                                        {p.amount}
+                                    </span>
+                                    <span
+                                        className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${PAYMENT_STATUS_STYLES[p.status] ?? 'bg-muted text-muted-foreground'}`}
+                                    >
+                                        {p.status}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground capitalize">
+                                        {p.gateway}
+                                        {p.type === 'manual' ? ' · manual' : ''}
+                                    </span>
+                                </div>
+                                {p.note && <p className="mt-0.5 text-xs text-muted-foreground">{p.note}</p>}
+                            </div>
+                            <span className="shrink-0 text-xs text-muted-foreground">{p.at}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            {canManage && (
+                <div className="mt-4 border-t pt-3">
+                    <p className="mb-2 text-xs text-muted-foreground">
+                        Adjust payment — adds a new ledger entry, never changes the customer’s original payment.
+                    </p>
+                    <Form method="post" action={`/admin/orders/${order.id}/payments`} options={{ preserveScroll: true }} resetOnSuccess>
+                        {({ processing, errors }) => (
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <select
+                                        name="direction"
+                                        value={direction}
+                                        onChange={(e) => setDirection(e.target.value)}
+                                        className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                    >
+                                        <option value="credit">Payment received</option>
+                                        <option value="debit">Refund / reduce</option>
+                                    </select>
+                                    <input
+                                        name="amount"
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        placeholder="Amount (৳)"
+                                        className="h-9 w-32 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                    />
+                                </div>
+                                <InputError message={errors.amount} />
+                                <input
+                                    name="note"
+                                    type="text"
+                                    maxLength={255}
+                                    placeholder="Note (required) — e.g. bKash received, partial refund"
+                                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                />
+                                <InputError message={errors.note} />
+                                <Button type="submit" variant="outline" className="w-full" disabled={processing}>
+                                    {direction === 'debit' ? 'Record refund' : 'Record payment'}
+                                </Button>
+                            </div>
+                        )}
+                    </Form>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function OrderShow({
     order,
     nextStatuses,
     pendingReasons,
+    canManagePayments,
 }: {
     order: Order;
     nextStatuses: string[];
     pendingReasons: string[];
+    canManagePayments: boolean;
 }) {
     const [reason, setReason] = useState(order.pending_reason);
+    const [direction, setDirection] = useState('credit');
     const itemColumns: Column<Item>[] = [
         {
             key: 'title',
@@ -117,8 +234,15 @@ export default function OrderShow({
                                 <Row label="Subtotal" value={order.subtotal} />
                                 <Row label="Shipping" value={order.shipping_cost} />
                                 <Row label="Total" value={order.total} />
+                                <Row label="Advance paid" value={order.advance_paid} />
+                                <div className="flex justify-between gap-4 border-t pt-2 text-sm font-semibold">
+                                    <span>Due (COD)</span>
+                                    <span className="text-right">{order.due}</span>
+                                </div>
                             </div>
                         </div>
+
+                        <PaymentsCard order={order} canManage={canManagePayments} direction={direction} setDirection={setDirection} />
                     </div>
 
                     <div className="space-y-4">

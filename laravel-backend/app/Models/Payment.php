@@ -22,6 +22,7 @@ use Spatie\Activitylog\LogOptions;
  * @property string $gateway
  * @property Money $amount
  * @property string $type
+ * @property string $direction
  * @property string $tran_id
  * @property string|null $val_id
  * @property string $status
@@ -39,7 +40,19 @@ class Payment extends Model
 
     public const TYPE_SHIPPING = 'shipping';
 
-    public const TYPES = [self::TYPE_FULL, self::TYPE_PARTIAL, self::TYPE_SHIPPING];
+    // An admin-recorded offline adjustment (cash/bank received, or a refund).
+    public const TYPE_MANUAL = 'manual';
+
+    public const TYPES = [self::TYPE_FULL, self::TYPE_PARTIAL, self::TYPE_SHIPPING, self::TYPE_MANUAL];
+
+    // Ledger direction — credit adds to what's paid, debit reduces it.
+    public const DIRECTION_CREDIT = 'credit';
+
+    public const DIRECTION_DEBIT = 'debit';
+
+    public const DIRECTIONS = [self::DIRECTION_CREDIT, self::DIRECTION_DEBIT];
+
+    public const GATEWAY_MANUAL = 'manual';
 
     public const STATUS_PENDING = 'pending';
 
@@ -60,7 +73,7 @@ class Payment extends Model
     ];
 
     protected $fillable = [
-        'order_id', 'gateway', 'amount', 'type', 'tran_id', 'val_id', 'status', 'note', 'raw_payload',
+        'order_id', 'gateway', 'amount', 'type', 'direction', 'tran_id', 'val_id', 'status', 'note', 'raw_payload',
     ];
 
     protected function casts(): array
@@ -77,7 +90,7 @@ class Payment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['order_id', 'gateway', 'amount', 'type', 'tran_id', 'val_id', 'status', 'note'])
+            ->logOnly(['order_id', 'gateway', 'amount', 'type', 'direction', 'tran_id', 'val_id', 'status', 'note'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('Payment');

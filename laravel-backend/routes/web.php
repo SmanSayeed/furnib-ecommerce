@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\InvoiceListController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderPaymentController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
@@ -138,6 +139,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:orders.manage')->name('orders.status');
     Route::put('orders/{order}/pending', [OrderController::class, 'updatePending'])
         ->middleware('permission:orders.manage')->name('orders.pending');
+    // Manual payment ledger adjustment (credit = received, debit = refund).
+    Route::post('orders/{order}/payments', [OrderPaymentController::class, 'store'])
+        ->middleware('permission:orders.manage')->name('orders.payments.store');
 
     // Customer directory (read-only) — reuses the orders.view permission.
     Route::get('customers', [CustomerController::class, 'index'])

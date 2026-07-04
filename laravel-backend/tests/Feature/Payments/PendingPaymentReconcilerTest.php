@@ -5,14 +5,23 @@ declare(strict_types=1);
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Payments\PendingPaymentReconciler;
+use App\Services\Settings\SettingsService;
 use App\Support\Money;
 use App\Support\Payments\FakePaymentGateway;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
+    cache()->flush();
     $this->gateway = new FakePaymentGateway;
     $this->app->instance(PaymentGateway::class, $this->gateway);
+
+    // The sweep short-circuits unless SSLCommerz is configured.
+    $settings = app(SettingsService::class);
+    $settings->set('sslcommerz', 'store_id', 'test_store', false);
+    $settings->set('sslcommerz', 'store_passwd', 'test_pass', true);
+    cache()->flush();
+
     $this->reconciler = app(PendingPaymentReconciler::class);
 });
 

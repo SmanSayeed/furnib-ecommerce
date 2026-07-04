@@ -6,6 +6,7 @@ namespace App\Services\Payments;
 
 use App\Actions\Payments\RecordPayment;
 use App\Models\Payment;
+use App\Services\Settings\SettingsService;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,7 @@ final class PendingPaymentReconciler
     public function __construct(
         private readonly PaymentGateway $gateway,
         private readonly RecordPayment $recordPayment,
+        private readonly SettingsService $settings,
     ) {}
 
     /**
@@ -45,6 +47,15 @@ final class PendingPaymentReconciler
      */
     public function sweep(): array
     {
+        $empty = ['swept' => 0, 'recovered' => 0, 'failed' => 0, 'still_pending' => 0];
+
+        // Nothing to query without gateway credentials — skip cleanly (no error
+        // spam) so `schedule:run` is a no-op until SSLCommerz is configured.
+        if (blank($this->settings->get('sslcommerz', 'store_id'))
+            || blank($this->settings->get('sslcommerz', 'store_passwd'))) {
+            return $empty;
+        }
+
         $payments = Payment::query()
             ->where('gateway', 'sslcommerz')
             ->where('status', Payment::STATUS_PENDING)

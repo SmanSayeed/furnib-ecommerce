@@ -202,8 +202,26 @@ return { type: 'existing', id: item.id };
         post(editing ? `/admin/catalog/products/${product!.id}` : '/admin/catalog/products', {
             forceFormData: true,
             preserveScroll: true,
+            // On validation failure the save is rejected and the product is left
+            // unchanged — scroll the error summary into view so it never looks
+            // like the form silently "reverted" the values.
+            onError: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
         });
     };
+
+    // Live guard: a discount must stay below the price. Surfaced inline (and the
+    // server enforces the same rule) so lowering the price under an old discount
+    // is caught immediately instead of silently failing the save.
+    const priceNum = parseFloat(data.price);
+    const discountNum = parseFloat(data.discount_price);
+    const discountTooHigh =
+        Number.isFinite(priceNum) &&
+        Number.isFinite(discountNum) &&
+        discountNum >= priceNum;
+
+    const errorList = Object.entries(errors as Record<string, string | undefined>).filter(
+        ([, message]) => Boolean(message),
+    );
 
     return (
         <>
@@ -219,6 +237,22 @@ return { type: 'existing', id: item.id };
                         {editing ? 'Edit product' : 'New product'}
                     </h1>
                 </div>
+
+                {errorList.length > 0 && (
+                    <div
+                        role="alert"
+                        className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                    >
+                        <p className="font-semibold">
+                            Nothing was saved — please fix the following:
+                        </p>
+                        <ul className="mt-2 list-inside list-disc space-y-1">
+                            {errorList.map(([field, message]) => (
+                                <li key={field}>{message}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
                 {/* Basics */}
                 <section className="mb-4 space-y-4 rounded-xl border bg-card p-4 md:p-6">
@@ -432,6 +466,12 @@ setMainPreview(URL.createObjectURL(file));
                                 onChange={(e) => setData('discount_price', e.target.value)}
                                 placeholder="optional"
                             />
+                            {discountTooHigh && !errors.discount_price && (
+                                <p className="text-xs text-destructive">
+                                    Discounted price must be lower than the price (৳{data.price}).
+                                    Clear it or lower it to save.
+                                </p>
+                            )}
                             <InputError message={errors.discount_price} />
                         </div>
                         <div className="grid gap-2">

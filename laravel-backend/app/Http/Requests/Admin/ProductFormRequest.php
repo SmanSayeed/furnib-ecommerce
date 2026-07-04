@@ -73,6 +73,16 @@ class ProductFormRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'discount_price.lt' => 'The discounted price must be lower than the price. Clear or lower the discount before saving.',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $isAdvance = $this->boolean('is_advance_payment');

@@ -10,6 +10,88 @@ binary: `/l/laragon/bin/php/php-8.3.16-Win32-vs16-x64/php.exe`. Admin build need
 
 ---
 
+## 0. SESSION 2026-07-04 — big additions (all on `master`, NOT yet deployed)
+
+Everything below is committed + pushed to `master`, **Pest 517 green (2 skipped),
+Pint clean, Larastan max 0, storefront + admin builds green**. **Owner still needs
+to deploy** backend + storefront, then do the config steps in §A.
+
+Commits this session (newest first):
+- `dfea7b0` feat(orders): **single order-placed SMS + self-service `/pay` page**
+- `5a14d14` feat(sslcommerz): **sandbox + live creds stored separately**, switch by mode
+- `e588181` feat(sms): **DLR delivery reports** (token-secured webhook)
+- `1a2834a` feat(notifications): **channel-agnostic customer SMS** (Automas), email-ready
+- `2fd068d` feat(ops): **scheduler + queue worker via supervisor** in-container; docs
+- `afb4d87` chore(quality): Larastan-max clean + handover
+- `7edb4dd` feat(courier): **Steadfast auto-push on confirm + hourly status poll + fraud stats**
+- `12e06d7` feat(payments): **reconciliation sweep** (recover lost callback/IPN)
+- `8f827c5` fix(checkout): success-page advance retry
+
+### What each subsystem does + key files
+- **Payment reconciliation** (`ReconcilePendingPayments` job, 5-min schedule →
+  `PendingPaymentReconciler`): recovers payments where bank charged but callback+IPN
+  lost, via SSLCommerz Transaction Query API (`SslCommerzGateway::queryTransaction`).
+  Skips cleanly if SSLCommerz not configured. Doc: `SSLCOMMERZ-INTEGRATION.md`.
+- **Steadfast courier** (`OrderObserver` → `PushOrderToCourier` on confirm;
+  `SyncCourierStatuses` hourly; `CustomerCourierStats` fraud/return-ratio on the
+  admin order page). Auto-push only when Steadfast creds set + `steadfast.auto_push`.
+  Doc: `STEADFAST-INTEGRATION.md`.
+- **Customer SMS** (channel-agnostic, email-ready): `OrderNotificationService` →
+  `SmsOrderChannel` (base `BaseOrderNotificationChannel`), `OrderNotificationEvent`
+  enum (Placed/Confirmed/Shipped/Delivered/Cancelled/Returned), `AutomasSmsGateway`
+  (v3, auto Unicode `smsformat=8` for Bangla per BTRC), bound only when configured
+  (else Log). **Exactly ONE SMS per order by default**: only `Placed` is on; status
+  events default OFF. `notification_logs` table = audit + idempotency (unique
+  order+event+channel). Doc: `docs/sms-gateway/SMS-INTEGRATION.md`.
+- **Double-SMS fix**: legacy `SendOrderConfirmation` is **email-only** now; the one
+  placement SMS goes via `OrderNotificationEvent::Placed`.
+- **Self-service pay link**: `PayLink` builds `{FRONTEND_URL}/pay/{order_no}?t={HMAC}`
+  (keyed by APP_KEY, no IDOR). Storefront `app/pay/[order]/page.tsx` reads
+  `GET /api/v1/pay/{order_no}/summary?t=…` (`PayPageController`, token-gated) and
+  offers 2 SSLCommerz buttons: **Pay delivery charge** (`type=shipping`) + **Pay
+  full** (`type=full`). The Placed SMS template carries `{pay_url}`.
+- **SMS DLR**: `DlrController` at `GET|POST /api/v1/sms/dlr/{token}/{outcome}`
+  (secret `sms.dlr_token`, hash_equals → 404 on mismatch). Matches by provider id
+  (`AutomasSmsGateway implements ProvidesMessageId`) → sets delivered/undelivered +
+  `delivered_at`. Admin SMS card shows the Success/Fail URLs to paste into Automas.
+- **SSLCommerz sandbox/live split**: creds stored as `sandbox_store_id`/
+  `sandbox_store_passwd` + `live_store_id`/`live_store_passwd` (blank-keeps, so
+  switching mode never wipes the other). Gateway reads the ACTIVE mode (legacy
+  single pair kept as fallback). A deploy migration copies the legacy pair into the
+  active mode. Admin card = two credential blocks + mode toggle.
+- **Ops**: `docker/supervisord.conf` now runs `php artisan schedule:work` +
+  `queue:work` alongside php-fpm/nginx (EasyPanel has no cron menu). `QUEUE_CONNECTION
+  =database`. Doc: `SERVER-OPS-GUIDE.md` §"Background workers". Owner confirmed
+  `schedule:list` shows both jobs live.
+
+### A. Owner config after deploy (in order)
+1. **Deploy backend + storefront** (redeploy on EasyPanel). Backend boot auto-runs
+   migrations (adds `notification_logs`, `delivered_at`, sslcommerz cred split) +
+   restarts the supervisor scheduler/queue worker with new code.
+2. **SSLCommerz**: Admin → Settings → Integrations → SSLCommerz — Live creds already
+   present migrate into the Live slot; optionally add Sandbox creds; pick Mode.
+3. **SMS**: same page → SMS card — enable, Sender ID, **API key** (regenerate the one
+   leaked in `docs/sms-gateway/code-examples.txt` first!), keep **Order placed (pay
+   link)** ON with BTRC-vetted Bangla template ({order_no} {pay_url}); status events
+   OFF unless wanted. Ensure `FRONTEND_URL=https://furnib.com`. Balance > 0.
+4. **Steadfast**: same page → add Api-Key/Secret-Key → confirmed orders auto-push.
+5. (Optional) **SMS DLR**: paste the shown Success/Fail URLs into Automas → Developer
+   Options → DLR Push Configuration.
+6. Test: place a COD order → ONE Bangla SMS + pay link → `/pay` page → buttons.
+
+### B. Security note — DO NOT COMMIT
+`docs/sms-gateway/code-examples.txt` + `notes.txt` are **untracked and hold a real
+API key** — never `git add` them (only `SMS-INTEGRATION.md` was committed). Advise
+regenerating that Automas key.
+
+### C. Still pending / optional
+- Deploy all of the above.
+- (Optional) Steadfast OpenSpec doc; bulk courier push from orders table.
+- (Optional) turn on status SMS events; wire DLR.
+- `dbe0612` cus_state fix — deploy (still listed below, older).
+
+---
+
 ## 1. Status snapshot (what's DONE + on `master`)
 
 Recent commits (newest first):

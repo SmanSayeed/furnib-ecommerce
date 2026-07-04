@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Mail\OrderConfirmationMail;
 use App\Models\Product;
 use App\Models\ShippingZone;
+use App\Services\Settings\SettingsService;
 use App\Support\Sms\FakeSmsGateway;
 use App\Support\Sms\SmsGateway;
 use Illuminate\Support\Facades\Mail;
@@ -14,6 +15,10 @@ beforeEach(function () {
     Mail::fake();
     $this->sms = new FakeSmsGateway;
     $this->app->instance(SmsGateway::class, $this->sms);
+
+    // The single order-placed SMS goes through the notification system.
+    app(SettingsService::class)->set('sms', 'enabled', true);
+    cache()->flush();
 });
 
 function confirmableProduct(): Product

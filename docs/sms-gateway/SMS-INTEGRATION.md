@@ -24,6 +24,26 @@ Treat it as a secret:
 
 ---
 
+## 0b. One SMS per order + self-service pay link (2026-07-04)
+
+To avoid double SMS charges, an order now sends **exactly one** SMS by default:
+- The legacy English "order received" SMS (`SendOrderConfirmation`) was removed —
+  that action now sends **email only**.
+- Order placement dispatches `OrderNotificationEvent::Placed` (the only event ON by
+  default; confirmed/shipped/delivered/cancelled/returned default OFF). Its Bangla
+  template carries a **`{pay_url}`** — a signed, self-service payment link.
+- `PayLink` builds `{frontend}/pay/{order_no}?t={HMAC token}`. The token is an
+  HMAC of the order_no keyed by `APP_KEY`, so the link is unguessable and can't be
+  enumerated (no IDOR/PII leak).
+- Storefront **`/pay/{order_no}`** page reads the summary via
+  `GET /api/v1/pay/{order_no}/summary?t=…` (token-gated) and offers two SSLCommerz
+  buttons: **Pay delivery charge** (`type=shipping`) and **Pay full amount**
+  (`type=full`). Nothing due → "fully paid".
+- Placeholders now include `{pay_url}`. Tests: `PayPageTest`, and
+  `OrderConfirmationTest` asserts a single placement SMS + the email.
+
+---
+
 ## 1. BTRC compliance (mandatory)
 
 Per the provider's BTRC notice (`docs/sms-gateway/notes.txt`):

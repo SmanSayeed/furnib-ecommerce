@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\MarketingController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\OrderStatusController;
 use App\Http\Controllers\Api\PageController as ApiPageController;
+use App\Http\Controllers\Api\Payment\PayPageController;
 use App\Http\Controllers\Api\Payment\SslController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductShippingZoneController;
@@ -67,6 +68,9 @@ Route::prefix('v1')->group(function () {
     // after returning from the gateway. Guarded by order_no + their mobile (no
     // IDOR), rate-limited. Read-only, money fields only.
     Route::middleware('throttle:30,1')->post('orders/{order_no}/status', [OrderStatusController::class, 'show']);
+
+    // Self-service pay page summary — gated by the signed link token (no IDOR).
+    Route::middleware('throttle:30,1')->get('pay/{order_no}/summary', [PayPageController::class, 'summary']);
 
     Route::middleware('auth:sanctum')->get('me', fn (Request $request) => response()->json([
         'id' => $request->user()->id,

@@ -20,6 +20,10 @@ beforeEach(function () {
 
     $this->settings = app(SettingsService::class);
     $this->settings->set('sms', 'enabled', true);
+    // Status events are off by default now (only `placed` is on) — enable the
+    // ones these tests exercise.
+    $this->settings->set('sms', OrderNotificationEvent::Confirmed->toggleKey(), true);
+    $this->settings->set('sms', OrderNotificationEvent::Shipped->toggleKey(), true);
     cache()->flush();
 });
 

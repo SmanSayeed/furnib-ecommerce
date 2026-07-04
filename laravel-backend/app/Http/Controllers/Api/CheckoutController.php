@@ -8,9 +8,11 @@ use App\Actions\Marketing\ConfirmOrderPurchase;
 use App\Actions\Orders\PlaceOrder;
 use App\Actions\Orders\SendOrderConfirmation;
 use App\DTOs\PlaceOrderData;
+use App\Enums\OrderNotificationEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
+use App\Jobs\SendOrderNotification;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 
@@ -62,7 +64,11 @@ class CheckoutController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
+        // Email (when an address is on file) is sent synchronously; the single
+        // order-placed SMS (with the self-service pay link) goes via the queued
+        // notification system so there is exactly one SMS per order.
         $this->sendConfirmation->handle($order);
+        SendOrderNotification::dispatch($order->id, OrderNotificationEvent::Placed->value);
 
         $order->loadMissing(['items.product.category', 'customer', 'shippingZone']);
 

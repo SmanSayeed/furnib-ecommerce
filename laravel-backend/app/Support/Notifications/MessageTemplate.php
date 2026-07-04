@@ -6,6 +6,7 @@ namespace App\Support\Notifications;
 
 use App\Models\Order;
 use App\Support\Money;
+use App\Support\Orders\PayLink;
 
 /**
  * Renders a `{placeholder}` template and builds the order's placeholder map —
@@ -43,6 +44,7 @@ final class MessageTemplate
             'total' => $order->total->format('Tk '),
             'due' => Money::fromMinor($dueMinor)->format('Tk '),
             'tracking' => (string) ($order->shipment->tracking_code ?? ''),
+            'pay_url' => PayLink::for($order),
         ];
     }
 }

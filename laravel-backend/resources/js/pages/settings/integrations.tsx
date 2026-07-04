@@ -38,6 +38,7 @@ type SmsSettings = {
 };
 
 const SMS_EVENT_LABELS: Record<string, string> = {
+    placed: 'Order placed (pay link)',
     confirmed: 'Order confirmed',
     shipped: 'Shipped (with tracking)',
     delivered: 'Delivered',

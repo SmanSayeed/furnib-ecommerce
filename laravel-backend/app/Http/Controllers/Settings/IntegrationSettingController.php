@@ -50,7 +50,7 @@ class IntegrationSettingController extends Controller
                 // Per-event toggle + current (or default) Bangla template.
                 'events' => collect(OrderNotificationEvent::cases())->map(fn (OrderNotificationEvent $e): array => [
                     'key' => $e->value,
-                    'enabled' => (bool) $this->settings->get('sms', $e->toggleKey(), true),
+                    'enabled' => (bool) $this->settings->get('sms', $e->toggleKey(), $e->defaultEnabled()),
                     'template' => (string) ($this->settings->get('sms', $e->templateKey()) ?: $e->defaultSmsTemplate()),
                 ])->all(),
                 // DLR (SMS delivery report) push URLs to paste into the Automas

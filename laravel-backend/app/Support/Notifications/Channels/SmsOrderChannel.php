@@ -34,8 +34,9 @@ final class SmsOrderChannel extends BaseOrderNotificationChannel
 
     protected function eventEnabled(OrderNotificationEvent $event): bool
     {
-        // Default on — once SMS is enabled, each event fires unless turned off.
-        return (bool) $this->settings->get('sms', $event->toggleKey(), true);
+        // Per-event default: only `Placed` is on, so a fresh install sends exactly
+        // one SMS per order. The admin can switch the status events on.
+        return (bool) $this->settings->get('sms', $event->toggleKey(), $event->defaultEnabled());
     }
 
     protected function routeFor(Order $order): string

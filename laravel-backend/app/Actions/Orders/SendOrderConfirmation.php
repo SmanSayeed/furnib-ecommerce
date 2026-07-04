@@ -6,47 +6,24 @@ namespace App\Actions\Orders;
 
 use App\Mail\OrderConfirmationMail;
 use App\Models\Order;
-use App\Support\Sms\SmsGateway;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 /**
- * Notifies the customer that their order was received: an SMS to the mobile
- * (always) and a queued email when an address is on file. Delivery failures are
- * non-fatal — the order has already been placed, so we only log and move on.
+ * Emails the customer that their order was received (when an address is on file).
+ * The order-placed SMS is handled separately by the notification system
+ * (OrderNotificationEvent::Placed) so the customer gets exactly ONE SMS — this
+ * action no longer sends SMS, avoiding a duplicate charge. Failures are
+ * non-fatal: the order is already placed, so we log and move on.
  */
 final class SendOrderConfirmation
 {
-    public function __construct(private readonly SmsGateway $sms) {}
-
     public function handle(Order $order): void
     {
         $order->loadMissing('customer');
 
-        $this->sendSms($order);
         $this->sendEmail($order);
-    }
-
-    private function sendSms(Order $order): void
-    {
-        $mobile = $order->customer?->mobile;
-
-        if (blank($mobile)) {
-            return;
-        }
-
-        try {
-            $this->sms->send(
-                (string) $mobile,
-                "Furnib: order {$order->order_no} received. Total {$order->total->format()}. Thank you!",
-            );
-        } catch (Throwable $e) {
-            Log::warning('Order confirmation SMS failed', [
-                'order_no' => $order->order_no,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 
     private function sendEmail(Order $order): void

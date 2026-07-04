@@ -123,7 +123,8 @@ export function CheckoutForm({
         body: JSON.stringify({
           items: [{ product_id: product.id, qty }],
           customer: { name, mobile },
-          shipping_zone_id: zoneId,
+          // A free-shipping product carries no delivery zone at all.
+          shipping_zone_id: product.free_shipping ? null : zoneId,
           address,
           // Passive acceptance — clicking Place Order = agreeing to our policies.
           terms_accepted: true,
@@ -274,7 +275,7 @@ export function CheckoutForm({
           {fieldError("address")}
         </div>
 
-        {zones.length > 0 && (
+        {zones.length > 0 && !product.free_shipping && (
           <div>
             <span className="mb-2 block text-sm font-medium">Shipping method</span>
             <div className="space-y-2">
@@ -319,16 +320,14 @@ export function CheckoutForm({
           <span className="text-muted">Subtotal ({qty} item{qty > 1 ? "s" : ""})</span>
           <span className="font-medium">{taka(subtotalMinor)}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted">Shipping</span>
-          <span className="font-medium">
-            {product.free_shipping
-              ? "Free"
-              : shippingMinor
-                ? taka(shippingMinor)
-                : "—"}
-          </span>
-        </div>
+        {!product.free_shipping && (
+          <div className="flex justify-between">
+            <span className="text-muted">Shipping</span>
+            <span className="font-medium">
+              {shippingMinor ? taka(shippingMinor) : "—"}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between border-t border-border pt-2 text-base font-bold">
           <span>Total</span>
           <span className="text-accent">{taka(totalMinor)}</span>

@@ -166,13 +166,13 @@ export default function CategoryForm({ category }: { category: Category | null }
                                     name="header_image_mobile"
                                     label="Header image (mobile)"
                                     current={category?.header_mobile_url ?? null}
-                                    description="Optional mobile header (portrait). Falls back to the desktop header if empty. Max 20 MB."
+                                    description="Optional mobile header (portrait) — recommended 800×1000 px. Falls back to the desktop header if empty. Max 20 MB."
                                 />
                                 <ImageField
                                     name="thumbnail_image"
                                     label="Thumbnail image"
                                     current={category?.thumbnail_url ?? null}
-                                    description="Square card image — recommended 600×600 px. Max 20 MB."
+                                    description="Square card image — recommended 600×400 px. Max 20 MB."
                                 />
                             </div>
                             <InputError message={errors.header_image} />

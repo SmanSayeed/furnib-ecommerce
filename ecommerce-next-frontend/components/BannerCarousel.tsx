@@ -2,11 +2,36 @@
 
 import { useEffect, useState } from "react";
 
-type Banner = { desktop: string; mobile: string };
+type Banner = { desktop: string | null; mobile: string | null };
 
 export function BannerCarousel({ banners }: { banners: Banner[] }) {
+  // Split the banners per device. A banner only appears on a device when it has
+  // an image for that device: the API already falls a desktop-only banner back
+  // to the wide image on mobile (mobile = mobile ?? desktop), but a mobile-only
+  // banner has no desktop image, so it is filtered out of the desktop carousel
+  // and never leaks onto desktop screens.
+  const desktopSlides = banners
+    .map((b) => b.desktop)
+    .filter((src): src is string => Boolean(src));
+  const mobileSlides = banners
+    .map((b) => b.mobile)
+    .filter((src): src is string => Boolean(src));
+
+  if (desktopSlides.length === 0 && mobileSlides.length === 0) return null;
+
+  return (
+    <>
+      {/* Desktop (≥768px): wide banners only. */}
+      <Slides slides={desktopSlides} className="hidden aspect-9/2 md:block" />
+      {/* Mobile (<768px): portrait banners only. */}
+      <Slides slides={mobileSlides} className="aspect-4/5 md:hidden" />
+    </>
+  );
+}
+
+function Slides({ slides, className }: { slides: string[]; className: string }) {
   const [index, setIndex] = useState(0);
-  const count = banners.length;
+  const count = slides.length;
 
   useEffect(() => {
     if (count <= 1) return;
@@ -19,23 +44,20 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
 
   return (
-    <section className="relative mt-3 w-full overflow-hidden rounded-card border border-border">
-      <div className="relative aspect-[4/5] w-full sm:aspect-[9/2]">
-        {banners.map((b, i) => (
-          <picture
+    <section
+      className={`relative mt-3 w-full overflow-hidden rounded-card border border-border ${className}`}
+    >
+      <div className="relative h-full w-full">
+        {slides.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             key={i}
-            className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${
+            src={src}
+            alt={`Banner ${i + 1}`}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
               i === index ? "opacity-100" : "opacity-0"
             }`}
-          >
-            <source media="(min-width:768px)" srcSet={b.desktop} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={b.mobile}
-              alt={`Banner ${i + 1}`}
-              className="h-full w-full object-cover"
-            />
-          </picture>
+          />
         ))}
       </div>
 
@@ -58,7 +80,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
             ›
           </button>
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
-            {banners.map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 type="button"

@@ -191,7 +191,7 @@ export type SiteSettings = {
   logo_dark: string | null;
   logo_footer: string | null;
   favicon: string | null;
-  banners: Array<{ desktop: string; mobile: string }>;
+  banners: Array<{ desktop: string | null; mobile: string | null }>;
   socials?: SocialLinks;
   // Published pages shown in the footer "About Us" column, each → /p/{slug}.
   footer_pages?: Array<{ slug: string; title: string }>;

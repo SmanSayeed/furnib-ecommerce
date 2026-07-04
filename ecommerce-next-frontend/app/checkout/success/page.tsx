@@ -106,11 +106,16 @@ export default function SuccessPage() {
     );
   }
 
-  // An advance (full or partial) was mandatory and was collected at checkout via
-  // the gateway — so the success page must NOT offer to pay again. Only a
-  // pure-COD order (no advance) shows the optional "pay online" button.
+  // An advance (full or partial) was mandatory for this order.
   const advanceRequired = live?.advance_required ?? order.advance_amount.minor > 0;
+  // Whether it was ACTUALLY collected — trust only the live server status (the
+  // sessionStorage snapshot is captured before payment, so advance_paid is 0
+  // there). If the gateway session failed to open, the shopper lands here with
+  // the advance unpaid and must be able to retry.
+  const advancePaidMinor = live?.advance_paid.minor ?? 0;
+  const advanceSettled = advanceRequired && advancePaidMinor > 0;
   const advancePaid = live?.advance_paid ?? order.advance_paid;
+  const advanceDue = live?.advance_amount.formatted ?? order.advance_amount.formatted;
   const dueFormatted =
     live?.due.formatted ??
     `৳${Math.round((order.total.minor - order.advance_amount.minor) / 100).toLocaleString("en-US")}`;
@@ -160,7 +165,7 @@ export default function SuccessPage() {
             <span>Total</span>
             <span className="text-accent">{order.total.formatted}</span>
           </div>
-          {advanceRequired && (
+          {advanceSettled && (
             <>
               <div className="flex justify-between pt-1 text-xs text-green-600 dark:text-green-400">
                 <span>Advance paid online</span>
@@ -171,6 +176,12 @@ export default function SuccessPage() {
                 <span className="font-medium">{dueFormatted}</span>
               </div>
             </>
+          )}
+          {advanceRequired && !advanceSettled && (
+            <div className="flex justify-between pt-1 text-xs text-amber-600 dark:text-amber-400">
+              <span>Advance to pay now</span>
+              <span className="font-semibold">{advanceDue}</span>
+            </div>
           )}
         </div>
 
@@ -185,11 +196,28 @@ export default function SuccessPage() {
 
       {/* Payment + invoice */}
       <div className="mt-5 space-y-3">
-        {advanceRequired ? (
+        {advanceSettled ? (
+          // Advance already collected at checkout — no re-payment offered.
           <p className="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-center text-sm text-green-700 dark:text-green-400">
             Advance received — {advancePaid.formatted} paid online. The balance of {dueFormatted} is
             collected on delivery.
           </p>
+        ) : advanceRequired ? (
+          // Advance is required but NOT yet paid (e.g. the gateway couldn't open,
+          // or the shopper cancelled). Let them retry — the order is already saved.
+          <>
+            <button
+              type="button"
+              onClick={() => pay("partial")}
+              disabled={paying !== null}
+              className="w-full rounded-xl bg-accent px-6 py-3.5 font-semibold text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
+            >
+              {paying === "partial" ? "Starting payment…" : `Pay advance now — ${advanceDue}`}
+            </button>
+            <p className="text-center text-xs text-muted">
+              Your order is saved. Complete the advance to confirm it.
+            </p>
+          </>
         ) : (
           <button
             type="button"

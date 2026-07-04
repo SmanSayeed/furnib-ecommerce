@@ -28,6 +28,11 @@ type SmsSettings = {
     sender_id: string;
     api_key_set: boolean;
     events: SmsEvent[];
+    dlr: {
+        configured: boolean;
+        success_url: string | null;
+        failed_url: string | null;
+    };
 };
 
 const SMS_EVENT_LABELS: Record<string, string> = {
@@ -341,6 +346,27 @@ export default function Integrations({
                                     </div>
                                 ))}
                             </div>
+
+                            {/* DLR (delivery report) push URLs for the Automas panel */}
+                            {sms.dlr.configured ? (
+                                <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                                    <p className="text-sm font-medium">Delivery reports (DLR) — optional</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        In the Automas panel → Developer Options → DLR Push Configuration, add these
+                                        URLs so delivered/failed status is tracked here. Keep them secret.
+                                    </p>
+                                    <div className="grid gap-2">
+                                        <Label className="text-xs">Success URL</Label>
+                                        <Input readOnly value={sms.dlr.success_url ?? ''} onFocus={(e) => e.target.select()} />
+                                        <Label className="text-xs">Fail URL</Label>
+                                        <Input readOnly value={sms.dlr.failed_url ?? ''} onFocus={(e) => e.target.select()} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    Save once to generate your DLR (delivery report) push URLs.
+                                </p>
+                            )}
 
                             <div className="flex items-center gap-4">
                                 <Button disabled={processing} data-test="save-sms">

@@ -11,6 +11,7 @@ use App\Http\Requests\Settings\SslcommerzSettingsRequest;
 use App\Http\Requests\Settings\SteadfastSettingsRequest;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,8 +47,25 @@ class IntegrationSettingController extends Controller
                     'enabled' => (bool) $this->settings->get('sms', $e->toggleKey(), true),
                     'template' => (string) ($this->settings->get('sms', $e->templateKey()) ?: $e->defaultSmsTemplate()),
                 ])->all(),
+                // DLR (SMS delivery report) push URLs to paste into the Automas
+                // panel. Present only once SMS has been saved (token generated).
+                'dlr' => $this->dlrUrls(),
             ],
         ]);
+    }
+
+    /**
+     * @return array{configured: bool, success_url: string|null, failed_url: string|null}
+     */
+    private function dlrUrls(): array
+    {
+        $token = (string) ($this->settings->get('sms', 'dlr_token') ?? '');
+
+        return [
+            'configured' => $token !== '',
+            'success_url' => $token !== '' ? url("/api/v1/sms/dlr/{$token}/success") : null,
+            'failed_url' => $token !== '' ? url("/api/v1/sms/dlr/{$token}/failed") : null,
+        ];
     }
 
     public function updateSslcommerz(SslcommerzSettingsRequest $request): RedirectResponse
@@ -91,6 +109,11 @@ class IntegrationSettingController extends Controller
 
         if (filled($validated['api_key'] ?? null)) {
             $this->settings->set('sms', 'api_key', $validated['api_key'], isSecret: true);
+        }
+
+        // Generate the DLR push token once, so the delivery-report URLs are stable.
+        if (blank($this->settings->get('sms', 'dlr_token'))) {
+            $this->settings->set('sms', 'dlr_token', Str::random(48), isSecret: true);
         }
 
         foreach (OrderNotificationEvent::cases() as $event) {

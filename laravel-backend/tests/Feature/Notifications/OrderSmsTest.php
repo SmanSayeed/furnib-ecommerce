@@ -51,7 +51,9 @@ it('sends a Bangla confirmation SMS and logs it', function () {
     $log = NotificationLog::query()->where('order_id', $order->id)->where('channel', 'sms')->firstOrFail();
     expect($log->status)->toBe('sent')
         ->and($log->event)->toBe('confirmed')
-        ->and($log->recipient)->toBe('+8801712345678');
+        ->and($log->recipient)->toBe('+8801712345678')
+        // Provider id captured (via ProvidesMessageId) so a later DLR can match.
+        ->and($log->provider_message_id)->toBe('FAKE-SMS-1');
 });
 
 it('includes the tracking code in the shipped SMS', function () {

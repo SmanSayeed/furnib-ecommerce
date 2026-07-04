@@ -18,7 +18,7 @@ use Throwable;
  * Never throws on a delivery failure — returns false so callers/order flow are
  * unaffected. See docs/sms-gateway/SMS-INTEGRATION.md.
  */
-final class AutomasSmsGateway implements SmsGateway
+final class AutomasSmsGateway implements ProvidesMessageId, SmsGateway
 {
     private const ENDPOINT = 'https://api.automas.com.bd/smsapiv3';
 
@@ -27,10 +27,20 @@ final class AutomasSmsGateway implements SmsGateway
 
     private const UNICODE_LIMIT = 70;
 
+    /** Provider id of the last successful send — read by the DLR matcher. */
+    private ?string $lastMessageId = null;
+
     public function __construct(private readonly SettingsService $settings) {}
+
+    public function lastMessageId(): ?string
+    {
+        return $this->lastMessageId;
+    }
 
     public function send(string $mobile, string $message): bool
     {
+        $this->lastMessageId = null;
+
         $apiKey = (string) ($this->settings->get('sms', 'api_key') ?? '');
         $sender = (string) ($this->settings->get('sms', 'sender_id') ?? '');
 
@@ -77,6 +87,9 @@ final class AutomasSmsGateway implements SmsGateway
 
             return false;
         }
+
+        $id = $entry['id'] ?? null;
+        $this->lastMessageId = $id === null ? null : (string) $id;
 
         return true;
     }

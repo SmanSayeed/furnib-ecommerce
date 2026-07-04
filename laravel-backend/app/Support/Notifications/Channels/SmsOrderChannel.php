@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Support\Notifications\BaseOrderNotificationChannel;
 use App\Support\Notifications\MessageTemplate;
 use App\Support\Notifications\NotificationResult;
+use App\Support\Sms\ProvidesMessageId;
 use App\Support\Sms\SmsGateway;
 
 /**
@@ -53,9 +54,17 @@ final class SmsOrderChannel extends BaseOrderNotificationChannel
 
     protected function deliver(string $recipient, string $message): NotificationResult
     {
-        return $this->gateway()->send($recipient, $message)
-            ? NotificationResult::sent()
-            : NotificationResult::failed('SMS gateway rejected the message.');
+        $gateway = $this->gateway();
+
+        if (! $gateway->send($recipient, $message)) {
+            return NotificationResult::failed('SMS gateway rejected the message.');
+        }
+
+        // Capture the provider id (when the driver exposes it) so a later DLR can
+        // be matched back to this exact message.
+        $id = $gateway instanceof ProvidesMessageId ? $gateway->lastMessageId() : null;
+
+        return NotificationResult::sent($id);
     }
 
     protected function provider(): string

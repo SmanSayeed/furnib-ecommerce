@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductShippingZoneController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShippingZoneController;
+use App\Http\Controllers\Api\Sms\DlrController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Models\Customer;
 use Illuminate\Http\Request;
@@ -85,6 +86,14 @@ Route::prefix('v1')->group(function () {
         Route::post('cancel', [SslController::class, 'cancel'])->name('api.payment.ssl.cancel');
         Route::post('ipn', [SslController::class, 'ipn'])->name('api.payment.ssl.ipn');
     });
+
+    // Automas SMS delivery reports (DLR). The secret {token} authenticates the
+    // caller; {outcome} is fixed by which URL Automas was given. GET or POST — we
+    // don't know which Automas uses, so accept both. Rate-limited against abuse.
+    Route::middleware('throttle:120,1')
+        ->match(['get', 'post'], 'sms/dlr/{token}/{outcome}', [DlrController::class, 'handle'])
+        ->where('outcome', 'success|failed')
+        ->name('api.sms.dlr');
 
     // Authenticated customer (Sanctum token scoped to the 'customer' ability).
     // The bearer token's tokenable is a Customer; fetch it explicitly so the

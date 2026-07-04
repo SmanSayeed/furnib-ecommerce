@@ -242,9 +242,26 @@ Stored canonical `+8801XXXXXXXXX` (via `MobileNumber`). Automas wants `880…` (
    pastes **BTRC-vetted Bangla** templates, enables the events wanted, `sms.enabled=on`.
 2. Ensure balance > 0 (panel shows ৳; `getbalancev3` for a dashboard widget later).
 3. Test order → confirm → phone receives the Bangla SMS; check `sms_logs`.
-4. Later: wire **DLR Push** (panel → Developer Options → DLR Push Conf) to
-   `https://admin.furnib.com/api/v1/sms/dlr` for delivered/failed tracking.
+4. **DLR (delivery reports) — implemented.** After the first SMS save, the SMS
+   card shows a **Success URL** and **Fail URL** (each carrying a secret token).
+   Paste them into the Automas panel → Developer Options → DLR Push Configuration.
+   Automas then POSTs/GETs each message's final status back, and we advance the
+   matching `notification_logs` row to `delivered` / `undelivered`.
+
+### DLR design (delivered)
 
 > **DLR Push** = Automas's delivery-report webhook (like SSLCommerz IPN, but for
-> SMS): set a Success URL + Fail URL and Automas POSTs each message's final
-> delivery status. Optional; deferred to a later step.
+> SMS): a Success URL + Fail URL that Automas calls with each message's outcome.
+
+- **Match key:** the provider message id. `AutomasSmsGateway` implements the
+  optional `ProvidesMessageId` capability, so `SmsOrderChannel` records the id in
+  `notification_logs.provider_message_id`; the DLR looks the row up by it.
+- **Auth:** the URL carries a secret `sms.dlr_token` (generated on first save,
+  stored encrypted). `DlrController` compares it with `hash_equals`; a wrong/absent
+  token is a generic 404, so the endpoint isn't probeable or spoofable.
+- **Routes:** `GET|POST /api/v1/sms/dlr/{token}/{outcome}` (`outcome` = `success`
+  |`failed`), rate-limited. Reads the id under any of Automas' likely param names
+  (`id`/`sid`/`messageid`/…). Only advances an EXISTING row; never creates one;
+  always returns `200 {ok:true}` (no existence leak). Adds `delivered_at`.
+- **Tests:** `tests/Feature/Sms/SmsDlrTest.php` — delivered/undelivered by id, bad
+  token → 404, unknown id → 200 no-op, invalid outcome → 404.

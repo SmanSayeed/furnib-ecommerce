@@ -9,22 +9,32 @@ namespace App\Support\Sms;
  * verify a send happened (and with what content) without hitting a network.
  * The next send can be forced to fail to exercise non-fatal failure handling.
  */
-final class FakeSmsGateway implements SmsGateway
+final class FakeSmsGateway implements ProvidesMessageId, SmsGateway
 {
     /** @var array<int, array{mobile: string, message: string}> */
     public array $sent = [];
 
     public bool $shouldFail = false;
 
+    private ?string $lastMessageId = null;
+
     public function send(string $mobile, string $message): bool
     {
+        $this->lastMessageId = null;
+
         if ($this->shouldFail) {
             return false;
         }
 
         $this->sent[] = ['mobile' => $mobile, 'message' => $message];
+        $this->lastMessageId = 'FAKE-SMS-'.count($this->sent);
 
         return true;
+    }
+
+    public function lastMessageId(): ?string
+    {
+        return $this->lastMessageId;
     }
 
     /**

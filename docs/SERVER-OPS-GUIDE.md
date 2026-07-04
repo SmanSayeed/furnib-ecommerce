@@ -152,6 +152,60 @@ NEXT_PUBLIC_WHATSAPP=8801XXXXXXXXX
 
 ---
 
+## 6b. Background workers (scheduler + queue) — REQUIRED
+
+Furnib runs two always-on background processes for payment recovery and courier
+automation. **EasyPanel (this version) has no Cron/Schedules menu**, and the app
+is containerised — so instead of a system crontab, both processes run as
+**Supervisor programs inside the backend container** (`docker/supervisord.conf`,
+alongside `php-fpm` + `nginx`). They ship with the image, auto-start, auto-restart
+on crash, and restart on every deploy. **No separate EasyPanel service needed.**
+
+| Program | Command | Does |
+|---|---|---|
+| `scheduler` | `php artisan schedule:work` | Container-native cron. Ticks every minute and dispatches the scheduled jobs (`routes/console.php`). |
+| `queue-worker` | `php artisan queue:work --tries=3 --backoff=60 --sleep=3 --max-time=3600` | Processes queued jobs on `QUEUE_CONNECTION=database`. |
+
+What they run:
+- **Payment reconciliation** — `ReconcilePendingPayments` every **5 min**: recovers
+  payments where the bank charged but the callback + IPN were both lost. See
+  `SSLCOMMERZ-INTEGRATION.md` §2.
+- **Courier auto-push** — `PushOrderToCourier`, dispatched by `OrderObserver` the
+  moment an order is **confirmed** (only when Steadfast creds are set).
+- **Courier status poll** — `SyncCourierStatuses` **hourly** (Steadfast has no
+  webhook). See `STEADFAST-INTEGRATION.md`.
+
+### Requirements & gotchas
+- **`QUEUE_CONNECTION=database`** must be set in the backend env (default), and the
+  `jobs` / `failed_jobs` tables must exist (created by the base migration, applied
+  on boot). If you set `QUEUE_CONNECTION=sync`, the queue worker is unused and
+  every job runs inline — the courier push then blocks the admin "confirm" request.
+  Keep it on **database**.
+- **Redeploy = fresh container → workers restart automatically** with the new code.
+  No manual `queue:restart` needed (but harmless to run from Console).
+- **Single replica assumed.** If you ever scale the backend to >1 replica, the
+  scheduler would run on each — add `->onOneServer()` to the schedule (needs a
+  shared cache lock; `CACHE_STORE=database` already gives one) to avoid duplicate
+  dispatches, or move the scheduler to a dedicated 1-replica worker service.
+
+### Verify workers are alive (backend Console `>_`)
+```
+# The scheduler is registered:
+php artisan schedule:list          # shows ReconcilePendingPayments + SyncCourierStatuses
+
+# Force one reconciliation pass by hand (safe, idempotent):
+php artisan schedule:run
+
+# Queue is being drained (should be ~0 and not growing):
+php artisan queue:monitor database:default
+```
+In **Overview → Logs** you should periodically see the worker log lines
+(`Payment reconciled from gateway query`, consignment creation, status updates).
+If jobs pile up in the `jobs` table and nothing logs, the `queue-worker` program
+isn't running — check the deploy used the current `docker/supervisord.conf`.
+
+---
+
 ## 7. Domain + Cloudflare + SSL (safe order)
 
 1. Test everything on the free `*.easypanel.host` domains first.

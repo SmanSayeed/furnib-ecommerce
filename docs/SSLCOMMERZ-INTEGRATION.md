@@ -45,6 +45,38 @@ arrives even if the shopper closes the tab. `success_url` is the browser return
 (nice UX) but must never be the only path — both run through the same validated
 `finalize()`, and the idempotency guard means the double-fire counts once.
 
+### Recovery net — reconciliation sweep (the "both callbacks lost" case)
+
+Rare but real: the bank captured the money, but the **browser callback AND the
+IPN were both lost** (or the validation API blipped at that exact moment). The
+Payment row is stuck `pending`/`failed` while money actually moved — a
+false-negative. A scheduled sweep closes this gap:
+
+```
+Schedule (routes/console.php): ReconcilePendingPayments  → every 5 min
+  → PendingPaymentReconciler::sweep()
+      for each sslcommerz Payment still `pending`, older than a 5-min grace
+      and within 72h:
+        SslCommerzGateway::queryTransaction(tran_id)   ← Transaction Query API
+          • VALID/VALIDATED → RecordPayment (idempotent, re-validates amount+
+            currency+tran_id) → order reconciled
+          • FAILED/CANCELLED/EXPIRED → mark the row failed with a note
+          • no record yet / still processing → leave pending for the next sweep
+          • query API throws (transport error) → NEVER mark failed (that would
+            be the very false-negative we guard against) — retry next sweep
+```
+
+- Uses SSLCommerz' **Transaction Query API**
+  (`/validator/api/merchantTransIDvalidationAPI.php`), which looks a transaction
+  up by *our* `tran_id` even when no callback ever arrived.
+- Recording still goes through `RecordPayment`, so a late IPN + the sweep can
+  both fire and the money is applied exactly once.
+- The sweep is a queued, unique Job → needs the **queue worker + scheduler**
+  running (see SERVER-OPS-GUIDE §"Background workers"). Without them, IPN still
+  works; you just lose the automatic recovery of the double-lost case.
+
+Full failure-mode table (A–I): see `PAYMENT-COURIER-HANDOVER.md` §4.
+
 ### Two payment entry points
 
 | Product needs an advance? | Where payment starts | Payment is |
@@ -158,5 +190,13 @@ test on the deployed VPS (or an ngrok tunnel locally).
 `tests/Feature/Payments/SslCommerzPaymentTest.php` covers: session open, forged
 success rejected, amount/currency mismatch rejected, verify_sign rejection,
 genuine full/partial/shipping payments, idempotency, browser redirect on
-success/fail/cancel, unknown transaction, and secret-leak protection. The real
-HTTP gateway is swapped for `FakePaymentGateway`, so tests never hit the network.
+success/fail/cancel, unknown transaction, and secret-leak protection.
+
+`tests/Feature/Payments/PendingPaymentReconcilerTest.php` covers the recovery
+sweep: recovers a genuinely-paid-but-lost transaction, stays idempotent against a
+late IPN, rejects an amount mismatch, marks dead statuses failed, leaves
+"no record yet" and in-grace rows pending, and never marks failed on a query API
+transport error.
+
+The real HTTP gateway is swapped for `FakePaymentGateway`, so tests never hit the
+network.

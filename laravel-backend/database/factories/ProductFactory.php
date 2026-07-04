@@ -37,6 +37,7 @@ class ProductFactory extends Factory
             'product_status' => 'published',
             'stock_amount' => fake()->numberBetween(1, 100),
             'stock_status' => true,
+            'shipping_charge_allowed' => true,
         ];
     }
 

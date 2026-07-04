@@ -42,7 +42,8 @@ export function CheckoutForm({
   // yet, block submission with a clear message instead of a cryptic server error.
   const needsShippingZone =
     (product.advance?.required ?? false) &&
-    product.advance?.partial_type === "shipping";
+    product.advance?.partial_type === "shipping" &&
+    !product.free_shipping;
   const blockedNoZone = needsShippingZone && zones.length === 0;
 
   // Effective shipping for a zone = base + this product's per-unit extra × qty.
@@ -50,7 +51,12 @@ export function CheckoutForm({
     zone.base.minor + zone.extra_per_unit.minor * qty;
 
   const subtotalMinor = unit.minor * qty;
-  const shippingMinor = selectedZone ? zoneCostMinor(selectedZone) : 0;
+  // A free-shipping product never adds any delivery charge.
+  const shippingMinor = product.free_shipping
+    ? 0
+    : selectedZone
+      ? zoneCostMinor(selectedZone)
+      : 0;
   const totalMinor = subtotalMinor + shippingMinor;
 
   // Live advance preview — mirrors the server's AdvancePayment rule so the
@@ -315,7 +321,13 @@ export function CheckoutForm({
         </div>
         <div className="flex justify-between">
           <span className="text-muted">Shipping</span>
-          <span className="font-medium">{shippingMinor ? taka(shippingMinor) : "—"}</span>
+          <span className="font-medium">
+            {product.free_shipping
+              ? "Free"
+              : shippingMinor
+                ? taka(shippingMinor)
+                : "—"}
+          </span>
         </div>
         <div className="flex justify-between border-t border-border pt-2 text-base font-bold">
           <span>Total</span>

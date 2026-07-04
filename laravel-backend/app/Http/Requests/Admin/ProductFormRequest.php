@@ -53,6 +53,7 @@ class ProductFormRequest extends FormRequest
             'product_status' => ['required', Rule::in(['draft', 'published', 'disabled'])],
             'stock_amount' => ['nullable', 'integer', 'min:0'],
             'stock_status' => ['boolean'],
+            'shipping_charge_allowed' => ['boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
 
@@ -93,6 +94,11 @@ class ProductFormRequest extends FormRequest
             'is_featured' => $this->boolean('is_featured'),
             'is_new' => $this->boolean('is_new'),
             'stock_status' => $this->boolean('stock_status'),
+            // Defaults to true when the field is absent (e.g. legacy clients),
+            // matching the column default and "charge shipping" being the norm.
+            'shipping_charge_allowed' => $this->has('shipping_charge_allowed')
+                ? $this->boolean('shipping_charge_allowed')
+                : true,
             'position_order' => $this->input('position_order', 0),
             'stock_amount' => $this->input('stock_amount', 0),
         ]);

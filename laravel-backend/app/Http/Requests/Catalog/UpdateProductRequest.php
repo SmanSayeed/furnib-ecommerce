@@ -44,6 +44,7 @@ class UpdateProductRequest extends FormRequest
             'product_status' => ['sometimes', Rule::in(['draft', 'published', 'disabled'])],
             'stock_amount' => ['integer', 'min:0'],
             'stock_status' => ['boolean'],
+            'shipping_charge_allowed' => ['boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'og_image' => ['nullable', 'string'],

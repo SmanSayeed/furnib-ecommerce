@@ -84,9 +84,13 @@ final class PlaceOrder
                     $product->partial_amount,
                 )->toMinor();
 
+                // A shipping-charge advance only makes sense when the product
+                // actually incurs delivery: a free-shipping product has nothing
+                // to prepay, so it neither triggers the advance nor forces a zone.
                 if ($product->is_advance_payment
                     && $product->advance_payment_type === 'partial'
-                    && $product->partial_amount_type === 'shipping') {
+                    && $product->partial_amount_type === 'shipping'
+                    && $product->shipping_charge_allowed) {
                     $needsShippingAdvance = true;
                 }
 
@@ -119,14 +123,27 @@ final class PlaceOrder
             }
 
             // Effective shipping = zone base + Σ per-line (product per-unit extra
-            // for this zone × qty). Products without a charge for the zone add 0.
+            // for this zone × qty). A product flagged shipping_charge_allowed =
+            // false never contributes: not its per-unit extra, and not a share of
+            // the zone base. The base is charged once, but only when at least one
+            // line in the cart is chargeable — an all-free cart ships free (0).
             $shippingMinor = 0;
             if ($zone !== null) {
-                $shippingMinor = $zone->cost->toMinor();
+                $anyChargeable = false;
 
                 foreach ($lines as $line) {
-                    $extra = $products->get($line['product_id'])?->extraPerUnitMinorFor($zone->id) ?? 0;
-                    $shippingMinor += $extra * $line['qty'];
+                    $product = $products->get($line['product_id']);
+
+                    if ($product === null || ! $product->shipping_charge_allowed) {
+                        continue;
+                    }
+
+                    $anyChargeable = true;
+                    $shippingMinor += $product->extraPerUnitMinorFor($zone->id) * $line['qty'];
+                }
+
+                if ($anyChargeable) {
+                    $shippingMinor += $zone->cost->toMinor();
                 }
             }
 

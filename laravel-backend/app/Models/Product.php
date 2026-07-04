@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $social_thumbnail_image
  * @property bool $stock_status
  * @property int $stock_amount
+ * @property bool $shipping_charge_allowed
  * @property string $product_status
  */
 class Product extends Model
@@ -40,7 +41,8 @@ class Product extends Model
         'main_image', 'social_thumbnail_image', 'price', 'discount_price',
         'is_advance_payment', 'advance_payment_type', 'partial_amount_type', 'partial_amount',
         'is_featured', 'is_new', 'position_order', 'product_status',
-        'stock_amount', 'stock_status', 'meta_title', 'meta_description', 'og_image',
+        'stock_amount', 'stock_status', 'shipping_charge_allowed',
+        'meta_title', 'meta_description', 'og_image',
     ];
 
     protected function casts(): array
@@ -52,6 +54,7 @@ class Product extends Model
             'is_featured' => 'boolean',
             'is_new' => 'boolean',
             'stock_status' => 'boolean',
+            'shipping_charge_allowed' => 'boolean',
             'stock_amount' => 'integer',
             'position_order' => 'integer',
             'partial_amount' => 'integer',
@@ -83,6 +86,12 @@ class Product extends Model
      */
     public function extraPerUnitMinorFor(int $zoneId): int
     {
+        // A product marked "no delivery charge" never adds a per-unit extra,
+        // regardless of any rows left in shipping_charges.
+        if (! $this->shipping_charge_allowed) {
+            return 0;
+        }
+
         $charge = $this->shippingCharges->firstWhere('shipping_zone_id', $zoneId);
 
         return $charge?->extra_cost->toMinor() ?? 0;

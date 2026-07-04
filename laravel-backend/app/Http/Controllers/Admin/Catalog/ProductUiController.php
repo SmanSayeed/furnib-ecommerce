@@ -287,7 +287,7 @@ class ProductUiController extends Controller
             'price', 'discount_price', 'is_advance_payment', 'advance_payment_type',
             'partial_amount_type', 'partial_amount', 'is_featured', 'is_new',
             'position_order', 'product_status', 'stock_amount', 'stock_status',
-            'meta_title', 'meta_description',
+            'shipping_charge_allowed', 'meta_title', 'meta_description',
         ]);
     }
 
@@ -367,6 +367,15 @@ class ProductUiController extends Controller
      */
     private function syncShippingCharges(Product $product, ProductFormRequest $request): void
     {
+        // A free-shipping product carries no per-zone charges: wipe any existing
+        // rows and skip — the form disables this section, but enforce it here too
+        // so the two can never drift.
+        if (! $product->shipping_charge_allowed) {
+            $product->shippingCharges()->delete();
+
+            return;
+        }
+
         /** @var mixed $rows */
         $rows = $request->validated('shipping_charges');
 
@@ -468,6 +477,7 @@ class ProductUiController extends Controller
             'product_status' => $product->product_status,
             'stock_amount' => $product->stock_amount,
             'stock_status' => $product->stock_status,
+            'shipping_charge_allowed' => $product->shipping_charge_allowed,
             'meta_title' => $product->meta_title,
             'meta_description' => $product->meta_description,
             'main_image_url' => $this->url($product->main_image),

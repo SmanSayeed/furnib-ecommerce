@@ -185,6 +185,51 @@ it('clears a previously set shipping charge on update', function () {
     expect($product->shippingCharges()->count())->toBe(0);
 });
 
+it('wipes shipping charges and marks the product free when shipping is disabled', function () {
+    $product = Product::factory()->create(['shipping_charge_allowed' => true]);
+    $inside = ShippingZone::factory()->create(['name' => 'Inside Dhaka', 'cost' => 80]);
+    ProductShippingCharge::factory()->create([
+        'product_id' => $product->id,
+        'shipping_zone_id' => $inside->id,
+        'extra_cost' => Money::fromMinor(2000),
+    ]);
+
+    actingAs(productManager())
+        ->put("/admin/catalog/products/{$product->id}", [
+            'category_id' => $product->category_id,
+            'title' => $product->title,
+            'price' => '5000',
+            'product_status' => 'published',
+            'shipping_charge_allowed' => '0', // turn off delivery charge
+            // Even if stale rows are posted, they must be dropped.
+            'shipping_charges' => [
+                ['shipping_zone_id' => $inside->id, 'extra_cost' => '20'],
+            ],
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product->refresh();
+    expect($product->shipping_charge_allowed)->toBeFalse()
+        ->and($product->shippingCharges()->count())->toBe(0)
+        ->and($product->extraPerUnitMinorFor($inside->id))->toBe(0);
+});
+
+it('defaults shipping_charge_allowed to true when the field is absent', function () {
+    $category = Category::factory()->create();
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Normal Product',
+            'price' => '5000',
+            'product_status' => 'published',
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product = Product::query()->where('title', 'Normal Product')->firstOrFail();
+    expect($product->shipping_charge_allowed)->toBeTrue();
+});
+
 it('rejects a shipping charge for an inactive zone', function () {
     $category = Category::factory()->create();
     $hidden = ShippingZone::factory()->inactive()->create();

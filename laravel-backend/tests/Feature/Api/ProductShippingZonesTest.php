@@ -41,6 +41,24 @@ it('returns zero extra for zones the product has no charge for', function () {
     expect($response->json('data.0.extra_per_unit.minor'))->toBe(0);
 });
 
+it('reports free shipping with zeroed base and extra for a free-shipping product', function () {
+    $product = Product::factory()->create([
+        'slug' => 'free-sofa', 'product_status' => 'published',
+        'shipping_charge_allowed' => false,
+    ]);
+    $zone = ShippingZone::factory()->create(['name' => 'Inside Dhaka', 'cost' => 80, 'status' => true]);
+    // Even a stale extra row must report zero once shipping is disabled.
+    ProductShippingCharge::factory()->create([
+        'product_id' => $product->id, 'shipping_zone_id' => $zone->id, 'extra_cost' => Money::fromMinor(2000),
+    ]);
+
+    $response = $this->getJson('/api/v1/products/free-sofa/shipping-zones');
+
+    $response->assertOk()->assertJsonPath('free_shipping', true);
+    expect($response->json('data.0.base.minor'))->toBe(0)
+        ->and($response->json('data.0.extra_per_unit.minor'))->toBe(0);
+});
+
 it('404s for an unknown or unpublished product slug', function () {
     Product::factory()->draft()->create(['slug' => 'hidden-product']);
 

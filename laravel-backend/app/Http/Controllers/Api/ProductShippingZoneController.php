@@ -27,6 +27,11 @@ class ProductShippingZoneController extends Controller
 
         $product->loadMissing('shippingCharges');
 
+        // Free-shipping product: every zone reports zero base + zero extra so the
+        // storefront shows "Free" and the quantity-aware estimate stays at 0.
+        $free = ! $product->shipping_charge_allowed;
+        $zero = Money::fromMinor(0);
+
         $zones = ShippingZone::query()
             ->active()
             ->ordered()
@@ -34,12 +39,15 @@ class ProductShippingZoneController extends Controller
             ->map(fn (ShippingZone $z): array => [
                 'id' => $z->id,
                 'name' => $z->name,
-                'base' => $this->money($z->cost),
+                'base' => $this->money($free ? $zero : $z->cost),
                 'extra_per_unit' => $this->money(Money::fromMinor($product->extraPerUnitMinorFor($z->id))),
             ])
             ->all();
 
-        return response()->json(['data' => $zones]);
+        return response()->json([
+            'data' => $zones,
+            'free_shipping' => $free,
+        ]);
     }
 
     /**

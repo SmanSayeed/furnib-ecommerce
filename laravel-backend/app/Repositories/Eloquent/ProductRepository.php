@@ -61,8 +61,12 @@ final class ProductRepository extends BaseRepository implements ProductRepositor
         return Product::query()
             ->where('product_status', 'published')
             ->where('category_id', $categoryId)
+            // Merchant's manual sort order wins; within the same order value the
+            // newest product leads (so freshly published items surface at the top
+            // of order 0), with id as a stable final tiebreaker.
             ->orderBy('position_order')
-            ->orderBy('title')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->with('images')
             ->paginate($perPage);
     }

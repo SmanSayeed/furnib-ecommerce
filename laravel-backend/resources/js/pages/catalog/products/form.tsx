@@ -36,6 +36,7 @@ type Product = {
     product_status: 'draft' | 'published' | 'disabled';
     stock_amount: number;
     stock_status: boolean;
+    shipping_charge_allowed: boolean;
     meta_title: string | null;
     meta_description: string | null;
     main_image_url: string | null;
@@ -91,6 +92,7 @@ export default function ProductForm({
         product_status: product?.product_status ?? 'draft',
         stock_amount: String(product?.stock_amount ?? 0),
         stock_status: product?.stock_status ?? true,
+        shipping_charge_allowed: product?.shipping_charge_allowed ?? true,
         meta_title: product?.meta_title ?? '',
         meta_description: product?.meta_description ?? '',
         main_image: null as File | null,
@@ -193,6 +195,7 @@ return { type: 'existing', id: item.id };
             is_featured: bool(current.is_featured as boolean),
             is_new: bool(current.is_new as boolean),
             stock_status: bool(current.stock_status as boolean),
+            shipping_charge_allowed: bool(current.shipping_charge_allowed as boolean),
             gallery_new: newFiles,
             gallery_layout: JSON.stringify(layout),
             shipping_charges: shippingCharges,
@@ -599,10 +602,31 @@ setMainPreview(URL.createObjectURL(file));
                             </div>
                         );
                     })()}
+
+                    <div className="border-t pt-4">
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="shipping_charge_allowed"
+                                checked={data.shipping_charge_allowed}
+                                onCheckedChange={(v) =>
+                                    setData('shipping_charge_allowed', v === true)
+                                }
+                            />
+                            <Label htmlFor="shipping_charge_allowed">
+                                Charge delivery for this product
+                            </Label>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            On by default. Turn off for{' '}
+                            <strong>free delivery</strong> — no zone charge and no
+                            per-product extra are applied, and the order shows shipping
+                            as free.
+                        </p>
+                    </div>
                 </section>
 
                 {/* Shipping charges */}
-                {zones.length > 0 && (
+                {zones.length > 0 && data.shipping_charge_allowed && (
                     <section className="mb-4 space-y-4 rounded-xl border bg-card p-4 md:p-6">
                         <div>
                             <h2 className="text-sm font-medium text-muted-foreground">

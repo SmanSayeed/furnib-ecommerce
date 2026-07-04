@@ -50,6 +50,8 @@ export type Product = {
   // Optional numeric on-hand quantity. The public products API may not return
   // this yet; when absent we fall back to the boolean in_stock flag.
   stock_amount?: number | null;
+  // When true this product never incurs a delivery charge — shown as "Free".
+  free_shipping?: boolean;
   advance?: ProductAdvance;
   is_featured: boolean;
   is_new: boolean;

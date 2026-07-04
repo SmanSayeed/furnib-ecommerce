@@ -127,10 +127,12 @@ final class ProductRepository extends BaseRepository implements ProductRepositor
      */
     public function idsMatching(array $filters): array
     {
-        return $this->applyFilters(Product::query(), $filters)
-            ->pluck('id')
-            ->map(static fn ($id): int => (int) $id)
-            ->all();
+        return array_values(
+            $this->applyFilters(Product::query(), $filters)
+                ->pluck('id')
+                ->map(static fn ($id): int => (int) $id)
+                ->all()
+        );
     }
 
     /** @return LengthAwarePaginator<int, Product> */

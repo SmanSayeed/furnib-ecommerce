@@ -62,11 +62,13 @@ final class OrderRepository
      */
     public function idsMatching(ListQuery $query, int $cap = 500): array
     {
-        return Order::query()
-            ->applyList($query)
-            ->limit($cap)
-            ->pluck('id')
-            ->map(static fn ($id): int => (int) $id)
-            ->all();
+        return array_values(
+            Order::query()
+                ->applyList($query)
+                ->limit($cap)
+                ->pluck('id')
+                ->map(static fn ($id): int => (int) $id)
+                ->all()
+        );
     }
 }

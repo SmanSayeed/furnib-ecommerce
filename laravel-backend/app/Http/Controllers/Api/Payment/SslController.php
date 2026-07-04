@@ -177,7 +177,7 @@ class SslController extends Controller
             forceJson: false,
             json: ['status' => $status],
             resultStatus: $resultStatus,
-            orderNo: $payment?->order?->order_no ?? $this->orderNoFrom($request),
+            orderNo: $payment?->order->order_no ?? $this->orderNoFrom($request),
         );
     }
 

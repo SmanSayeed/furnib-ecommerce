@@ -45,6 +45,24 @@ manual ledger, orders-table UI, invoice 2-per-A4 all confirmed live.
 
 ---
 
+## ✅ 2026-07-04 UPDATE — Fixes #1, #2 and Steadfast automation DONE
+
+All items below (Fix #1, Fix #2, Steadfast auto-push/poll/fraud) are now
+implemented, tested (Pest 505+ green), Pint + Larastan-max clean, and committed.
+What remains is **owner-side config only**: deploy + add live SSLCommerz keys +
+add Steadfast Api-Key/Secret-Key. Details unchanged below for reference.
+
+- Fix #1 — success-page retry: shipped (storefront built green).
+- Fix #2 — `PendingPaymentReconciler` + `ReconcilePendingPayments` job, scheduled
+  every 5 min; gateway `queryTransaction()` (SSLCommerz Transaction Query API).
+- Steadfast auto-push: `OrderObserver` → `PushOrderToCourier` (queued, unique,
+  idempotent) fires on pending→confirmed **only when courier creds + auto_push on**.
+- Steadfast poll: `SyncCourierStatuses` job, scheduled hourly (no webhook exists).
+- Fraud system: `CustomerCourierStats` (derived from shipments by phone; risk
+  new/low/medium/high) shown on the admin order page + a Consignment card.
+
+---
+
 ## 2. PENDING FIX #1 — success-page retry when advance unpaid (Case B)
 
 **Status: draft applied to the working tree, NOT committed.** File:

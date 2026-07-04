@@ -9,7 +9,7 @@ use App\Services\Settings\SettingsService;
 use App\Storage\Contracts\StorageRepository;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdf;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Renders order documents to branded PDFs from the order's snapshot data: the

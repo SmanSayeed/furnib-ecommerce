@@ -56,6 +56,12 @@ final class SslCommerzGateway implements PaymentGateway
             'cus_phone' => (string) ($order->customer->mobile ?? ''),
             'cus_add1' => $order->address,
             'cus_city' => $city,
+            // cus_state/cus_postcode are marked mandatory by SSLCommerz v4. The
+            // sandbox is lenient, but LIVE can reject or risk-flag a session
+            // without them, so we always send a sensible value (zone as state,
+            // a generic Dhaka postcode we don't collect at checkout).
+            'cus_state' => $city,
+            'cus_postcode' => '1200',
             'cus_country' => 'Bangladesh',
             // Shipping (mandatory when shipping_method !== 'NO').
             'shipping_method' => 'YES',
@@ -63,6 +69,7 @@ final class SslCommerzGateway implements PaymentGateway
             'ship_name' => $customerName,
             'ship_add1' => $order->address,
             'ship_city' => $city,
+            'ship_state' => $city,
             'ship_postcode' => '1200',
             'ship_country' => 'Bangladesh',
             // Echoed back verbatim on every callback/IPN.

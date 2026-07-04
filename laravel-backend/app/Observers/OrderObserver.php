@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\OrderNotificationEvent;
 use App\Jobs\PushOrderToCourier;
+use App\Jobs\SendOrderNotification;
 use App\Models\Order;
 use App\Services\Settings\SettingsService;
 
 /**
- * Auto-pushes a freshly confirmed order to the courier. The push is queued (never
- * blocks the admin action) and only fires when a courier is actually configured,
- * so installs without courier credentials behave exactly as before.
+ * Reacts to order status changes: auto-books the courier on confirm, and notifies
+ * the customer (SMS now, email later) on any customer-facing status change. Both
+ * are queued (never block the admin action) and self-guard on configuration, so
+ * an install without courier/SMS credentials behaves exactly as before.
  */
 final class OrderObserver
 {
@@ -19,8 +22,18 @@ final class OrderObserver
 
     public function updated(Order $order): void
     {
+        if (! $order->wasChanged('status')) {
+            return;
+        }
+
+        $this->autoPushToCourier($order);
+        $this->notifyCustomer($order);
+    }
+
+    private function autoPushToCourier(Order $order): void
+    {
         // Only the pending → confirmed transition triggers a booking.
-        if (! $order->wasChanged('status') || $order->status !== 'confirmed') {
+        if ($order->status !== 'confirmed') {
             return;
         }
 
@@ -40,5 +53,17 @@ final class OrderObserver
         }
 
         PushOrderToCourier::dispatch($order->id);
+    }
+
+    private function notifyCustomer(Order $order): void
+    {
+        $event = OrderNotificationEvent::fromStatus($order->status);
+
+        // The notification channels self-guard (enablement, per-event toggle,
+        // idempotency), so we dispatch for any customer-facing status and let the
+        // channels decide — keeps the observer channel-agnostic.
+        if ($event !== null) {
+            SendOrderNotification::dispatch($order->id, $event->value);
+        }
     }
 }

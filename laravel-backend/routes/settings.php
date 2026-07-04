@@ -46,6 +46,7 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
     Route::get('settings/integrations', [IntegrationSettingController::class, 'edit'])->name('integrations.edit');
     Route::post('settings/sslcommerz', [IntegrationSettingController::class, 'updateSslcommerz'])->name('sslcommerz-settings.update');
     Route::post('settings/steadfast', [IntegrationSettingController::class, 'updateSteadfast'])->name('steadfast-settings.update');
+    Route::post('settings/sms', [IntegrationSettingController::class, 'updateSms'])->name('sms-settings.update');
 
     // Media storage: driver toggle + Cloudflare R2 connection (encrypted keys).
     Route::get('settings/storage', [StorageSettingController::class, 'edit'])->name('storage-settings.edit');

@@ -17,6 +17,27 @@ type Steadfast = {
     secret_key_set: boolean;
 };
 
+type SmsEvent = {
+    key: string;
+    enabled: boolean;
+    template: string;
+};
+
+type SmsSettings = {
+    enabled: boolean;
+    sender_id: string;
+    api_key_set: boolean;
+    events: SmsEvent[];
+};
+
+const SMS_EVENT_LABELS: Record<string, string> = {
+    confirmed: 'Order confirmed',
+    shipped: 'Shipped (with tracking)',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+    returned: 'Returned',
+};
+
 function SecretHint({ isSet }: { isSet: boolean }) {
     return (
         <span className="text-muted-foreground">
@@ -28,11 +49,17 @@ function SecretHint({ isSet }: { isSet: boolean }) {
 export default function Integrations({
     sslcommerz,
     steadfast,
+    sms,
 }: {
     sslcommerz: Sslcommerz;
     steadfast: Steadfast;
+    sms: SmsSettings;
 }) {
     const [sandbox, setSandbox] = useState<boolean>(sslcommerz.sandbox);
+    const [smsEnabled, setSmsEnabled] = useState<boolean>(sms.enabled);
+    const [smsEvents, setSmsEvents] = useState<Record<string, boolean>>(
+        () => Object.fromEntries(sms.events.map((e) => [e.key, e.enabled])),
+    );
 
     return (
         <>
@@ -207,6 +234,117 @@ export default function Integrations({
                             <div className="flex items-center gap-4">
                                 <Button disabled={processing} data-test="save-steadfast">
                                     Save SteadFast
+                                </Button>
+                                {recentlySuccessful && <p className="text-sm text-green-600">Saved.</p>}
+                            </div>
+                        </>
+                    )}
+                </Form>
+
+                {/* SMS (Automas) — customer order-status notifications */}
+                <Form
+                    action="/settings/sms"
+                    method="post"
+                    options={{ preserveScroll: true }}
+                    className="space-y-4 rounded-lg border border-border p-4"
+                >
+                    {({ processing, errors, recentlySuccessful }) => (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">SMS — customer notifications (Automas)</p>
+                                <span
+                                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                                        sms.api_key_set
+                                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                    }`}
+                                >
+                                    {sms.api_key_set ? 'Configured' : 'Not configured'}
+                                </span>
+                            </div>
+
+                            <p className="text-xs text-muted-foreground">
+                                Order-status SMS to customers, in Bangla (Unicode) per BTRC rules. Paste your
+                                BTRC-vetted text into each template. Placeholders:{' '}
+                                <code>{'{name}'}</code> <code>{'{order_no}'}</code> <code>{'{total}'}</code>{' '}
+                                <code>{'{due}'}</code> <code>{'{tracking}'}</code>.
+                            </p>
+
+                            {/* Master enable */}
+                            <input type="hidden" name="enabled" value={smsEnabled ? '1' : '0'} />
+                            <label className="flex cursor-pointer items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    checked={smsEnabled}
+                                    onChange={(e) => setSmsEnabled(e.target.checked)}
+                                />
+                                <span className="text-sm font-medium">Enable SMS notifications</span>
+                            </label>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="sender_id">Sender ID</Label>
+                                    <Input
+                                        id="sender_id"
+                                        name="sender_id"
+                                        defaultValue={sms.sender_id}
+                                        placeholder="8809617635160"
+                                        autoComplete="off"
+                                    />
+                                    <InputError message={errors.sender_id} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="sms_api_key">
+                                        API Key <SecretHint isSet={sms.api_key_set} />
+                                    </Label>
+                                    <Input
+                                        id="sms_api_key"
+                                        name="api_key"
+                                        type="password"
+                                        autoComplete="off"
+                                        placeholder="••••••••"
+                                    />
+                                    <InputError message={errors.api_key} />
+                                </div>
+                            </div>
+
+                            {/* Per-event toggle + editable Bangla template */}
+                            <div className="space-y-3">
+                                {sms.events.map((ev) => (
+                                    <div key={ev.key} className="rounded-lg border border-border p-3">
+                                        <input
+                                            type="hidden"
+                                            name={`event_${ev.key}`}
+                                            value={smsEvents[ev.key] ? '1' : '0'}
+                                        />
+                                        <label className="flex cursor-pointer items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={smsEvents[ev.key] ?? false}
+                                                onChange={(e) =>
+                                                    setSmsEvents((s) => ({ ...s, [ev.key]: e.target.checked }))
+                                                }
+                                            />
+                                            <span className="text-sm font-medium">
+                                                {SMS_EVENT_LABELS[ev.key] ?? ev.key}
+                                            </span>
+                                        </label>
+                                        <textarea
+                                            name={`tpl_${ev.key}`}
+                                            defaultValue={ev.template}
+                                            rows={2}
+                                            maxLength={500}
+                                            dir="auto"
+                                            className="mt-2 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                                        />
+                                        <InputError message={errors[`tpl_${ev.key}`]} />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <Button disabled={processing} data-test="save-sms">
+                                    Save SMS
                                 </Button>
                                 {recentlySuccessful && <p className="text-sm text-green-600">Saved.</p>}
                             </div>

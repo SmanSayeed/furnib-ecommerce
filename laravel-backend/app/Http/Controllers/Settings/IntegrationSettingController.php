@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\OrderNotificationEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\SmsSettingsRequest;
 use App\Http\Requests\Settings\SslcommerzSettingsRequest;
 use App\Http\Requests\Settings\SteadfastSettingsRequest;
 use App\Services\Settings\SettingsService;
@@ -33,6 +35,17 @@ class IntegrationSettingController extends Controller
             'steadfast' => [
                 'api_key_set' => filled($this->settings->get('steadfast', 'api_key')),
                 'secret_key_set' => filled($this->settings->get('steadfast', 'secret_key')),
+            ],
+            'sms' => [
+                'enabled' => (bool) $this->settings->get('sms', 'enabled', false),
+                'sender_id' => (string) ($this->settings->get('sms', 'sender_id') ?? ''),
+                'api_key_set' => filled($this->settings->get('sms', 'api_key')),
+                // Per-event toggle + current (or default) Bangla template.
+                'events' => collect(OrderNotificationEvent::cases())->map(fn (OrderNotificationEvent $e): array => [
+                    'key' => $e->value,
+                    'enabled' => (bool) $this->settings->get('sms', $e->toggleKey(), true),
+                    'template' => (string) ($this->settings->get('sms', $e->templateKey()) ?: $e->defaultSmsTemplate()),
+                ])->all(),
             ],
         ]);
     }
@@ -64,6 +77,29 @@ class IntegrationSettingController extends Controller
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Courier settings saved.')]);
+
+        return back();
+    }
+
+    public function updateSms(SmsSettingsRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $this->settings->set('sms', 'enabled', (bool) $validated['enabled']);
+        $this->settings->set('sms', 'provider', 'automas');
+        $this->settings->set('sms', 'sender_id', (string) ($validated['sender_id'] ?? ''));
+
+        if (filled($validated['api_key'] ?? null)) {
+            $this->settings->set('sms', 'api_key', $validated['api_key'], isSecret: true);
+        }
+
+        foreach (OrderNotificationEvent::cases() as $event) {
+            $this->settings->set('sms', $event->toggleKey(), (bool) $validated[$event->toggleKey()]);
+            // Blank template → the code default (Bangla) is used at render time.
+            $this->settings->set('sms', $event->templateKey(), (string) ($validated[$event->templateKey()] ?? ''));
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('SMS settings saved.')]);
 
         return back();
     }

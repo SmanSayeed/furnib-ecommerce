@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Repositories\Eloquent\OrderRepository;
+use App\Services\Courier\CustomerCourierStats;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,11 +66,16 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, Order $order): Response
+    public function show(Request $request, Order $order, CustomerCourierStats $courierStats): Response
     {
-        $order->load(['items', 'customer', 'shippingZone', 'payments' => fn ($q) => $q->latest('id')]);
+        $order->load(['items', 'customer', 'shippingZone', 'shipment', 'payments' => fn ($q) => $q->latest('id')]);
 
         $dueMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
+
+        // Our own courier fraud/return-ratio signal for this customer's phone —
+        // lets the admin spot a repeat "cancel on delivery" buyer before shipping.
+        $mobile = (string) ($order->customer->mobile ?? '');
+        $fraud = $mobile !== '' ? $courierStats->forPhone($mobile) : null;
 
         return Inertia::render('orders/show', [
             'order' => [
@@ -112,10 +118,20 @@ class OrderController extends Controller
                     'note' => $p->note,
                     'at' => $p->created_at?->toDateTimeString(),
                 ])->all(),
+                // Courier consignment (null until the order is shipped/booked).
+                'shipment' => $order->shipment === null ? null : [
+                    'courier' => $order->shipment->courier,
+                    'consignment_id' => $order->shipment->consignment_id,
+                    'tracking_code' => $order->shipment->tracking_code,
+                    'status' => $order->shipment->status,
+                    'cod_amount' => $order->shipment->cod_amount->format('৳'),
+                ],
             ],
             'nextStatuses' => Order::TRANSITIONS[$order->status] ?? [],
             'pendingReasons' => Order::PENDING_REASONS,
             'canManagePayments' => $request->user()?->can('orders.manage') ?? false,
+            // Our own fraud/return-ratio signal for this customer's phone.
+            'courierStats' => $fraud,
         ]);
     }
 

@@ -34,6 +34,27 @@ type PaymentRow = {
     at: string | null;
 };
 
+type ShipmentInfo = {
+    courier: string;
+    consignment_id: string | null;
+    tracking_code: string | null;
+    status: string;
+    cod_amount: string;
+};
+
+type CourierStats = {
+    phone: string;
+    total: number;
+    delivered: number;
+    cancelled: number;
+    returned: number;
+    completed: number;
+    in_flight: number;
+    fraud_score: number;
+    success_rate: number;
+    risk: 'new' | 'low' | 'medium' | 'high';
+};
+
 type Order = {
     id: number;
     order_no: string;
@@ -53,7 +74,67 @@ type Order = {
     shipping_zone: string | null;
     items: Item[];
     payments: PaymentRow[];
+    shipment: ShipmentInfo | null;
 };
+
+const RISK_STYLES: Record<string, string> = {
+    high: 'bg-red-500/15 text-red-600 dark:text-red-400',
+    medium: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    low: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    new: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
+};
+
+const RISK_LABELS: Record<string, string> = {
+    high: 'High risk',
+    medium: 'Some risk',
+    low: 'Good history',
+    new: 'New customer',
+};
+
+function CourierRiskCard({ stats }: { stats: CourierStats }) {
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Courier history</h2>
+                <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${RISK_STYLES[stats.risk]}`}>
+                    {RISK_LABELS[stats.risk]}
+                </span>
+            </div>
+            {stats.total === 0 ? (
+                <p className="text-sm text-muted-foreground">No past deliveries for this number.</p>
+            ) : (
+                <>
+                    <Row label="Delivered" value={String(stats.delivered)} />
+                    <Row label="Cancelled" value={String(stats.cancelled)} />
+                    <Row label="Returned" value={String(stats.returned)} />
+                    <Row label="In transit" value={String(stats.in_flight)} />
+                    <div className="mt-1 flex justify-between gap-4 border-t pt-2 text-sm font-semibold">
+                        <span>Fail ratio</span>
+                        <span className="text-right">{Math.round(stats.fraud_score * 100)}%</span>
+                    </div>
+                    {stats.risk === 'high' && (
+                        <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                            ⚠️ Many cancels/returns — consider requiring an advance before shipping COD.
+                        </p>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
+function ShipmentCard({ shipment }: { shipment: ShipmentInfo }) {
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Courier consignment</h2>
+            <Row label="Courier" value={shipment.courier} />
+            <Row label="Consignment" value={shipment.consignment_id} />
+            <Row label="Tracking" value={shipment.tracking_code} />
+            <Row label="Status" value={shipment.status} />
+            <Row label="COD to collect" value={shipment.cod_amount} />
+        </div>
+    );
+}
 
 function Row({ label, value }: { label: string; value: string | null }) {
     return (
@@ -169,11 +250,13 @@ export default function OrderShow({
     nextStatuses,
     pendingReasons,
     canManagePayments,
+    courierStats,
 }: {
     order: Order;
     nextStatuses: string[];
     pendingReasons: string[];
     canManagePayments: boolean;
+    courierStats: CourierStats | null;
 }) {
     const [reason, setReason] = useState(order.pending_reason);
     const [direction, setDirection] = useState('credit');
@@ -345,6 +428,10 @@ export default function OrderShow({
                                 <p className="mt-2 text-sm text-muted-foreground">Notes: {order.notes}</p>
                             )}
                         </div>
+
+                        {order.shipment && <ShipmentCard shipment={order.shipment} />}
+
+                        {courierStats && <CourierRiskCard stats={courierStats} />}
                     </div>
                 </div>
             </div>

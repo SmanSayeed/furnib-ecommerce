@@ -7,8 +7,10 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Concerns\AppliesListFilters;
 use App\Concerns\Auditable;
+use App\Observers\OrderObserver;
 use App\Support\Money;
 use Database\Factories\OrderFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +45,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $terms_accepted_at
  * @property string|null $terms_ip
  */
+#[ObservedBy([OrderObserver::class])]
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */

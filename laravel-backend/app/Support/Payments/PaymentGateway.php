@@ -32,6 +32,16 @@ interface PaymentGateway
     public function validatePayment(string $valId): array;
 
     /**
+     * Look a transaction up by OUR tran_id via the gateway's transaction-query
+     * API (used by the reconciliation sweep when a callback/IPN never arrived).
+     * Returns the same normalized array as validatePayment(), or null when the
+     * gateway has no record of the transaction yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function queryTransaction(string $tranId): ?array;
+
+    /**
      * Cheap authenticity check on a callback/IPN payload BEFORE any outbound
      * call — proves the POST really came from the gateway (e.g. SSLCommerz'
      * verify_sign hash). Returns true when the signature is valid OR when the

@@ -21,6 +21,9 @@ final class FakePaymentGateway implements PaymentGateway
     /** @var array<string, mixed>|null */
     public ?array $nextValidation = null;
 
+    /** @var array<string, array<string, mixed>|null> scripted queryTransaction() results, keyed by tran_id */
+    public array $queries = [];
+
     public function initSession(Order $order, Money $amount, string $tranId): string
     {
         $this->sessions[] = [
@@ -41,6 +44,22 @@ final class FakePaymentGateway implements PaymentGateway
             ['currency' => 'BDT'],
             $this->nextValidation ?? ['status' => 'INVALID', 'val_id' => $valId],
         );
+    }
+
+    public function queryTransaction(string $tranId): ?array
+    {
+        // Not scripted → the gateway has no record yet (leave pending).
+        return $this->queries[$tranId] ?? null;
+    }
+
+    /**
+     * Script the next queryTransaction() result for a tran_id.
+     *
+     * @param  array<string, mixed>|null  $data
+     */
+    public function fakeQuery(string $tranId, ?array $data): void
+    {
+        $this->queries[$tranId] = $data;
     }
 
     /**

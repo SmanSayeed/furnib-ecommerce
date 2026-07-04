@@ -108,6 +108,45 @@ final class SslCommerzGateway implements PaymentGateway
     }
 
     /**
+     * Query a transaction by OUR tran_id (SSLCommerz "Transaction Query" API).
+     * Used by the reconciliation sweep to recover a payment whose browser
+     * callback AND IPN were both lost, but where money may actually have moved.
+     * Returns null when the gateway reports no transaction for this id yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function queryTransaction(string $tranId): ?array
+    {
+        [$storeId, $storePassword] = $this->credentials();
+
+        $response = Http::get($this->baseUrl().'/validator/api/merchantTransIDvalidationAPI.php', [
+            'tran_id' => $tranId,
+            'store_id' => $storeId,
+            'store_passwd' => $storePassword,
+            'v' => 1,
+            'format' => 'json',
+        ]);
+
+        $data = $response->json();
+        $elements = $data['element'] ?? null;
+
+        if ((int) ($data['no_of_trans_found'] ?? 0) < 1 || ! is_array($elements) || $elements === []) {
+            return null;
+        }
+
+        // Most recent element wins if the gateway returns several attempts.
+        $element = $elements[0];
+
+        return [
+            'status' => (string) ($element['status'] ?? 'INVALID'),
+            'tran_id' => (string) ($element['tran_id'] ?? $tranId),
+            'amount' => (float) ($element['amount'] ?? $element['currency_amount'] ?? 0),
+            'currency' => (string) ($element['currency_type'] ?? $element['currency'] ?? 'BDT'),
+            'val_id' => (string) ($element['val_id'] ?? ''),
+        ];
+    }
+
+    /**
      * Verify SSLCommerz' verify_sign hash: md5 of the alphabetically-sorted
      * verify_key fields plus md5(store_passwd), as key=value&… . Proves the POST
      * genuinely came from SSLCommerz. Absent signature → true (validatePayment

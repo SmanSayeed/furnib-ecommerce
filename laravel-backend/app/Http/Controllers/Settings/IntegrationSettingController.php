@@ -29,9 +29,15 @@ class IntegrationSettingController extends Controller
     {
         return Inertia::render('settings/integrations', [
             'sslcommerz' => [
-                'store_id' => (string) ($this->settings->get('sslcommerz', 'store_id') ?? ''),
                 'sandbox' => (bool) $this->settings->get('sslcommerz', 'sandbox', true),
-                'store_passwd_set' => filled($this->settings->get('sslcommerz', 'store_passwd')),
+                // Sandbox + live credentials kept side by side. Store ids are shown;
+                // passwords are write-only (only a "set" flag reaches the browser).
+                // A deploy migration copies any legacy single pair into the active
+                // mode, so pre-split installs still show their id in the right slot.
+                'sandbox_store_id' => (string) ($this->settings->get('sslcommerz', 'sandbox_store_id') ?? ''),
+                'sandbox_store_passwd_set' => filled($this->settings->get('sslcommerz', 'sandbox_store_passwd')),
+                'live_store_id' => (string) ($this->settings->get('sslcommerz', 'live_store_id') ?? ''),
+                'live_store_passwd_set' => filled($this->settings->get('sslcommerz', 'live_store_passwd')),
             ],
             'steadfast' => [
                 'api_key_set' => filled($this->settings->get('steadfast', 'api_key')),
@@ -72,11 +78,18 @@ class IntegrationSettingController extends Controller
     {
         $validated = $request->validated();
 
-        $this->settings->set('sslcommerz', 'store_id', $validated['store_id']);
         $this->settings->set('sslcommerz', 'sandbox', (bool) $validated['sandbox']);
 
-        if (filled($validated['store_passwd'] ?? null)) {
-            $this->settings->set('sslcommerz', 'store_passwd', $validated['store_passwd'], isSecret: true);
+        // Sandbox + live are independent; every credential field is blank-keeps so
+        // saving one environment (or just flipping the mode) never wipes the other.
+        foreach (['sandbox', 'live'] as $mode) {
+            if (filled($validated[$mode.'_store_id'] ?? null)) {
+                $this->settings->set('sslcommerz', $mode.'_store_id', $validated[$mode.'_store_id']);
+            }
+
+            if (filled($validated[$mode.'_store_passwd'] ?? null)) {
+                $this->settings->set('sslcommerz', $mode.'_store_passwd', $validated[$mode.'_store_passwd'], isSecret: true);
+            }
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('SSLCommerz settings saved.')]);

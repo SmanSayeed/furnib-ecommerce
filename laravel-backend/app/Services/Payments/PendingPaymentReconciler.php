@@ -50,9 +50,15 @@ final class PendingPaymentReconciler
         $empty = ['swept' => 0, 'recovered' => 0, 'failed' => 0, 'still_pending' => 0];
 
         // Nothing to query without gateway credentials — skip cleanly (no error
-        // spam) so `schedule:run` is a no-op until SSLCommerz is configured.
-        if (blank($this->settings->get('sslcommerz', 'store_id'))
-            || blank($this->settings->get('sslcommerz', 'store_passwd'))) {
+        // spam) so `schedule:run` is a no-op until SSLCommerz is configured. Reads
+        // the ACTIVE mode's credentials (sandbox/live), with a legacy fallback.
+        $mode = (bool) $this->settings->get('sslcommerz', 'sandbox', true) ? 'sandbox' : 'live';
+        $storeId = $this->settings->get('sslcommerz', $mode.'_store_id')
+            ?? $this->settings->get('sslcommerz', 'store_id');
+        $storePassword = $this->settings->get('sslcommerz', $mode.'_store_passwd')
+            ?? $this->settings->get('sslcommerz', 'store_passwd');
+
+        if (blank($storeId) || blank($storePassword)) {
             return $empty;
         }
 

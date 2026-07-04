@@ -22,22 +22,29 @@ function settingsAdmin(): User
     return $user;
 }
 
-it('saves SSLCommerz credentials with the password encrypted + masked', function () {
+it('saves live SSLCommerz credentials encrypted + masked, without wiping sandbox', function () {
+    // Pre-existing sandbox credentials.
+    $settings = app(SettingsService::class);
+    $settings->set('sslcommerz', 'sandbox_store_id', 'testbox', false);
+    $settings->set('sslcommerz', 'sandbox_store_passwd', 'sbox-pass', true);
+
     actingAs(settingsAdmin())->post('/settings/sslcommerz', [
-        'store_id' => 'furnib_live',
-        'store_passwd' => 'ssl-secret-pass',
         'sandbox' => false,
+        'live_store_id' => 'furnib_live',
+        'live_store_passwd' => 'ssl-secret-pass',
     ])->assertRedirect();
 
-    $row = Setting::query()->where('group', 'sslcommerz')->where('key', 'store_passwd')->firstOrFail();
+    $row = Setting::query()->where('group', 'sslcommerz')->where('key', 'live_store_passwd')->firstOrFail();
     expect($row->is_secret)->toBeTrue()
         ->and($row->value)->not->toBe('ssl-secret-pass');
 
-    $settings = app(SettingsService::class);
-    expect($settings->get('sslcommerz', 'store_id'))->toBe('furnib_live')
+    expect($settings->get('sslcommerz', 'live_store_id'))->toBe('furnib_live')
         ->and($settings->get('sslcommerz', 'sandbox'))->toBeFalse()
-        ->and($settings->get('sslcommerz', 'store_passwd'))->toBe('ssl-secret-pass')
-        ->and($settings->toArray('sslcommerz'))->toMatchArray(['store_passwd' => null]);
+        ->and($settings->get('sslcommerz', 'live_store_passwd'))->toBe('ssl-secret-pass')
+        // Sandbox credentials are untouched by saving live.
+        ->and($settings->get('sslcommerz', 'sandbox_store_id'))->toBe('testbox')
+        ->and($settings->get('sslcommerz', 'sandbox_store_passwd'))->toBe('sbox-pass')
+        ->and($settings->toArray('sslcommerz'))->toMatchArray(['live_store_passwd' => null]);
 });
 
 it('saves SteadFast credentials with both keys encrypted', function () {
@@ -57,8 +64,8 @@ it('saves SteadFast credentials with both keys encrypted', function () {
 
 it('renders the integrations page with masked secret-set flags', function () {
     $settings = app(SettingsService::class);
-    $settings->set('sslcommerz', 'store_id', 'furnib_live', false);
-    $settings->set('sslcommerz', 'store_passwd', 'ssl-secret', true);
+    $settings->set('sslcommerz', 'live_store_id', 'furnib_live', false);
+    $settings->set('sslcommerz', 'live_store_passwd', 'ssl-secret', true);
     $settings->set('sslcommerz', 'sandbox', false);
     $settings->set('steadfast', 'api_key', 'sf-key', true);
 
@@ -67,13 +74,14 @@ it('renders the integrations page with masked secret-set flags', function () {
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('settings/integrations')
-            ->where('sslcommerz.store_id', 'furnib_live')
+            ->where('sslcommerz.live_store_id', 'furnib_live')
             ->where('sslcommerz.sandbox', false)
-            ->where('sslcommerz.store_passwd_set', true)
+            ->where('sslcommerz.live_store_passwd_set', true)
+            ->where('sslcommerz.sandbox_store_passwd_set', false)
             ->where('steadfast.api_key_set', true)
             ->where('steadfast.secret_key_set', false)
             // Secrets must never reach the client.
-            ->missing('sslcommerz.store_passwd')
+            ->missing('sslcommerz.live_store_passwd')
             ->missing('steadfast.api_key'));
 });
 

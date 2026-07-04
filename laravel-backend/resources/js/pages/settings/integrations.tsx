@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 type Sslcommerz = {
-    store_id: string;
     sandbox: boolean;
-    store_passwd_set: boolean;
+    sandbox_store_id: string;
+    sandbox_store_passwd_set: boolean;
+    live_store_id: string;
+    live_store_passwd_set: boolean;
 };
 
 type Steadfast = {
@@ -91,39 +93,78 @@ export default function Integrations({
                                 <p className="text-sm font-medium">SSLCommerz — online payments</p>
                                 <span
                                     className={`rounded-md px-2 py-0.5 text-xs font-medium ${
-                                        sslcommerz.store_passwd_set
+                                        (sandbox ? sslcommerz.sandbox_store_passwd_set : sslcommerz.live_store_passwd_set)
                                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                                             : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                                     }`}
                                 >
-                                    {sslcommerz.store_passwd_set ? 'Configured' : 'Not configured'}
+                                    {(sandbox ? sslcommerz.sandbox_store_passwd_set : sslcommerz.live_store_passwd_set)
+                                        ? `${sandbox ? 'Sandbox' : 'Live'} configured`
+                                        : `${sandbox ? 'Sandbox' : 'Live'} not configured`}
                                 </span>
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="store_id">Store ID</Label>
-                                <Input
-                                    id="store_id"
-                                    name="store_id"
-                                    defaultValue={sslcommerz.store_id}
-                                    placeholder="furnib_live"
-                                    autoComplete="off"
-                                />
-                                <InputError message={errors.store_id} />
+                            <p className="text-xs text-muted-foreground">
+                                Sandbox and Live credentials are stored separately — filling one never wipes the
+                                other. The Mode below decides which set is used. Leave a password blank to keep it.
+                            </p>
+
+                            {/* Sandbox credentials */}
+                            <div className="space-y-3 rounded-lg border border-border p-3">
+                                <p className="text-xs font-semibold text-muted-foreground">Sandbox credentials</p>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="sandbox_store_id">Sandbox Store ID</Label>
+                                    <Input
+                                        id="sandbox_store_id"
+                                        name="sandbox_store_id"
+                                        defaultValue={sslcommerz.sandbox_store_id}
+                                        placeholder="testbox"
+                                        autoComplete="off"
+                                    />
+                                    <InputError message={errors.sandbox_store_id} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="sandbox_store_passwd">
+                                        Sandbox Store Password <SecretHint isSet={sslcommerz.sandbox_store_passwd_set} />
+                                    </Label>
+                                    <Input
+                                        id="sandbox_store_passwd"
+                                        name="sandbox_store_passwd"
+                                        type="password"
+                                        autoComplete="off"
+                                        placeholder="••••••••"
+                                    />
+                                    <InputError message={errors.sandbox_store_passwd} />
+                                </div>
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="store_passwd">
-                                    Store Password <SecretHint isSet={sslcommerz.store_passwd_set} />
-                                </Label>
-                                <Input
-                                    id="store_passwd"
-                                    name="store_passwd"
-                                    type="password"
-                                    autoComplete="off"
-                                    placeholder="••••••••"
-                                />
-                                <InputError message={errors.store_passwd} />
+                            {/* Live credentials */}
+                            <div className="space-y-3 rounded-lg border border-border p-3">
+                                <p className="text-xs font-semibold text-muted-foreground">Live credentials</p>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="live_store_id">Live Store ID</Label>
+                                    <Input
+                                        id="live_store_id"
+                                        name="live_store_id"
+                                        defaultValue={sslcommerz.live_store_id}
+                                        placeholder="furniblive"
+                                        autoComplete="off"
+                                    />
+                                    <InputError message={errors.live_store_id} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="live_store_passwd">
+                                        Live Store Password <SecretHint isSet={sslcommerz.live_store_passwd_set} />
+                                    </Label>
+                                    <Input
+                                        id="live_store_passwd"
+                                        name="live_store_passwd"
+                                        type="password"
+                                        autoComplete="off"
+                                        placeholder="••••••••"
+                                    />
+                                    <InputError message={errors.live_store_passwd} />
+                                </div>
                             </div>
 
                             <div className="grid gap-2">

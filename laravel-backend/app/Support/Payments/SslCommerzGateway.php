@@ -202,12 +202,21 @@ final class SslCommerzGateway implements PaymentGateway
     }
 
     /**
+     * Credentials for the ACTIVE mode. Sandbox and live store credentials are
+     * stored side by side (`sandbox_store_id`/`live_store_id`, …) so switching
+     * the Sandbox/Live toggle never wipes the other environment's keys. Falls
+     * back to the legacy single pair for installs predating the split.
+     *
      * @return array{0: string, 1: string}
      */
     private function credentials(): array
     {
-        $storeId = $this->settings->get('sslcommerz', 'store_id');
-        $storePassword = $this->settings->get('sslcommerz', 'store_passwd');
+        $mode = $this->isSandbox() ? 'sandbox' : 'live';
+
+        $storeId = $this->settings->get('sslcommerz', $mode.'_store_id')
+            ?? $this->settings->get('sslcommerz', 'store_id');
+        $storePassword = $this->settings->get('sslcommerz', $mode.'_store_passwd')
+            ?? $this->settings->get('sslcommerz', 'store_passwd');
 
         if (blank($storeId) || blank($storePassword)) {
             throw new RuntimeException('SSLCommerz credentials are not configured.');
@@ -216,9 +225,14 @@ final class SslCommerzGateway implements PaymentGateway
         return [(string) $storeId, (string) $storePassword];
     }
 
+    private function isSandbox(): bool
+    {
+        return (bool) $this->settings->get('sslcommerz', 'sandbox', true);
+    }
+
     private function baseUrl(): string
     {
-        return (bool) $this->settings->get('sslcommerz', 'sandbox', true)
+        return $this->isSandbox()
             ? 'https://sandbox.sslcommerz.com'
             : 'https://securepay.sslcommerz.com';
     }

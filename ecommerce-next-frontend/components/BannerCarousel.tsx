@@ -23,8 +23,8 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
     <>
       {/* Desktop (≥768px): wide banners only. */}
       <Slides slides={desktopSlides} className="hidden aspect-9/2 md:block" />
-      {/* Mobile (<768px): portrait banners only. */}
-      <Slides slides={mobileSlides} className="aspect-4/5 md:hidden" />
+      {/* Mobile (<768px): short 2:1 landscape banners only. */}
+      <Slides slides={mobileSlides} className="aspect-2/1 md:hidden" />
     </>
   );
 }

@@ -156,8 +156,8 @@ export default function Site({ branding }: { branding: Branding }) {
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     Upload a desktop and a mobile image for each banner.
-                                    Desktop ≈ 1600×600 px (wide), mobile ≈ 800×1000 px
-                                    (portrait), max 20 MB each.
+                                    Desktop ≈ 1600×600 px (wide), mobile ≈ 1080×540 px
+                                    (2:1 landscape), max 20 MB each.
                                 </p>
 
                                 {([1, 2] as const).map((n) => {
@@ -200,7 +200,7 @@ export default function Site({ branding }: { branding: Branding }) {
                                                     Banner {n} — mobile
                                                 </Label>
                                                 <p className="text-xs text-muted-foreground">
-                                                    ≈ 800×1000 px (portrait), max 20 MB.
+                                                    ≈ 1080×540 px (2:1 landscape), max 20 MB.
                                                 </p>
                                                 {mobileUrl && (
                                                     <img

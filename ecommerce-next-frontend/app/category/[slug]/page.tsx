@@ -63,12 +63,15 @@ export default async function CategoryPage({
             className="h-full w-full object-cover"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full p-6 sm:p-12">
+        <div className="absolute bottom-0 left-0 w-full p-4 sm:p-8">
           <div className="mx-auto max-w-5xl">
-            <h1 className="text-3xl font-extrabold sm:text-5xl">{category.title}</h1>
+            {/* No full-image overlay — a text drop-shadow keeps the title legible
+                on light or dark banners without darkening the whole image. */}
+            <h1 className="text-xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] sm:text-3xl">
+              {category.title}
+            </h1>
             {category.details && (
-              <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
+              <p className="mt-1 max-w-2xl text-xs text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)] sm:text-sm">
                 {category.details}
               </p>
             )}

@@ -107,6 +107,17 @@ export type PlacedOrder = {
   tracking?: OrderTracking;
 };
 
+// A single customer-visible payment row (success or pending), newest first.
+export type PaymentHistoryRow = {
+  type: string; // full | partial | shipping | manual
+  direction: string; // credit | debit
+  status: string; // success | pending
+  amount: string; // "Tk 150"
+  amount_minor: number;
+  gateway: string;
+  date: string | null;
+};
+
 // Live paid/due snapshot for a placed order (Laravel OrderStatusController),
 // fetched after returning from the gateway so the success page shows the truth.
 export type OrderStatus = {
@@ -114,10 +125,18 @@ export type OrderStatus = {
   status: string;
   payment_status: string;
   total: Money;
+  shipping_cost: Money;
   advance_amount: Money;
   advance_paid: Money;
   due: Money;
   advance_required: boolean;
+  // Self-service pay options (COD success page mirrors the /pay page).
+  shipping_minor: number;
+  due_minor: number;
+  free_shipping: boolean;
+  can_pay_shipping: boolean;
+  can_pay_full: boolean;
+  payments: PaymentHistoryRow[];
 };
 
 export type PageMeta = {

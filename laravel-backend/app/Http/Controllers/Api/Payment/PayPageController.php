@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Support\Money;
 use App\Support\Orders\PayLink;
+use App\Support\Payments\PayableState;
+use App\Support\Payments\PaymentHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,11 +34,10 @@ class PayPageController extends Controller
 
         $order = Order::query()
             ->where('order_no', $order_no)
-            ->with(['items', 'customer'])
+            ->with(['items', 'customer', 'payments'])
             ->firstOrFail();
 
-        $dueMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
-        $shippingMinor = $order->shipping_cost->toMinor();
+        $state = PayableState::for($order);
 
         return response()->json([
             'data' => [
@@ -55,12 +56,13 @@ class PayPageController extends Controller
                 'shipping' => $order->shipping_cost->format('Tk '),
                 'total' => $order->total->format('Tk '),
                 'advance_paid' => $order->advance_paid->format('Tk '),
-                'due' => Money::fromMinor($dueMinor)->format('Tk '),
-                // Which buttons the page should offer.
-                'can_pay_shipping' => $shippingMinor > 0 && $dueMinor > 0 && $order->advance_paid->toMinor() < $shippingMinor,
-                'can_pay_full' => $dueMinor > 0,
-                'shipping_minor' => $shippingMinor,
-                'due_minor' => $dueMinor,
+                'due' => Money::fromMinor($state['due_minor'])->format('Tk '),
+                // Which buttons the page should offer (shared PayableState rules).
+                'can_pay_shipping' => $state['can_pay_shipping'],
+                'can_pay_full' => $state['can_pay_full'],
+                'shipping_minor' => $state['shipping_minor'],
+                'due_minor' => $state['due_minor'],
+                'payments' => PaymentHistory::forOrder($order),
             ],
         ]);
     }

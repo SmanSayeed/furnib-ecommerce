@@ -61,7 +61,7 @@ export default function SuccessPage() {
   // server-side Meta CAPI / GA4 / TikTok) already fired at checkout, the moment
   // the order was placed.
 
-  async function pay(type: "full" | "partial") {
+  async function pay(type: "full" | "partial" | "shipping") {
     if (!order) return;
     setPaying(type);
     setPayError(null);
@@ -188,6 +188,34 @@ export default function SuccessPage() {
         <p className="mt-3 text-xs text-muted">Deliver to: {order.address}</p>
       </div>
 
+      {live && live.payments.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold text-muted">Payment history</h2>
+          <ul className="mt-3 space-y-2">
+            {live.payments.map((p, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0">
+                  <span className="block font-medium capitalize">
+                    {p.type === "shipping" ? "Delivery charge" : p.type} payment
+                  </span>
+                  <span className="text-xs text-muted">
+                    {p.date ?? ""}
+                    {p.status === "pending" ? " · pending" : ""}
+                  </span>
+                </span>
+                <span
+                  className={`shrink-0 font-semibold ${
+                    p.status === "pending" ? "text-amber-600 dark:text-amber-400" : ""
+                  }`}
+                >
+                  {p.amount}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {payError && (
         <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
           {payError}
@@ -219,14 +247,53 @@ export default function SuccessPage() {
             </p>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => pay("full")}
-            disabled={paying !== null}
-            className="w-full rounded-xl bg-accent px-6 py-3.5 font-semibold text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
-          >
-            {paying === "full" ? "Starting payment…" : `Pay online — ${order.total.formatted}`}
-          </button>
+          (() => {
+            // Cash-on-delivery order: mirror the /pay page — offer the delivery
+            // charge and/or the remaining full amount. Falls back to the placed
+            // snapshot until the live status (with due/shipping) arrives.
+            const canShip = live?.can_pay_shipping ?? false;
+            const canFull = live?.can_pay_full ?? order.total.minor > 0;
+            const shippingLabel = live?.shipping_cost.formatted ?? order.shipping_cost.formatted;
+            const dueLabel = live?.due.formatted ?? order.total.formatted;
+
+            if (!canShip && !canFull) {
+              return (
+                <p className="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-center text-sm text-green-700 dark:text-green-400">
+                  This order is fully paid. Thank you!
+                </p>
+              );
+            }
+
+            return (
+              <>
+                {canShip && (
+                  <button
+                    type="button"
+                    onClick={() => pay("shipping")}
+                    disabled={paying !== null}
+                    className="w-full rounded-xl border border-accent bg-surface px-6 py-3.5 font-semibold text-accent transition hover:bg-surface-2 disabled:opacity-60"
+                  >
+                    {paying === "shipping"
+                      ? "Starting payment…"
+                      : `Pay delivery charge — ${shippingLabel}`}
+                  </button>
+                )}
+                {canFull && (
+                  <button
+                    type="button"
+                    onClick={() => pay("full")}
+                    disabled={paying !== null}
+                    className="w-full rounded-xl bg-accent px-6 py-3.5 font-semibold text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
+                  >
+                    {paying === "full" ? "Starting payment…" : `Pay full payment — ${dueLabel}`}
+                  </button>
+                )}
+                <p className="text-center text-xs text-muted">
+                  Secure payment via SSLCommerz. The rest is collected on delivery.
+                </p>
+              </>
+            );
+          })()
         )}
 
         <a

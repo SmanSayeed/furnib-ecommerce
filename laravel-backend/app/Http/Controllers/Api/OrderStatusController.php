@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Api;
 use App\Models\Order;
 use App\Support\MobileNumber;
 use App\Support\Money;
+use App\Support\Payments\PayableState;
+use App\Support\Payments\PaymentHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -35,13 +37,14 @@ final class OrderStatusController
         $order = Order::query()
             ->where('order_no', $orderNo)
             ->whereHas('customer', fn ($q) => $q->where('mobile', $normalized))
+            ->with('payments')
             ->first();
 
         if ($order === null) {
             return $this->notFound();
         }
 
-        $dueMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
+        $state = PayableState::for($order);
 
         return response()->json([
             'data' => [
@@ -49,10 +52,18 @@ final class OrderStatusController
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
                 'total' => $this->money($order->total),
+                'shipping_cost' => $this->money($order->shipping_cost),
                 'advance_amount' => $this->money($order->advance_amount),
                 'advance_paid' => $this->money($order->advance_paid),
-                'due' => $this->money(Money::fromMinor($dueMinor)),
+                'due' => $this->money(Money::fromMinor($state['due_minor'])),
                 'advance_required' => $order->advance_amount->toMinor() > 0,
+                // Self-service pay options (COD success page mirrors the pay page).
+                'shipping_minor' => $state['shipping_minor'],
+                'due_minor' => $state['due_minor'],
+                'free_shipping' => $state['free_shipping'],
+                'can_pay_shipping' => $state['can_pay_shipping'],
+                'can_pay_full' => $state['can_pay_full'],
+                'payments' => PaymentHistory::forOrder($order),
             ],
         ]);
     }

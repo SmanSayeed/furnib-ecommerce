@@ -18,6 +18,12 @@ type PaySummary = {
   due: string;
   can_pay_shipping: boolean;
   can_pay_full: boolean;
+  payments: {
+    type: string;
+    status: string;
+    amount: string;
+    date: string | null;
+  }[];
 };
 
 export default function PayPage() {
@@ -157,6 +163,34 @@ export default function PayPage() {
 
         <p className="mt-3 text-xs text-muted">Deliver to: {data.address}</p>
       </div>
+
+      {data.payments.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold text-muted">Payment history</h2>
+          <ul className="mt-3 space-y-2">
+            {data.payments.map((p, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0">
+                  <span className="block font-medium capitalize">
+                    {p.type === "shipping" ? "Delivery charge" : p.type} payment
+                  </span>
+                  <span className="text-xs text-muted">
+                    {p.date ?? ""}
+                    {p.status === "pending" ? " · pending" : ""}
+                  </span>
+                </span>
+                <span
+                  className={`shrink-0 font-semibold ${
+                    p.status === "pending" ? "text-amber-600 dark:text-amber-400" : ""
+                  }`}
+                >
+                  {p.amount}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {error && (
         <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">

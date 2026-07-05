@@ -19,8 +19,22 @@ type OrderRow = {
     status: string;
     pending_reason: string | null;
     payment_status: string;
+    courier: string | null;
+    courier_status: string | null;
     created_at: string | null;
 };
+
+type CourierOption = {
+    id: number;
+    name: string;
+    driver: string;
+    is_api: boolean;
+    configured: boolean;
+};
+
+// RedX/Pathao need a delivery location chosen at booking time, so they can't be
+// booked inline from the table — selecting one opens the order detail cascade.
+const LOCATION_DRIVERS = ['redx', 'pathao'];
 
 const PENDING_REASON_LABELS: Record<string, string> = {
     new_order: 'New order',
@@ -49,6 +63,8 @@ type Props = {
     statuses: string[];
     paymentStatuses: string[];
     transitions: Record<string, string[]>;
+    couriers: CourierOption[];
+    canBook: boolean;
 };
 
 const PER_PAGE_OPTIONS = ['20', '50', '100'];
@@ -186,6 +202,79 @@ function RowStatus({ row, transitions }: { row: OrderRow; transitions: Record<st
     );
 }
 
+function RowCourier({
+    row,
+    couriers,
+    canBook,
+}: {
+    row: OrderRow;
+    couriers: CourierOption[];
+    canBook: boolean;
+}) {
+    const [saving, setSaving] = useState(false);
+    const inputClass = 'h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-xs';
+
+    // Already booked — show the courier + its status.
+    if (row.courier) {
+        return (
+            <div className="flex flex-col items-start gap-0.5">
+                <span className="font-medium">{row.courier}</span>
+                {row.courier_status && (
+                    <span className="text-xs text-muted-foreground capitalize">{row.courier_status}</span>
+                )}
+            </div>
+        );
+    }
+
+    if (!canBook || couriers.length === 0) {
+        return <span className="text-xs text-muted-foreground">—</span>;
+    }
+
+    const onPick = (value: string) => {
+        const courier = couriers.find((c) => String(c.id) === value);
+
+        if (!courier) {
+            return;
+        }
+
+        // RedX/Pathao need a location chosen on the detail page's cascade UI.
+        if (LOCATION_DRIVERS.includes(courier.driver)) {
+            router.visit(`/admin/orders/${row.id}`);
+
+            return;
+        }
+
+        // Manual/Steadfast — book straight from the table.
+        setSaving(true);
+        router.post(
+            `/admin/orders/${row.id}/ship`,
+            { courier_id: courier.id },
+            { preserveScroll: true, onFinish: () => setSaving(false) },
+        );
+    };
+
+    return (
+        <select
+            aria-label={`Set courier for ${row.order_no}`}
+            defaultValue=""
+            disabled={saving}
+            onChange={(e) => onPick(e.target.value)}
+            className={inputClass}
+        >
+            <option value="" disabled>
+                Set courier…
+            </option>
+            {couriers.map((c) => (
+                <option key={c.id} value={String(c.id)} disabled={c.is_api && !c.configured}>
+                    {c.name}
+                    {c.is_api && !c.configured ? ' (needs setup)' : ''}
+                    {LOCATION_DRIVERS.includes(c.driver) ? ' →' : ''}
+                </option>
+            ))}
+        </select>
+    );
+}
+
 function RowActions({ row }: { row: OrderRow }) {
     return (
         <div className="flex justify-end gap-0.5">
@@ -208,7 +297,7 @@ function RowActions({ row }: { row: OrderRow }) {
     );
 }
 
-export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses, transitions }: Props) {
+export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses, transitions, couriers, canBook }: Props) {
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [selected, setSelected] = useState<Set<string | number>>(new Set());
     const [allMatching, setAllMatching] = useState(false);
@@ -404,6 +493,11 @@ params.to = extra.to;
             header: 'Payment',
             cell: (row) => <span className="text-muted-foreground capitalize">{row.payment_status}</span>,
         },
+        {
+            key: 'courier',
+            header: 'Courier',
+            cell: (row) => <RowCourier row={row} couriers={couriers} canBook={canBook} />,
+        },
         { key: 'actions', header: 'Actions', align: 'right', cell: (row) => <RowActions row={row} /> },
     ];
 
@@ -416,6 +510,12 @@ params.to = extra.to;
                     <span>{row.customer ?? '—'}</span>
                     <span>·</span>
                     <span>{row.total}</span>
+                    {row.courier && (
+                        <>
+                            <span>·</span>
+                            <span>🚚 {row.courier}</span>
+                        </>
+                    )}
                 </div>
             </div>
             <Eye className="size-4 text-muted-foreground" />

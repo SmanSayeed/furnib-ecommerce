@@ -47,7 +47,7 @@ final class OrderRepository
     public function adminList(ListQuery $query): LengthAwarePaginator
     {
         return Order::query()
-            ->with('customer')
+            ->with(['customer', 'shipment:id,order_id,courier,status'])
             ->applyList($query)
             ->paginate($query->perPage)
             ->withQueryString();

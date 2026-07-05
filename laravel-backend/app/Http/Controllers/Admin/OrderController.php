@@ -41,6 +41,10 @@ class OrderController extends Controller
                 'status' => $o->status,
                 'pending_reason' => $o->status === 'pending' ? $o->pending_reason : null,
                 'payment_status' => $o->payment_status,
+                // The booked courier (name snapshot) + its status, or null when the
+                // order has no shipment yet — drives the list's Courier column.
+                'courier' => $o->shipment?->courier,
+                'courier_status' => $o->shipment?->status,
                 'created_at' => $o->created_at?->toDateTimeString(),
             ])->all(),
             'meta' => [
@@ -64,7 +68,34 @@ class OrderController extends Controller
             // Legal next statuses per current status — drives the inline per-row
             // status dropdown (the server still re-validates every transition).
             'transitions' => Order::TRANSITIONS,
+            // Active couriers for the inline "Set courier" control in the list.
+            'couriers' => $this->activeCourierOptions(),
+            // Booking is guarded by orders.manage; hide the set control otherwise.
+            'canBook' => (bool) $request->user()?->can('orders.manage'),
         ]);
+    }
+
+    /**
+     * Active couriers the admin can book an order with (id/name/driver + whether
+     * it is API-driven and configured). Shared by the order list and detail.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function activeCourierOptions(): array
+    {
+        return Courier::query()
+            ->active()
+            ->orderBy('position_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Courier $c): array => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'driver' => $c->driver,
+                'is_api' => $c->isApi(),
+                'configured' => $c->isConfigured(),
+            ])
+            ->all();
     }
 
     public function show(Request $request, Order $order, CustomerCourierStats $courierStats): Response
@@ -134,19 +165,7 @@ class OrderController extends Controller
             // Our own fraud/return-ratio signal for this customer's phone.
             'courierStats' => $fraud,
             // Active couriers the admin can book this order with.
-            'couriers' => Courier::query()
-                ->active()
-                ->orderBy('position_order')
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Courier $c): array => [
-                    'id' => $c->id,
-                    'name' => $c->name,
-                    'driver' => $c->driver,
-                    'is_api' => $c->isApi(),
-                    'configured' => $c->isConfigured(),
-                ])
-                ->all(),
+            'couriers' => $this->activeCourierOptions(),
         ]);
     }
 

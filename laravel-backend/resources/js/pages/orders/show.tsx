@@ -602,6 +602,13 @@ export default function OrderShow({
                     </div>
 
                     <div className="space-y-4">
+                        {/* Courier first — pick/see the courier before touching status. */}
+                        {order.shipment ? (
+                            <ShipmentCard shipment={order.shipment} />
+                        ) : (
+                            canManagePayments && <BookCourierCard orderId={order.id} couriers={couriers} />
+                        )}
+
                         {order.status === 'pending' && (
                             <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
                                 <h2 className="mb-2 text-sm font-medium text-amber-700 dark:text-amber-400">
@@ -701,12 +708,6 @@ export default function OrderShow({
                                 <p className="mt-2 text-sm text-muted-foreground">Notes: {order.notes}</p>
                             )}
                         </div>
-
-                        {order.shipment ? (
-                            <ShipmentCard shipment={order.shipment} />
-                        ) : (
-                            canManagePayments && <BookCourierCard orderId={order.id} couriers={couriers} />
-                        )}
 
                         {courierStats && <CourierRiskCard stats={courierStats} />}
                     </div>

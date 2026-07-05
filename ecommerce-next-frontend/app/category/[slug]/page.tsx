@@ -45,7 +45,7 @@ export default async function CategoryPage({
 
   return (
     <div>
-      <section className="relative mt-3 h-[45vh] w-full overflow-hidden rounded-card border border-border sm:h-[50vh]">
+      <section className="relative mt-3 h-[22vh] w-full overflow-hidden rounded-card border border-border sm:h-[50vh]">
         {desktopHeader ? (
           <picture className="block h-full w-full">
             <source media="(min-width:768px)" srcSet={desktopHeader} />

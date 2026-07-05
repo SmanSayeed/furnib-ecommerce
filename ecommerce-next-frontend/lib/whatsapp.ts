@@ -1,4 +1,5 @@
 import { config } from "./config";
+import { imageUrl } from "./image";
 import type { Product } from "./types";
 
 /**
@@ -30,16 +31,18 @@ export function whatsappGeneral(number?: string | null): string {
 
 export function whatsappInquiry(
   product: Product,
-  productUrl: string,
   number?: string | null,
 ): string {
   const price = product.discount_price ?? product.price;
+  // WhatsApp deep links carry text only (no attachments), so the main photo is
+  // sent as its absolute URL — WhatsApp renders a link preview of it. Only the
+  // product name, SKU, price and main photo are included (no details).
+  const photo = imageUrl(product.main_image);
   const lines = [
     `*Inquiry — ${product.title}*`,
     `SKU: ${product.sku}`,
     `Price: ${price.formatted}`,
-    product.details ? `\n${product.details}` : "",
-    `\n${productUrl}`,
+    photo ? `\n${photo}` : "",
   ].filter(Boolean);
   return link(lines.join("\n"), number);
 }

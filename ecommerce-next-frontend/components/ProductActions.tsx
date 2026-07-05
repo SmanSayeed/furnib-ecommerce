@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { config } from "@/lib/config";
 import { trackInitiateCheckout, trackLead } from "@/lib/track";
 import type { Product } from "@/lib/types";
 import { whatsappInquiry } from "@/lib/whatsapp";
@@ -9,18 +8,15 @@ import { WhatsAppIcon } from "./WhatsAppIcon";
 
 export function ProductActions({
   product,
-  categorySlug,
   whatsapp,
   inquiryEnabled = true,
 }: {
   product: Product;
+  /** Accepted for call-site compatibility; the inquiry no longer needs a URL. */
   categorySlug?: string;
   whatsapp?: string | null;
   inquiryEnabled?: boolean;
 }) {
-  const productUrl = categorySlug
-    ? `${config.siteUrl}/category/${categorySlug}`
-    : `${config.siteUrl}/product/${product.slug}`;
   const unit = product.discount_price ?? product.price;
 
   const discountPct =
@@ -28,7 +24,7 @@ export function ProductActions({
       ? Math.round((1 - product.discount_price.display / product.price.display) * 100)
       : 0;
 
-  const inquiryHref = whatsappInquiry(product, productUrl, whatsapp);
+  const inquiryHref = whatsappInquiry(product, whatsapp);
   const onInquiry = () =>
     trackLead({ sku: product.sku, name: product.title, price: unit.display });
 

@@ -6,7 +6,6 @@ import { imageUrl } from "@/lib/image";
 import { trackInitiateCheckout, trackLead } from "@/lib/track";
 import type { Product } from "@/lib/types";
 import { whatsappInquiry } from "@/lib/whatsapp";
-import { config } from "@/lib/config";
 import { SafeImage } from "./SafeImage";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 
@@ -119,8 +118,7 @@ export function HeaderSearch({
       <ul className="max-h-[70vh] divide-y divide-border overflow-auto">
         {results.map((product) => {
           const unit = product.discount_price ?? product.price;
-          const productUrl = `${config.siteUrl}/product/${product.slug}`;
-          const inquiryHref = whatsappInquiry(product, productUrl, whatsapp);
+          const inquiryHref = whatsappInquiry(product, whatsapp);
 
           return (
             <li key={product.id} className="flex items-center gap-3 px-3 py-2.5">
@@ -218,7 +216,10 @@ export function HeaderSearch({
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Search furniture…"
                 aria-label="Search products"
-                className="h-11 w-full rounded-full border border-border bg-surface pl-9 pr-4 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
+                // 16px (text-base) on mobile: iOS auto-zooms into any focused
+                // input smaller than 16px, which shifts the full-width results
+                // panel off-screen. Keeping it ≥16px stops that zoom.
+                className="h-11 w-full rounded-full border border-border bg-surface pl-9 pr-4 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
             </div>
             {hasQuery && (

@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace App\Actions\Shipments;
 
+use App\Models\Courier;
 use App\Models\Order;
 use App\Models\Shipment;
-use App\Support\Courier\CourierGateway;
+use App\Support\Courier\CourierManager;
 use App\Support\Money;
 
 /**
- * Creates (or returns the existing) courier consignment for an order. Idempotent
- * per order: once a consignment exists it is returned untouched. The COD amount
- * is the remaining balance (total minus what was already paid), computed
- * server-side.
+ * Books (or returns the existing) shipment for an order with a chosen courier.
+ * Idempotent per order: once an API consignment exists it is returned untouched.
+ * An API courier is pushed to its provider; a manual courier is recorded only
+ * (its name still prints on the label). The COD amount is the remaining balance
+ * (total minus what was already paid), computed server-side.
  */
 final class CreateConsignment
 {
-    public function __construct(private readonly CourierGateway $courier) {}
+    public function __construct(private readonly CourierManager $manager) {}
 
-    public function handle(Order $order, ?string $note = null): Shipment
+    public function handle(Order $order, Courier $courier, ?string $note = null): Shipment
     {
         $order->loadMissing('customer');
 
         $shipment = Shipment::query()->firstOrNew(['order_id' => $order->id]);
 
-        // Already booked — do not create a duplicate consignment.
+        // Already booked with an API consignment — never create a duplicate.
         if (filled($shipment->consignment_id)) {
             return $shipment;
         }
@@ -33,7 +35,8 @@ final class CreateConsignment
         $codMinor = max(0, $order->total->toMinor() - $order->advance_paid->toMinor());
 
         $shipment->fill([
-            'courier' => 'steadfast',
+            'courier_id' => $courier->id,
+            'courier' => $courier->name,   // name snapshot: survives courier deletion
             'recipient_name' => (string) ($order->customer->name ?? 'Customer'),
             'recipient_phone' => (string) ($order->customer->mobile ?? ''),
             'recipient_address' => $order->address,
@@ -43,7 +46,15 @@ final class CreateConsignment
         ]);
         $shipment->save();
 
-        $result = $this->courier->createConsignment($shipment);
+        // Manual (or unregistered) courier: recorded only — no API call. The admin
+        // books it by hand and can fill the consignment/tracking + status later.
+        $driver = $this->manager->driverFor($courier);
+
+        if ($driver === null) {
+            return $shipment;
+        }
+
+        $result = $driver->createConsignment($shipment);
 
         $shipment->update([
             'consignment_id' => $result['consignment_id'],

@@ -73,6 +73,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'orders.view',
         items: [
             { title: 'Shipping charge', href: '/admin/shipping/zones', icon: Truck },
+            { title: 'Couriers', href: '/admin/shipping/couriers', icon: Truck, permission: 'couriers.manage' },
             { title: 'Consignments', href: '/admin/shipping/consignments', icon: Truck },
         ],
     },

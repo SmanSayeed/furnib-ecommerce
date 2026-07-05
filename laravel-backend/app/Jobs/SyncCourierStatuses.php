@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Shipment;
-use App\Support\Courier\CourierGateway;
+use App\Support\Courier\CourierManager;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
 
 /**
- * Steadfast has no delivery webhook, so we poll. This scheduled job refreshes the
- * courier status of every shipment that is still in flight (not yet in a terminal
- * state) and maps it onto our record — feeding both order tracking and the
- * customer fraud/return-ratio stats.
+ * API couriers have no delivery webhook, so we poll. This scheduled job refreshes
+ * the status of every in-flight shipment (not yet terminal) via that shipment's
+ * own courier driver, and maps it onto our record — feeding order tracking and
+ * the customer fraud/return-ratio stats. Manual couriers (no API driver) are
+ * skipped; their status is updated by hand.
  */
 final class SyncCourierStatuses implements ShouldBeUnique, ShouldQueue
 {
@@ -30,14 +31,29 @@ final class SyncCourierStatuses implements ShouldBeUnique, ShouldQueue
     /** Statuses we never re-poll — the consignment's journey is over. */
     public const TERMINAL = ['delivered', 'partial_delivered', 'cancelled', 'returned'];
 
-    public function handle(CourierGateway $courier): void
+    public function handle(CourierManager $couriers): void
     {
         Shipment::query()
             ->whereNotNull('tracking_code')
+            ->whereNotNull('courier_id')
             ->whereNotIn('status', self::TERMINAL)
-            ->each(function (Shipment $shipment) use ($courier): void {
+            ->with('courierModel')
+            ->each(function (Shipment $shipment) use ($couriers): void {
+                $courier = $shipment->courierModel;
+
+                if ($courier === null) {
+                    return;
+                }
+
+                $driver = $couriers->driverFor($courier);
+
+                if ($driver === null) {
+                    // Manual courier — no API to poll; status is set by hand.
+                    return;
+                }
+
                 try {
-                    $status = $courier->getStatus((string) $shipment->tracking_code);
+                    $status = $driver->getStatus((string) $shipment->tracking_code);
                 } catch (Throwable $e) {
                     // Transient courier error — leave the status, retry next run.
                     report($e);

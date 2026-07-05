@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace App\Support\Courier;
 
 use App\Models\Shipment;
-use App\Services\Settings\SettingsService;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * SteadFast courier integration. API credentials are read from encrypted
- * settings at call time and sent only to SteadFast over HTTPS — never returned
- * to the client or logged.
+ * SteadFast courier integration. Credentials are injected per-courier (from the
+ * courier's encrypted config) and sent only to SteadFast over HTTPS — never
+ * returned to the client or logged.
  */
 final class SteadFastCourier implements CourierGateway
 {
     private const BASE_URL = 'https://portal.packzy.com/api/v1';
 
-    public function __construct(private readonly SettingsService $settings) {}
+    public function __construct(
+        private readonly ?string $apiKey,
+        private readonly ?string $secretKey,
+    ) {}
 
     public function createConsignment(Shipment $shipment): array
     {
@@ -54,16 +56,13 @@ final class SteadFastCourier implements CourierGateway
 
     private function client(): PendingRequest
     {
-        $apiKey = $this->settings->get('steadfast', 'api_key');
-        $secretKey = $this->settings->get('steadfast', 'secret_key');
-
-        if (blank($apiKey) || blank($secretKey)) {
+        if (blank($this->apiKey) || blank($this->secretKey)) {
             throw new RuntimeException('SteadFast credentials are not configured.');
         }
 
         return Http::withHeaders([
-            'Api-Key' => (string) $apiKey,
-            'Secret-Key' => (string) $secretKey,
+            'Api-Key' => (string) $this->apiKey,
+            'Secret-Key' => (string) $this->secretKey,
             'Content-Type' => 'application/json',
         ]);
     }

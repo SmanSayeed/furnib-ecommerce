@@ -42,6 +42,13 @@ type ShipmentInfo = {
     cod_amount: string;
 };
 
+type CourierOption = {
+    id: number;
+    name: string;
+    is_api: boolean;
+    configured: boolean;
+};
+
 type CourierStats = {
     phone: string;
     total: number;
@@ -133,6 +140,63 @@ function ShipmentCard({ shipment }: { shipment: ShipmentInfo }) {
             <Row label="Status" value={shipment.status} />
             <Row label="COD to collect" value={shipment.cod_amount} />
         </div>
+    );
+}
+
+function BookCourierCard({ orderId, couriers }: { orderId: number; couriers: CourierOption[] }) {
+    const [courierId, setCourierId] = useState<string>(couriers[0] ? String(couriers[0].id) : '');
+    const selected = couriers.find((c) => String(c.id) === courierId);
+    const blocked = selected?.is_api === true && selected.configured === false;
+
+    if (couriers.length === 0) {
+        return (
+            <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+                No active courier. Add one under Shipping → Couriers to ship this order.
+            </div>
+        );
+    }
+
+    return (
+        <Form action={`/admin/orders/${orderId}/ship`} method="post" options={{ preserveScroll: true }}>
+            {({ processing }) => (
+                <div className="rounded-xl border bg-card p-4">
+                    <h2 className="mb-3 text-sm font-medium text-muted-foreground">Book courier</h2>
+                    <div className="grid gap-2">
+                        <select
+                            name="courier_id"
+                            value={courierId}
+                            onChange={(e) => setCourierId(e.target.value)}
+                            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                        >
+                            {couriers.map((c) => (
+                                <option key={c.id} value={String(c.id)}>
+                                    {c.name}
+                                    {c.is_api ? '' : ' (manual)'}
+                                    {c.is_api && !c.configured ? ' — needs credentials' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                            name="note"
+                            placeholder="Note for the courier (optional)"
+                            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                        />
+                        {blocked && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                                This API courier has no credentials yet — add them under Couriers first.
+                            </p>
+                        )}
+                        <Button type="submit" disabled={processing || blocked} className="mt-1">
+                            {selected?.is_api ? 'Book with courier' : 'Record shipment'}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                            An API courier is booked immediately; a manual courier is recorded and its
+                            name prints on the label.
+                        </p>
+                    </div>
+                </div>
+            )}
+        </Form>
     );
 }
 
@@ -251,12 +315,14 @@ export default function OrderShow({
     pendingReasons,
     canManagePayments,
     courierStats,
+    couriers,
 }: {
     order: Order;
     nextStatuses: string[];
     pendingReasons: string[];
     canManagePayments: boolean;
     courierStats: CourierStats | null;
+    couriers: CourierOption[];
 }) {
     const [reason, setReason] = useState(order.pending_reason);
     const [direction, setDirection] = useState('credit');
@@ -429,7 +495,11 @@ export default function OrderShow({
                             )}
                         </div>
 
-                        {order.shipment && <ShipmentCard shipment={order.shipment} />}
+                        {order.shipment ? (
+                            <ShipmentCard shipment={order.shipment} />
+                        ) : (
+                            canManagePayments && <BookCourierCard orderId={order.id} couriers={couriers} />
+                        )}
 
                         {courierStats && <CourierRiskCard stats={courierStats} />}
                     </div>

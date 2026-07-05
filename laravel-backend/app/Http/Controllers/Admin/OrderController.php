@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OrderBulkStatusRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Requests\Admin\UpdatePendingReasonRequest;
+use App\Models\Courier;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Repositories\Eloquent\OrderRepository;
@@ -132,6 +133,19 @@ class OrderController extends Controller
             'canManagePayments' => $request->user()?->can('orders.manage') ?? false,
             // Our own fraud/return-ratio signal for this customer's phone.
             'courierStats' => $fraud,
+            // Active couriers the admin can book this order with.
+            'couriers' => Courier::query()
+                ->active()
+                ->orderBy('position_order')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Courier $c): array => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'is_api' => $c->isApi(),
+                    'configured' => $c->isConfigured(),
+                ])
+                ->all(),
         ]);
     }
 

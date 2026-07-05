@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Catalog\CategoryUiController;
+use App\Http\Controllers\Admin\Catalog\CourierUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ConsignmentController;
@@ -180,6 +181,16 @@ Route::middleware('auth')->prefix('admin/shipping')->name('admin.')->group(funct
     // Courier consignments (read-only list).
     Route::get('consignments', [ConsignmentController::class, 'index'])
         ->middleware('permission:orders.view')->name('consignments.index');
+
+    // Courier management (list + API credentials) — CRUD.
+    Route::middleware('permission:couriers.manage')->group(function () {
+        Route::get('couriers', [CourierUiController::class, 'index'])->name('couriers.index');
+        Route::get('couriers/create', [CourierUiController::class, 'create'])->name('couriers.create');
+        Route::post('couriers', [CourierUiController::class, 'store'])->name('couriers.store');
+        Route::get('couriers/{courier}/edit', [CourierUiController::class, 'edit'])->name('couriers.edit');
+        Route::put('couriers/{courier}', [CourierUiController::class, 'update'])->name('couriers.update');
+        Route::delete('couriers/{courier}', [CourierUiController::class, 'destroy'])->name('couriers.destroy');
+    });
 });
 
 // Admin payments + subscribers — read-only Inertia lists.

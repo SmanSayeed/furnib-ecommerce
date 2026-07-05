@@ -12,6 +12,8 @@ return [
         'catalog.manage',
         'orders.view',
         'orders.manage',
+        // Manage the couriers list + their API credentials.
+        'couriers.manage',
         'payments.view',
         'payments.manage',
         'marketing.manage',
@@ -33,6 +35,7 @@ return [
         'admin' => [
             'catalog.view', 'catalog.manage',
             'orders.view', 'orders.manage',
+            'couriers.manage',
             'payments.view', 'payments.manage',
             'marketing.manage', 'settings.manage',
             'users.manage', 'audit.view',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Courier;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -16,7 +17,7 @@ use App\Storage\Contracts\StorageRepository;
 use App\Storage\StorageManager;
 use App\Support\Capi\ConversionApi;
 use App\Support\Capi\MetaConversionApi;
-use App\Support\Courier\CourierGateway;
+use App\Support\Courier\CourierManager;
 use App\Support\Courier\SteadFastCourier;
 use App\Support\Ga4\HttpMeasurementProtocol;
 use App\Support\Ga4\MeasurementProtocol;
@@ -42,7 +43,6 @@ class RepositoryServiceProvider extends ServiceProvider
         CategoryRepositoryInterface::class => CategoryRepository::class,
         ProductRepositoryInterface::class => ProductRepository::class,
         PaymentGateway::class => SslCommerzGateway::class,
-        CourierGateway::class => SteadFastCourier::class,
         ConversionApi::class => MetaConversionApi::class,
         EventsApi::class => HttpEventsApi::class,
         MeasurementProtocol::class => HttpMeasurementProtocol::class,
@@ -67,6 +67,25 @@ class RepositoryServiceProvider extends ServiceProvider
             return $configured
                 ? $app->make(AutomasSmsGateway::class)
                 : $app->make(LogSmsGateway::class);
+        });
+
+        // Courier gateways, keyed by driver. Open for extension: RedX/Pathao
+        // register their own factory in later phases without touching callers. A
+        // Steadfast courier reads its own encrypted config, falling back to the
+        // legacy `steadfast` settings so pre-migration installs keep working.
+        $this->app->singleton(CourierManager::class, function ($app): CourierManager {
+            $manager = new CourierManager;
+
+            $manager->register(Courier::DRIVER_STEADFAST, function (Courier $courier) use ($app): SteadFastCourier {
+                $settings = $app->make(SettingsService::class);
+
+                return new SteadFastCourier(
+                    $courier->credential('api_key') ?? $settings->get('steadfast', 'api_key'),
+                    $courier->credential('secret_key') ?? $settings->get('steadfast', 'secret_key'),
+                );
+            });
+
+            return $manager;
         });
 
         // Order notification channels (SMS now, email later). Tagging keeps the

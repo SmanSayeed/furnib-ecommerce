@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Actions\Shipments\CreateConsignment;
+use App\Models\Courier;
 use App\Models\Order;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,7 +28,10 @@ final class PushOrderToCourier implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 1800;
 
-    public function __construct(public readonly int $orderId) {}
+    public function __construct(
+        public readonly int $orderId,
+        public readonly int $courierId,
+    ) {}
 
     public function uniqueId(): string
     {
@@ -37,11 +41,12 @@ final class PushOrderToCourier implements ShouldBeUnique, ShouldQueue
     public function handle(CreateConsignment $createConsignment): void
     {
         $order = Order::query()->find($this->orderId);
+        $courier = Courier::query()->find($this->courierId);
 
-        if ($order === null) {
+        if ($order === null || $courier === null) {
             return;
         }
 
-        $createConsignment->handle($order);
+        $createConsignment->handle($order, $courier);
     }
 }

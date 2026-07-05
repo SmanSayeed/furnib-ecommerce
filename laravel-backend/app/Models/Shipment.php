@@ -19,6 +19,7 @@ use Spatie\Activitylog\LogOptions;
  *
  * @property int $id
  * @property int $order_id
+ * @property int|null $courier_id
  * @property string $courier
  * @property string|null $consignment_id
  * @property string|null $tracking_code
@@ -38,7 +39,7 @@ class Shipment extends Model
     public const STATUS_PENDING = 'pending';
 
     protected $fillable = [
-        'order_id', 'courier', 'consignment_id', 'tracking_code', 'status',
+        'order_id', 'courier_id', 'courier', 'consignment_id', 'tracking_code', 'status',
         'recipient_name', 'recipient_phone', 'recipient_address', 'cod_amount', 'note', 'raw_payload',
     ];
 
@@ -63,5 +64,11 @@ class Shipment extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /** @return BelongsTo<Courier, $this> */
+    public function courierModel(): BelongsTo
+    {
+        return $this->belongsTo(Courier::class, 'courier_id');
     }
 }

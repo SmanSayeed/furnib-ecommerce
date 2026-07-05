@@ -7,8 +7,10 @@ namespace App\Observers;
 use App\Enums\OrderNotificationEvent;
 use App\Jobs\PushOrderToCourier;
 use App\Jobs\SendOrderNotification;
+use App\Models\Courier;
 use App\Models\Order;
 use App\Services\Settings\SettingsService;
+use App\Support\Courier\CourierManager;
 
 /**
  * Reacts to order status changes: auto-books the courier on confirm, and notifies
@@ -18,7 +20,10 @@ use App\Services\Settings\SettingsService;
  */
 final class OrderObserver
 {
-    public function __construct(private readonly SettingsService $settings) {}
+    public function __construct(
+        private readonly SettingsService $settings,
+        private readonly CourierManager $couriers,
+    ) {}
 
     public function updated(Order $order): void
     {
@@ -37,13 +42,16 @@ final class OrderObserver
             return;
         }
 
-        // Opt-out switch (default on) + a configured courier are both required.
-        if (! (bool) $this->settings->get('steadfast', 'auto_push', true)) {
+        // Opt-out switch (default on).
+        if (! (bool) $this->settings->get('courier', 'auto_push', true)) {
             return;
         }
 
-        if (blank($this->settings->get('steadfast', 'api_key'))
-            || blank($this->settings->get('steadfast', 'secret_key'))) {
+        // A default courier must be set. A manual default has no API to call, so
+        // there is nothing to auto-book; an API default must be configured.
+        $courier = Courier::default();
+
+        if ($courier === null || ! $this->couriers->canBookViaApi($courier)) {
             return;
         }
 
@@ -52,7 +60,7 @@ final class OrderObserver
             return;
         }
 
-        PushOrderToCourier::dispatch($order->id);
+        PushOrderToCourier::dispatch($order->id, $courier->id);
     }
 
     private function notifyCustomer(Order $order): void

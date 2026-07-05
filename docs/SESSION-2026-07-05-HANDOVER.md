@@ -47,6 +47,12 @@ Decisions (user-approved): **phased** (P1 core+manual+steadfast → P2 RedX → 
 ## Gates status (all green at session end)
 Pest full suite green (run in chunks — the machine OOMs on the whole suite at once because of dompdf; use `-d memory_limit=1G` and split dirs). Pint clean. Larastan max 0. Admin build + storefront typecheck/build green.
 
+### WhatsApp country code fix (`lib/whatsapp.ts`)
+Local BD numbers (e.g. `01748870651`) produced "chat not found". Added
+`normalizeWhatsappNumber()` in the single shared `link()` builder → every button
+(floating, footer, product-card inquiry, hero, mobile tab bar, header search,
+order) now sends `880XXXXXXXXXX`. No raw `wa.me` links exist elsewhere.
+
 ## Pending / next
 - **Deploy** everything (backend + storefront). Then in admin: add real Steadfast creds under Couriers (or they carried over from legacy settings), set the default, upload 2:1 mobile banners, BTRC-vet SMS templates.
 - **Courier Phase 2 — RedX**: base `openapi.redx.com.bd` (live) / `sandbox.redx.com.bd` (sandbox); header `API-ACCESS-TOKEN: Bearer <jwt>`; `POST /parcel` (customer_name, customer_phone, delivery_area, delivery_area_id, customer_address, merchant_invoice_id, cash_collection_amount, parcel_weight, value, pickup_store_id → resp `tracking_id`); `GET /areas`; `GET /parcel/track/{tracking_id}`. Needs a booking-time **area selector** (order has no RedX area id). Register `redx` factory + `RedxCourier` driver + add to `SELECTABLE_DRIVERS` + credential fields.

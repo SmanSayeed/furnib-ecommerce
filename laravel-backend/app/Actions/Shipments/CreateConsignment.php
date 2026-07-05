@@ -21,7 +21,13 @@ final class CreateConsignment
 {
     public function __construct(private readonly CourierManager $manager) {}
 
-    public function handle(Order $order, Courier $courier, ?string $note = null): Shipment
+    /**
+     * @param  array<string, mixed>  $meta  Booking-time courier metadata (e.g. the
+     *                                      RedX delivery area, or the Pathao
+     *                                      city/zone/area). Ignored by couriers
+     *                                      that need none (Steadfast, manual).
+     */
+    public function handle(Order $order, Courier $courier, ?string $note = null, array $meta = []): Shipment
     {
         $order->loadMissing('customer');
 
@@ -43,6 +49,7 @@ final class CreateConsignment
             'cod_amount' => Money::fromMinor($codMinor),
             'status' => Shipment::STATUS_PENDING,
             'note' => $note,
+            'meta' => $meta === [] ? null : $meta,
         ]);
         $shipment->save();
 

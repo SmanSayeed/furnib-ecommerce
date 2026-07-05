@@ -1,6 +1,6 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { ArrowLeft, FileText, Ticket } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {  DataTable } from '@/components/admin/data-table';
 import type {Column} from '@/components/admin/data-table';
 import { PageHeader } from '@/components/admin/page-header';
@@ -45,9 +45,12 @@ type ShipmentInfo = {
 type CourierOption = {
     id: number;
     name: string;
+    driver: string;
     is_api: boolean;
     configured: boolean;
 };
+
+type LocationOption = { id: number; name: string };
 
 type CourierStats = {
     phone: string;
@@ -143,10 +146,158 @@ function ShipmentCard({ shipment }: { shipment: ShipmentInfo }) {
     );
 }
 
+const LOCATION_SELECT_CLASS =
+    'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs';
+
+/** Fetches a courier location option list server-side (credentials stay on the server). */
+function useLocationOptions(url: string | null): {
+    options: LocationOption[];
+    loading: boolean;
+    error: string | null;
+} {
+    const [options, setOptions] = useState<LocationOption[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Nothing to fetch; a hidden select keeps its stale list.
+        if (!url) {
+            return;
+        }
+
+        let cancelled = false;
+
+        // Flip the loading flag in a microtask so we never setState synchronously
+        // in the effect body (both are external-sync callbacks, not render churn).
+        Promise.resolve().then(() => {
+            if (!cancelled) {
+                setLoading(true);
+            }
+        });
+
+        fetch(url, { headers: { Accept: 'application/json' } })
+            .then((r) => r.json())
+            .then((d: { options?: LocationOption[]; error?: string }) => {
+                if (cancelled) {
+                    return;
+                }
+
+                setOptions(d.options ?? []);
+                setError(d.error ?? null);
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setError('Could not load locations. Try again.');
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [url]);
+
+    return { options, loading, error };
+}
+
+function LocationSelect({
+    label,
+    value,
+    onChange,
+    options,
+    loading,
+    disabled,
+}: {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    options: LocationOption[];
+    loading: boolean;
+    disabled?: boolean;
+}) {
+    return (
+        <div className="grid gap-1">
+            <span className="text-xs text-muted-foreground">
+                {label}
+                {loading ? ' …' : ''}
+            </span>
+            <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+                className={LOCATION_SELECT_CLASS}
+            >
+                <option value="">{`Select ${label.toLowerCase()}…`}</option>
+                {options.map((o) => (
+                    <option key={o.id} value={String(o.id)}>
+                        {o.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
 function BookCourierCard({ orderId, couriers }: { orderId: number; couriers: CourierOption[] }) {
     const [courierId, setCourierId] = useState<string>(couriers[0] ? String(couriers[0].id) : '');
     const selected = couriers.find((c) => String(c.id) === courierId);
+    const driver = selected?.driver;
+    const cid = selected?.id ?? 0;
     const blocked = selected?.is_api === true && selected.configured === false;
+
+    // RedX — single delivery area.
+    const [areaId, setAreaId] = useState('');
+    // Pathao — city → zone → area cascade.
+    const [cityId, setCityId] = useState('');
+    const [zoneId, setZoneId] = useState('');
+    const [pAreaId, setPAreaId] = useState('');
+
+    // Dependent resets happen in the change handlers (not effects), so switching a
+    // courier or a parent level clears the now-stale child selections.
+    const changeCourier = (v: string) => {
+        setCourierId(v);
+        setAreaId('');
+        setCityId('');
+        setZoneId('');
+        setPAreaId('');
+    };
+    const changeCity = (v: string) => {
+        setCityId(v);
+        setZoneId('');
+        setPAreaId('');
+    };
+    const changeZone = (v: string) => {
+        setZoneId(v);
+        setPAreaId('');
+    };
+
+    const canFetch = !blocked && cid > 0;
+    const redxAreas = useLocationOptions(
+        canFetch && driver === 'redx' ? `/admin/shipping/couriers/${cid}/locations/areas` : null,
+    );
+    const cities = useLocationOptions(
+        canFetch && driver === 'pathao' ? `/admin/shipping/couriers/${cid}/locations/cities` : null,
+    );
+    const zones = useLocationOptions(
+        canFetch && driver === 'pathao' && cityId
+            ? `/admin/shipping/couriers/${cid}/locations/zones?city_id=${cityId}`
+            : null,
+    );
+    const pAreas = useLocationOptions(
+        canFetch && driver === 'pathao' && zoneId
+            ? `/admin/shipping/couriers/${cid}/locations/pathao-areas?zone_id=${zoneId}`
+            : null,
+    );
+
+    const selectedArea = redxAreas.options.find((o) => String(o.id) === areaId);
+
+    const locationMissing =
+        (driver === 'redx' && !areaId) ||
+        (driver === 'pathao' && (!cityId || !zoneId || !pAreaId));
 
     if (couriers.length === 0) {
         return (
@@ -165,8 +316,8 @@ function BookCourierCard({ orderId, couriers }: { orderId: number; couriers: Cou
                         <select
                             name="courier_id"
                             value={courierId}
-                            onChange={(e) => setCourierId(e.target.value)}
-                            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            onChange={(e) => changeCourier(e.target.value)}
+                            className={LOCATION_SELECT_CLASS}
                         >
                             {couriers.map((c) => (
                                 <option key={c.id} value={String(c.id)}>
@@ -176,17 +327,73 @@ function BookCourierCard({ orderId, couriers }: { orderId: number; couriers: Cou
                                 </option>
                             ))}
                         </select>
+
+                        {/* RedX — pick the delivery area. */}
+                        {driver === 'redx' && !blocked && (
+                            <>
+                                <LocationSelect
+                                    label="Delivery area"
+                                    value={areaId}
+                                    onChange={setAreaId}
+                                    options={redxAreas.options}
+                                    loading={redxAreas.loading}
+                                />
+                                <input type="hidden" name="delivery_area_id" value={areaId} />
+                                <input type="hidden" name="delivery_area" value={selectedArea?.name ?? ''} />
+                                {redxAreas.error && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">{redxAreas.error}</p>
+                                )}
+                            </>
+                        )}
+
+                        {/* Pathao — city → zone → area cascade. */}
+                        {driver === 'pathao' && !blocked && (
+                            <>
+                                <LocationSelect
+                                    label="City"
+                                    value={cityId}
+                                    onChange={changeCity}
+                                    options={cities.options}
+                                    loading={cities.loading}
+                                />
+                                <LocationSelect
+                                    label="Zone"
+                                    value={zoneId}
+                                    onChange={changeZone}
+                                    options={zones.options}
+                                    loading={zones.loading}
+                                    disabled={!cityId}
+                                />
+                                <LocationSelect
+                                    label="Area"
+                                    value={pAreaId}
+                                    onChange={setPAreaId}
+                                    options={pAreas.options}
+                                    loading={pAreas.loading}
+                                    disabled={!zoneId}
+                                />
+                                <input type="hidden" name="recipient_city" value={cityId} />
+                                <input type="hidden" name="recipient_zone" value={zoneId} />
+                                <input type="hidden" name="recipient_area" value={pAreaId} />
+                                {(cities.error || zones.error || pAreas.error) && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                        {cities.error || zones.error || pAreas.error}
+                                    </p>
+                                )}
+                            </>
+                        )}
+
                         <input
                             name="note"
                             placeholder="Note for the courier (optional)"
-                            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            className={LOCATION_SELECT_CLASS}
                         />
                         {blocked && (
                             <p className="text-xs text-amber-600 dark:text-amber-400">
                                 This API courier has no credentials yet — add them under Couriers first.
                             </p>
                         )}
-                        <Button type="submit" disabled={processing || blocked} className="mt-1">
+                        <Button type="submit" disabled={processing || blocked || locationMissing} className="mt-1">
                             {selected?.is_api ? 'Book with courier' : 'Record shipment'}
                         </Button>
                         <p className="text-xs text-muted-foreground">

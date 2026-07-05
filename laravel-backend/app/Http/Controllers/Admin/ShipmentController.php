@@ -24,12 +24,19 @@ class ShipmentController extends Controller
 
     public function store(Request $request, Order $order, CreateConsignment $createConsignment): RedirectResponse
     {
-        $validated = $request->validate([
+        // Look up the courier first (any state) so we know which location fields to
+        // validate; the `exists … is_active` rule below still rejects an inactive or
+        // unknown courier with a proper validation error.
+        $courier = Courier::query()->whereKey($request->integer('courier_id'))->first();
+
+        $request->validate([
             'courier_id' => ['required', 'integer', Rule::exists('couriers', 'id')->where('is_active', true)],
             'note' => ['nullable', 'string', 'max:500'],
+            ...($courier !== null ? $this->metaRules($courier) : []),
         ]);
 
-        $courier = Courier::query()->whereKey($validated['courier_id'])->firstOrFail();
+        // Validation passed, so the courier exists and is active.
+        /** @var Courier $courier */
 
         // An API courier must be configured before it can be booked; a manual
         // courier is always bookable (recorded only).
@@ -42,7 +49,8 @@ class ShipmentController extends Controller
             return back();
         }
 
-        $createConsignment->handle($order, $courier, $validated['note'] ?? null);
+        $note = $request->filled('note') ? (string) $request->string('note') : null;
+        $createConsignment->handle($order, $courier, $note, $this->metaFor($courier, $request));
 
         $message = $courier->isApi()
             ? __('Consignment booked with :name.', ['name' => $courier->name])
@@ -77,5 +85,49 @@ class ShipmentController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Tracking status updated.')]);
 
         return back();
+    }
+
+    /**
+     * Validation rules for the booking-time location fields a courier needs. RedX
+     * needs a delivery area; Pathao needs a city/zone/area cascade. Others need
+     * nothing.
+     *
+     * @return array<string, mixed>
+     */
+    private function metaRules(Courier $courier): array
+    {
+        return match ($courier->driver) {
+            Courier::DRIVER_REDX => [
+                'delivery_area_id' => ['required', 'integer'],
+                'delivery_area' => ['required', 'string', 'max:255'],
+            ],
+            Courier::DRIVER_PATHAO => [
+                'recipient_city' => ['required', 'integer'],
+                'recipient_zone' => ['required', 'integer'],
+                'recipient_area' => ['required', 'integer'],
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * The booking metadata to snapshot on the shipment, shaped per driver.
+     *
+     * @return array<string, mixed>
+     */
+    private function metaFor(Courier $courier, Request $request): array
+    {
+        return match ($courier->driver) {
+            Courier::DRIVER_REDX => [
+                'delivery_area_id' => $request->integer('delivery_area_id'),
+                'delivery_area' => (string) $request->string('delivery_area'),
+            ],
+            Courier::DRIVER_PATHAO => [
+                'recipient_city' => $request->integer('recipient_city'),
+                'recipient_zone' => $request->integer('recipient_zone'),
+                'recipient_area' => $request->integer('recipient_area'),
+            ],
+            default => [],
+        };
     }
 }

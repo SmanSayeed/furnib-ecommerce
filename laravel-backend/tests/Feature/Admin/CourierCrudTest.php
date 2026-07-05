@@ -120,8 +120,61 @@ it('enforces a single default courier', function () {
 
 it('rejects an unsupported driver', function () {
     actingAs(courierAdmin())
-        ->post('/admin/shipping/couriers', ['name' => 'X', 'driver' => 'redx'])
-        ->assertSessionHasErrors('driver'); // RedX arrives in a later phase
+        ->post('/admin/shipping/couriers', ['name' => 'X', 'driver' => 'fedex'])
+        ->assertSessionHasErrors('driver'); // not a known courier driver
+});
+
+it('creates a RedX courier storing encrypted credentials + sandbox flag', function () {
+    actingAs(courierAdmin())
+        ->post('/admin/shipping/couriers', [
+            'name' => 'RedX',
+            'driver' => 'redx',
+            'is_active' => true,
+            'sandbox' => true,
+            'access_token' => 'jwt-token',
+            'pickup_store_id' => '4242',
+        ])
+        ->assertRedirect();
+
+    $courier = Courier::query()->where('name', 'RedX')->firstOrFail();
+    expect($courier->credential('access_token'))->toBe('jwt-token')
+        ->and($courier->credential('pickup_store_id'))->toBe('4242')
+        ->and($courier->config['sandbox'])->toBeTrue()
+        ->and($courier->isConfigured())->toBeTrue();
+
+    // Token never lands in the DB as plaintext.
+    expect((string) $courier->getRawOriginal('config'))->not->toContain('jwt-token');
+});
+
+it('creates a Pathao courier and reports unconfigured until every credential is set', function () {
+    actingAs(courierAdmin())
+        ->post('/admin/shipping/couriers', [
+            'name' => 'Pathao',
+            'driver' => 'pathao',
+            'is_active' => true,
+            'client_id' => 'cid',
+            'client_secret' => 'csecret',
+            'username' => 'merchant@shop.test',
+            // password + store_id intentionally omitted
+        ])
+        ->assertRedirect();
+
+    $courier = Courier::query()->where('name', 'Pathao')->firstOrFail();
+    expect($courier->credential('client_id'))->toBe('cid')
+        ->and($courier->isConfigured())->toBeFalse(); // missing password + store_id
+
+    actingAs(courierAdmin())
+        ->put("/admin/shipping/couriers/{$courier->id}", [
+            'name' => 'Pathao',
+            'driver' => 'pathao',
+            'is_active' => true,
+            'password' => 'secret',
+            'store_id' => '77',
+        ])
+        ->assertRedirect();
+
+    expect($courier->fresh()->isConfigured())->toBeTrue()
+        ->and($courier->fresh()->credential('client_id'))->toBe('cid'); // blank fields kept
 });
 
 it('soft-deletes a courier, keeping historical shipments intact', function () {

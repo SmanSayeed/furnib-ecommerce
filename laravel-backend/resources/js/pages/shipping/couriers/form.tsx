@@ -14,8 +14,17 @@ type Courier = {
     is_active: boolean;
     is_default: boolean;
     position_order: number;
-    api_key_set: boolean;
-    secret_key_set: boolean;
+    sandbox?: boolean;
+    // Per-driver "is set" flags (only the chosen driver's keys are present).
+    api_key_set?: boolean;
+    secret_key_set?: boolean;
+    access_token_set?: boolean;
+    pickup_store_id_set?: boolean;
+    client_id_set?: boolean;
+    client_secret_set?: boolean;
+    username_set?: boolean;
+    password_set?: boolean;
+    store_id_set?: boolean;
 };
 
 const SELECT_CLASS =
@@ -24,13 +33,41 @@ const SELECT_CLASS =
 const DRIVER_LABELS: Record<string, string> = {
     manual: 'Manual — no API (booked by hand)',
     steadfast: 'Steadfast (API)',
+    redx: 'RedX (API)',
+    pathao: 'Pathao (API)',
 };
+
+const API_DRIVERS = ['steadfast', 'redx', 'pathao'];
 
 function SecretHint({ set }: { set: boolean }) {
     return (
         <span className="text-xs text-muted-foreground">
             {set ? '(set — leave blank to keep)' : '(not set)'}
         </span>
+    );
+}
+
+function CredField({
+    name,
+    label,
+    set,
+    error,
+    type = 'password',
+}: {
+    name: string;
+    label: string;
+    set: boolean;
+    error?: string;
+    type?: string;
+}) {
+    return (
+        <div className="grid gap-2">
+            <Label htmlFor={name}>
+                {label} <SecretHint set={set} />
+            </Label>
+            <Input id={name} name={name} type={type} autoComplete="off" />
+            <InputError message={error} />
+        </div>
     );
 }
 
@@ -45,6 +82,7 @@ export default function CourierForm({
     const [driver, setDriver] = useState<string>(courier?.driver ?? 'manual');
     const [active, setActive] = useState<boolean>(courier?.is_active ?? true);
     const [isDefault, setIsDefault] = useState<boolean>(courier?.is_default ?? false);
+    const [sandbox, setSandbox] = useState<boolean>(courier?.sandbox ?? false);
 
     const action = editing ? `/admin/shipping/couriers/${courier!.id}` : '/admin/shipping/couriers';
 
@@ -65,6 +103,7 @@ export default function CourierForm({
 
                         <input type="hidden" name="is_active" value={active ? '1' : '0'} />
                         <input type="hidden" name="is_default" value={isDefault ? '1' : '0'} />
+                        <input type="hidden" name="sandbox" value={sandbox ? '1' : '0'} />
 
                         <div className="space-y-6 rounded-xl border bg-card p-4 md:p-6">
                             <div className="grid gap-2">
@@ -141,28 +180,49 @@ export default function CourierForm({
                             </div>
                         </div>
 
-                        {driver === 'steadfast' && (
+                        {API_DRIVERS.includes(driver) && (
                             <div className="mt-4 space-y-4 rounded-xl border bg-card p-4 md:p-6">
-                                <div>
-                                    <h2 className="text-sm font-medium">Steadfast API credentials</h2>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        Stored encrypted. Leave a field blank to keep the saved value.
-                                    </p>
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-sm font-medium">
+                                            {DRIVER_LABELS[driver] ?? driver} credentials
+                                        </h2>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Stored encrypted. Leave a field blank to keep the saved value.
+                                        </p>
+                                    </div>
+                                    <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                                        <Checkbox
+                                            checked={sandbox}
+                                            onCheckedChange={(v) => setSandbox(v === true)}
+                                        />
+                                        Sandbox mode
+                                    </label>
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="api_key">
-                                        API Key <SecretHint set={courier?.api_key_set ?? false} />
-                                    </Label>
-                                    <Input id="api_key" name="api_key" type="password" autoComplete="off" />
-                                    <InputError message={errors.api_key} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="secret_key">
-                                        Secret Key <SecretHint set={courier?.secret_key_set ?? false} />
-                                    </Label>
-                                    <Input id="secret_key" name="secret_key" type="password" autoComplete="off" />
-                                    <InputError message={errors.secret_key} />
-                                </div>
+
+                                {driver === 'steadfast' && (
+                                    <>
+                                        <CredField name="api_key" label="API Key" set={courier?.api_key_set ?? false} error={errors.api_key} />
+                                        <CredField name="secret_key" label="Secret Key" set={courier?.secret_key_set ?? false} error={errors.secret_key} />
+                                    </>
+                                )}
+
+                                {driver === 'redx' && (
+                                    <>
+                                        <CredField name="access_token" label="Access Token (JWT)" set={courier?.access_token_set ?? false} error={errors.access_token} />
+                                        <CredField name="pickup_store_id" label="Pickup Store ID" set={courier?.pickup_store_id_set ?? false} error={errors.pickup_store_id} type="text" />
+                                    </>
+                                )}
+
+                                {driver === 'pathao' && (
+                                    <>
+                                        <CredField name="client_id" label="Client ID" set={courier?.client_id_set ?? false} error={errors.client_id} />
+                                        <CredField name="client_secret" label="Client Secret" set={courier?.client_secret_set ?? false} error={errors.client_secret} />
+                                        <CredField name="username" label="Username" set={courier?.username_set ?? false} error={errors.username} type="text" />
+                                        <CredField name="password" label="Password" set={courier?.password_set ?? false} error={errors.password} />
+                                        <CredField name="store_id" label="Store ID" set={courier?.store_id_set ?? false} error={errors.store_id} type="text" />
+                                    </>
+                                )}
                             </div>
                         )}
 

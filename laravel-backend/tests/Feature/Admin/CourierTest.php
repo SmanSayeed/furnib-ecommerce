@@ -146,3 +146,74 @@ it('requires authentication', function () {
 
     $this->post("/admin/orders/{$order->id}/ship")->assertRedirect('/login');
 });
+
+it('snapshots the RedX delivery area onto the shipment meta', function () {
+    // Fake the RedX API so no real HTTP is made, but the courier is "configured".
+    app(CourierManager::class)->register(Courier::DRIVER_REDX, fn () => $this->courier);
+    $redx = Courier::factory()->create([
+        'name' => 'RedX',
+        'driver' => 'redx',
+        'is_active' => true,
+        'config' => ['access_token' => 't', 'pickup_store_id' => '1'],
+    ]);
+    $order = Order::factory()->create();
+
+    actingAs(courierManager())
+        ->post("/admin/orders/{$order->id}/ship", [
+            'courier_id' => $redx->id,
+            'delivery_area_id' => 42,
+            'delivery_area' => 'Banani',
+        ])
+        ->assertRedirect();
+
+    $shipment = Shipment::query()->where('order_id', $order->id)->firstOrFail();
+    expect($shipment->meta['delivery_area_id'])->toBe(42)
+        ->and($shipment->meta['delivery_area'])->toBe('Banani')
+        ->and($shipment->courier)->toBe('RedX');
+});
+
+it('rejects a RedX booking without a delivery area', function () {
+    app(CourierManager::class)->register(Courier::DRIVER_REDX, fn () => $this->courier);
+    $redx = Courier::factory()->create([
+        'driver' => 'redx',
+        'is_active' => true,
+        'config' => ['access_token' => 't', 'pickup_store_id' => '1'],
+    ]);
+    $order = Order::factory()->create();
+
+    actingAs(courierManager())
+        ->post("/admin/orders/{$order->id}/ship", ['courier_id' => $redx->id])
+        ->assertSessionHasErrors(['delivery_area_id', 'delivery_area']);
+
+    expect(Shipment::query()->where('order_id', $order->id)->count())->toBe(0);
+});
+
+it('snapshots the Pathao city/zone/area onto the shipment meta', function () {
+    app(CourierManager::class)->register(Courier::DRIVER_PATHAO, fn () => $this->courier);
+    $pathao = Courier::factory()->create([
+        'name' => 'Pathao',
+        'driver' => 'pathao',
+        'is_active' => true,
+        'config' => [
+            'client_id' => 'c', 'client_secret' => 's',
+            'username' => 'u', 'password' => 'p', 'store_id' => '9',
+        ],
+    ]);
+    $order = Order::factory()->create();
+
+    actingAs(courierManager())
+        ->post("/admin/orders/{$order->id}/ship", [
+            'courier_id' => $pathao->id,
+            'recipient_city' => 1,
+            'recipient_zone' => 5,
+            'recipient_area' => 9,
+        ])
+        ->assertRedirect();
+
+    $shipment = Shipment::query()->where('order_id', $order->id)->firstOrFail();
+    expect($shipment->meta)->toBe([
+        'recipient_city' => 1,
+        'recipient_zone' => 5,
+        'recipient_area' => 9,
+    ]);
+});

@@ -86,20 +86,27 @@ class CourierUiController extends Controller
     }
 
     /**
-     * Merge submitted credentials into the stored config; a blank field keeps the
-     * existing secret. A manual courier carries no config.
+     * Merge submitted credentials into the stored config; a blank credential field
+     * keeps the existing secret. Only the keys relevant to the chosen driver are
+     * persisted. API drivers also carry a `sandbox` flag. A manual courier carries
+     * no config.
      *
      * @return array<string, mixed>|null
      */
     private function buildConfig(CourierFormRequest $request, ?Courier $courier): ?array
     {
-        if ($request->validated('driver') !== Courier::DRIVER_STEADFAST) {
+        $driver = (string) $request->validated('driver');
+
+        // Manual courier — no credentials at all.
+        if (! in_array($driver, Courier::API_DRIVERS, true)) {
             return null;
         }
 
         $config = $courier !== null ? ($courier->config ?? []) : [];
 
-        foreach (['api_key', 'secret_key'] as $key) {
+        // $driver is one of the API drivers here (guarded above), so its required
+        // credential list always exists.
+        foreach (Courier::REQUIRED_CREDENTIALS[$driver] as $key) {
             $value = $request->validated($key);
 
             if (filled($value)) {
@@ -107,7 +114,10 @@ class CourierUiController extends Controller
             }
         }
 
-        return $config === [] ? null : $config;
+        // Sandbox is a plain flag (not a blank-keeps secret) — always set it.
+        $config['sandbox'] = (bool) $request->validated('sandbox', false);
+
+        return $config;
     }
 
     /** Ensure at most one default courier when this one is marked default. */
@@ -158,6 +168,13 @@ class CourierUiController extends Controller
      */
     private function formData(Courier $courier): array
     {
+        // Secrets never reach the browser — only whether each credential is set.
+        $credentialSet = [];
+
+        foreach (Courier::REQUIRED_CREDENTIALS[$courier->driver] ?? [] as $key) {
+            $credentialSet[$key.'_set'] = filled($courier->credential($key));
+        }
+
         return [
             'id' => $courier->id,
             'name' => $courier->name,
@@ -166,9 +183,8 @@ class CourierUiController extends Controller
             'is_active' => $courier->is_active,
             'is_default' => $courier->is_default,
             'position_order' => $courier->position_order,
-            // Secrets never reach the browser — only whether they are set.
-            'api_key_set' => filled($courier->credential('api_key')),
-            'secret_key_set' => filled($courier->credential('secret_key')),
+            'sandbox' => (bool) ($courier->config['sandbox'] ?? false),
+            ...$credentialSet,
         ];
     }
 }

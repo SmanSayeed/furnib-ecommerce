@@ -59,7 +59,7 @@ class Courier extends Model
     /** Required credential keys per API driver — used to gauge "configured". */
     public const REQUIRED_CREDENTIALS = [
         self::DRIVER_STEADFAST => ['api_key', 'secret_key'],
-        self::DRIVER_REDX => ['access_token'],
+        self::DRIVER_REDX => ['access_token', 'pickup_store_id'],
         self::DRIVER_PATHAO => ['client_id', 'client_secret', 'username', 'password', 'store_id'],
     ];
 

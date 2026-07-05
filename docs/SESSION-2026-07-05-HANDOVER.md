@@ -53,10 +53,23 @@ Local BD numbers (e.g. `01748870651`) produced "chat not found". Added
 (floating, footer, product-card inquiry, hero, mobile tab bar, header search,
 order) now sends `880XXXXXXXXXX`. No raw `wa.me` links exist elsewhere.
 
+## Courier Phase 2 (RedX) + Phase 3 (Pathao) — DONE (this session, after compact)
+Both API drivers built SOLID/DRY on top of the Phase-1 registry — **callers untouched**, just two new `register(...)` lines. Gates green (Pint · Larastan 0 · eslint · admin build · 117 Orders+Courier+Payments tests pass).
+
+- **Shared location snapshot**: new migration `2026_07_05_000005_add_meta_to_shipments_table` → `shipments.meta` (encrypted:array). Booking-time location ids live here; Steadfast/manual leave it null. `CreateConsignment::handle(Order, Courier, ?note, array $meta = [])`.
+- **Capability interfaces (ISP)**: `ListsDeliveryAreas` (RedX — `areas()`), `CascadesLocations` (Pathao — `cities()/zones($cityId)/areas($zoneId)`). Location proxy controller resolves the driver and `instanceof`-checks the capability, so credentials never leave the server.
+- **`RedxCourier`** (`ListsDeliveryAreas`): `POST /v1.0.0-beta/parcel` (header `API-ACCESS-TOKEN: Bearer`), `GET /parcel/track/{id}`, `GET /areas`. Config: `access_token`, `pickup_store_id`, `sandbox`. Reads `meta.delivery_area_id` + `meta.delivery_area`.
+- **`PathaoCourier`** (`CascadesLocations`): OAuth `POST /aladdin/api/v1/issue-token` **cached per courier** (`courier:pathao:token:{id}`, TTL = expires_in − 300s); `POST /aladdin/api/v1/orders`; cascade `city-list`→`cities/{id}/zone-list`→`zones/{id}/area-list`; status `GET /orders/{id}/info`. Config: `client_id/client_secret/username/password/store_id/sandbox`. Reads `meta.recipient_city/zone/area`.
+- **Registry**: `RepositoryServiceProvider` registers `redx` + `pathao` factories. `Courier::REQUIRED_CREDENTIALS` now `redx => [access_token, pickup_store_id]`.
+- **Admin courier form**: `SELECTABLE_DRIVERS` = all four; driver-aware `buildConfig`/`formData` (blank-keeps per key + `sandbox` flag); form.tsx has RedX/Pathao credential sections + Sandbox toggle; `*_set` flags only (no secrets to browser).
+- **Booking (order page)**: `ShipmentController::store` validates + snapshots driver-specific meta (`metaRules`/`metaFor`). `CourierLocationController` + routes `couriers/{courier}/locations/{areas,cities,zones,pathao-areas}` (permission:orders.manage). `orders/show.tsx` `BookCourierCard` shows a RedX area selector / Pathao city→zone→area cascade that fetches those endpoints; submit disabled until the location is fully chosen. Manual/Steadfast unaffected.
+- **Tests**: `RedxCourierTest`, `PathaoCourierTest` (Http::fake — create, missing-meta throw, status, area/cascade, token caching, sandbox vs live host), plus booking-meta snapshot tests in `CourierTest` and RedX/Pathao CRUD in `CourierCrudTest`.
+
+⚠️ **Not verifiable against live vendor APIs** (no sandbox creds here) — drivers coded to the documented contracts + tested with faked HTTP. First real booking on staging should confirm field names/response shapes with each provider's sandbox before go-live.
+
 ## Pending / next
-- **Deploy** everything (backend + storefront). Then in admin: add real Steadfast creds under Couriers (or they carried over from legacy settings), set the default, upload 2:1 mobile banners, BTRC-vet SMS templates.
-- **Courier Phase 2 — RedX**: base `openapi.redx.com.bd` (live) / `sandbox.redx.com.bd` (sandbox); header `API-ACCESS-TOKEN: Bearer <jwt>`; `POST /parcel` (customer_name, customer_phone, delivery_area, delivery_area_id, customer_address, merchant_invoice_id, cash_collection_amount, parcel_weight, value, pickup_store_id → resp `tracking_id`); `GET /areas`; `GET /parcel/track/{tracking_id}`. Needs a booking-time **area selector** (order has no RedX area id). Register `redx` factory + `RedxCourier` driver + add to `SELECTABLE_DRIVERS` + credential fields.
-- **Courier Phase 3 — Pathao**: base `api-hermes.pathao.com` (live) / `courier-api-sandbox.pathao.com` (sandbox); OAuth `POST /aladdin/api/v1/issue-token` (client_id, client_secret, username, password, grant_type=password → access_token + refresh_token, cache per courier); location cascade `city-list` → `cities/{id}/zone-list` → `zones/{id}/area-list` (numeric ids); `POST /aladdin/api/v1/orders` (store_id, recipient_*, recipient_city/zone/area, delivery_type 48/12, item_type 2, amount_to_collect=COD). Needs booking-time city→zone→area cascade UI.
+- **Deploy** everything (backend + storefront). Migrations run on boot / `php artisan migrate --force`. Then in admin under Couriers: add real Steadfast/RedX/Pathao creds, set the default, tick Sandbox while testing. Upload 2:1 mobile banners, BTRC-vet SMS templates, regenerate the leaked Automas key.
+- **Verify RedX/Pathao on each vendor's sandbox** before switching a courier off Sandbox mode (confirm parcel/area field names + response ids).
 - context7 does NOT cover Steadfast/Automas/RedX/Pathao (private BD vendors) — researched via web/official docs.
 
 ## Standing project rules (unchanged)

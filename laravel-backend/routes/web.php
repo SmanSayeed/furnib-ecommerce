@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Catalog\CourierUiController;
 use App\Http\Controllers\Admin\Catalog\ProductUiController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ConsignmentController;
+use App\Http\Controllers\Admin\CourierLocationController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\Dev\DeveloperController;
 use App\Http\Controllers\Admin\InvoiceController;
@@ -152,10 +153,16 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('invoices', [InvoiceListController::class, 'index'])
         ->middleware('permission:orders.view')->name('invoices.index');
 
-    // Courier consignment (SteadFast) — booking + tracking.
+    // Courier consignment — booking + tracking + booking-time location lookups.
     Route::middleware('permission:orders.manage')->group(function () {
         Route::post('orders/{order}/ship', [ShipmentController::class, 'store'])->name('orders.ship');
         Route::post('orders/{order}/track', [ShipmentController::class, 'track'])->name('orders.track');
+
+        // Server-side location proxy (credentials stay on the server).
+        Route::get('couriers/{courier}/locations/areas', [CourierLocationController::class, 'areas'])->name('couriers.locations.areas');
+        Route::get('couriers/{courier}/locations/cities', [CourierLocationController::class, 'cities'])->name('couriers.locations.cities');
+        Route::get('couriers/{courier}/locations/zones', [CourierLocationController::class, 'zones'])->name('couriers.locations.zones');
+        Route::get('couriers/{courier}/locations/pathao-areas', [CourierLocationController::class, 'pathaoAreas'])->name('couriers.locations.pathao-areas');
     });
 
     // Owner-only reversible Maintenance Lock.

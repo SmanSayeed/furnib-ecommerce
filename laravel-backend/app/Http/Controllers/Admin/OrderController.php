@@ -142,6 +142,7 @@ class OrderController extends Controller
                 ->map(fn (Courier $c): array => [
                     'id' => $c->id,
                     'name' => $c->name,
+                    'driver' => $c->driver,
                     'is_api' => $c->isApi(),
                     'configured' => $c->isConfigured(),
                 ])

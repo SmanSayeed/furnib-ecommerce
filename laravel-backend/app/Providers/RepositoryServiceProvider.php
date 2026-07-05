@@ -18,6 +18,8 @@ use App\Storage\StorageManager;
 use App\Support\Capi\ConversionApi;
 use App\Support\Capi\MetaConversionApi;
 use App\Support\Courier\CourierManager;
+use App\Support\Courier\PathaoCourier;
+use App\Support\Courier\RedxCourier;
 use App\Support\Courier\SteadFastCourier;
 use App\Support\Ga4\HttpMeasurementProtocol;
 use App\Support\Ga4\MeasurementProtocol;
@@ -84,6 +86,22 @@ class RepositoryServiceProvider extends ServiceProvider
                     $courier->credential('secret_key') ?? $settings->get('steadfast', 'secret_key'),
                 );
             });
+
+            $manager->register(Courier::DRIVER_REDX, fn (Courier $courier): RedxCourier => new RedxCourier(
+                $courier->credential('access_token'),
+                $courier->credential('pickup_store_id'),
+                (bool) ($courier->config['sandbox'] ?? false),
+            ));
+
+            $manager->register(Courier::DRIVER_PATHAO, fn (Courier $courier): PathaoCourier => new PathaoCourier(
+                $courier->credential('client_id'),
+                $courier->credential('client_secret'),
+                $courier->credential('username'),
+                $courier->credential('password'),
+                $courier->credential('store_id'),
+                (bool) ($courier->config['sandbox'] ?? false),
+                'courier:pathao:token:'.$courier->id,
+            ));
 
             return $manager;
         });

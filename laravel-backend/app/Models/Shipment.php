@@ -30,6 +30,7 @@ use Spatie\Activitylog\LogOptions;
  * @property Money $cod_amount
  * @property string|null $note
  * @property array<string, mixed>|null $raw_payload
+ * @property array<string, mixed>|null $meta
  */
 class Shipment extends Model
 {
@@ -40,7 +41,7 @@ class Shipment extends Model
 
     protected $fillable = [
         'order_id', 'courier_id', 'courier', 'consignment_id', 'tracking_code', 'status',
-        'recipient_name', 'recipient_phone', 'recipient_address', 'cod_amount', 'note', 'raw_payload',
+        'recipient_name', 'recipient_phone', 'recipient_address', 'cod_amount', 'note', 'raw_payload', 'meta',
     ];
 
     protected function casts(): array
@@ -48,6 +49,7 @@ class Shipment extends Model
         return [
             'cod_amount' => MoneyCast::class,
             'raw_payload' => 'encrypted:array',
+            'meta' => 'encrypted:array',
         ];
     }
 

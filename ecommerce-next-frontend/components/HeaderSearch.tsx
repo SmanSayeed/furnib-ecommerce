@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { imageUrl } from "@/lib/image";
-import { trackInitiateCheckout, trackLead } from "@/lib/track";
+import { trackInitiateCheckout, trackLead, trackSearch } from "@/lib/track";
 import type { Product } from "@/lib/types";
 import { whatsappInquiry } from "@/lib/whatsapp";
 import { SafeImage } from "./SafeImage";
@@ -74,6 +74,9 @@ export function HeaderSearch({
         const data = await res.json();
         if (id === seq.current) {
           setResults(Array.isArray(data?.data) ? data.data : []);
+          // Fire once per settled query (not per keystroke): the `seq` guard
+          // means only the latest debounced term reaches here.
+          trackSearch(q);
         }
       } catch {
         if (id === seq.current) setResults([]);

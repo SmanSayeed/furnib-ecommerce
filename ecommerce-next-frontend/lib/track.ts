@@ -129,6 +129,17 @@ export function trackViewCategory(c: {
 }
 
 /**
+ * Storefront search. A search is not a product funnel action, so this is a
+ * dataLayer-only signal (no Meta CAPI) — GA4's recommended `search` event with
+ * its standard `search_term` param. The marketer wires whatever GTM tag they
+ * want to it.
+ * @see https://support.google.com/analytics/answer/9267735
+ */
+export function trackSearch(term: string): void {
+  pushEvent("search", { search_term: term });
+}
+
+/**
  * `purchase` — fired when the order is placed (checkout HTTP 201). The rich
  * payload (ecommerce + raw/hashed user_data + fbp/fbc/client_ip + order_info) is
  * built server-side by Laravel and pushed verbatim; no PII handling happens in

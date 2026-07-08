@@ -11,11 +11,12 @@
 - **PII in browser:** marketer wants the full `user_data` block (raw name/phone/address/area + `fbp`/`fbc`/`client_ip`) in the dataLayer, **plus** extra hashed fields (`hashed_name`, `hashed_phone`, `hashed_email`). Owner accepts the residual exposure risk (any page script/extension can read raw PII in dataLayer). Server CAPI still sends raw PII hashed, securely.
 - **Admin GTM:** admin app loads GTM using the GTM id already settable in admin (marketing settings `gtm_id`). Same container as storefront unless marketer asks for a separate one.
 
-## 1. The 7 triggers
+## 1. The triggers
 
 | event | trigger (button / action) | file | status / action |
 |---|---|---|---|
 | `page_view` | every page load + SPA nav | — | **GTM/GA4 handles it** (GA4 config tag). No app code unless owner wants explicit push. *(PENDING decision A)* |
+| `search` | header search (desktop input + mobile panel), fired once per settled debounced query | `components/HeaderSearch.tsx` → `lib/track.ts` (`trackSearch`) | **done.** dataLayer-only signal (GA4 recommended `search` event, param `search_term`); no CAPI (search isn't a product funnel action) |
 | `view_category` | category card click (image **and** "View Series" — both inside one `<Link>`) | `components/CategoryGrid.tsx` | make client, add `onClick` → push `view_category` with `{ category_id, category_name, category_slug }` |
 | `view_item` | **"See more"** on product caption | `components/ProductCaption.tsx` (data from `ProductRow.tsx`) | thread product info into ProductCaption; fire on "See more" `onClick` |
 | `generate_lead` | Inquiry (WhatsApp) button | `components/ProductActions.tsx` | **already done** (`trackLead`) — keep |
@@ -37,6 +38,7 @@
 
 - **Storefront events live in** `lib/track.ts`:
   - `trackViewContent` → `view_item`, `trackInitiateCheckout` → `begin_checkout`, `trackLead` → `generate_lead`, `trackPurchase` → `purchase`.
+  - `trackSearch` → `search` (dataLayer-only, `{ search_term }`); wired in `HeaderSearch.tsx` after each settled debounced query.
   - `lib/dataLayer.ts`: `pushEvent(event, params)`, `clearEcommerce()` (GA4 needs `ecommerce:null` cleared before each ecommerce event).
   - Consent gate already removed (BD); GTM loads unconditionally — `components/analytics/Analytics.tsx`.
 - `ProductActions.tsx`: Inquiry `onClick={onInquiry}` (trackLead ✓). "Order now" = `<Link href="/checkout/{slug}?qty=1">` — **no event yet** → add `begin_checkout`.

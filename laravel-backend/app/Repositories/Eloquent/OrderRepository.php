@@ -29,8 +29,10 @@ final class OrderRepository
     public static function listConfig(): array
     {
         return [
-            'searchColumns' => ['order_no', 'customer.name', 'customer.mobile'],
-            'filters' => ['status', 'payment_status'],
+            'searchColumns' => ['order_no', 'customer.name', 'customer.mobile', 'admin_note'],
+            // pending_reason was displayed in the list but never filterable — the
+            // whitelist silently dropped it, so ?pending_reason=… did nothing.
+            'filters' => ['status', 'payment_status', 'pending_reason'],
             'sorts' => ['created_at', 'total', 'status'],
             'defaultSort' => 'created_at',
             'defaultDir' => 'desc',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Courier;
 
 use App\Models\Shipment;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -19,8 +20,10 @@ use RuntimeException;
  *
  * @see https://merchant.pathao.com/
  */
-final class PathaoCourier implements CascadesLocations, CourierGateway
+final class PathaoCourier implements CascadesLocations, CourierGateway, TestsConnection
 {
+    private const NAME = 'Pathao';
+
     private const LIVE_URL = 'https://api-hermes.pathao.com';
 
     private const SANDBOX_URL = 'https://courier-api-sandbox.pathao.com';
@@ -75,7 +78,7 @@ final class PathaoCourier implements CascadesLocations, CourierGateway
         $consignmentId = $response->json('data.consignment_id');
 
         if (! $response->successful() || blank($consignmentId)) {
-            throw new RuntimeException('Failed to create Pathao order.');
+            throw CourierException::http(self::NAME, $response->status(), $response->body());
         }
 
         return [
@@ -154,11 +157,27 @@ final class PathaoCourier implements CascadesLocations, CourierGateway
         return $this->sandbox ? self::SANDBOX_URL : self::LIVE_URL;
     }
 
+    /**
+     * Issuing a token IS the credential test — it exercises client_id, client_secret,
+     * username and password in one call. The cache is dropped first so a corrected
+     * credential is actually tried, rather than the stale token being re-used.
+     */
+    public function testConnection(): string
+    {
+        Cache::forget($this->cacheKey);
+        $this->accessToken();
+
+        return 'Pathao connected. Access token issued.';
+    }
+
     private function client(): PendingRequest
     {
         return Http::withToken($this->accessToken())
             ->acceptJson()
-            ->asJson();
+            ->asJson()
+            ->connectTimeout(10)
+            ->timeout(20)
+            ->retry(2, 300, throw: false);
     }
 
     /**
@@ -168,7 +187,7 @@ final class PathaoCourier implements CascadesLocations, CourierGateway
     private function accessToken(): string
     {
         if (blank($this->clientId) || blank($this->clientSecret) || blank($this->username) || blank($this->password)) {
-            throw new RuntimeException('Pathao credentials are not configured.');
+            throw CourierException::missingCredentials(self::NAME);
         }
 
         $cached = Cache::get($this->cacheKey);
@@ -177,19 +196,26 @@ final class PathaoCourier implements CascadesLocations, CourierGateway
             return $cached;
         }
 
-        $response = Http::acceptJson()->asJson()->post($this->baseUrl().'/aladdin/api/v1/issue-token', [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'username' => $this->username,
-            'password' => $this->password,
-            'grant_type' => 'password',
-        ]);
+        try {
+            $response = Http::acceptJson()->asJson()
+                ->connectTimeout(10)
+                ->timeout(20)
+                ->post($this->baseUrl().'/aladdin/api/v1/issue-token', [
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'username' => $this->username,
+                    'password' => $this->password,
+                    'grant_type' => 'password',
+                ]);
+        } catch (ConnectionException $e) {
+            throw CourierException::unreachable(self::NAME, $e->getMessage());
+        }
 
         $token = $response->json('access_token');
         $expiresIn = (int) ($response->json('expires_in') ?? 0);
 
         if (! $response->successful() || blank($token)) {
-            throw new RuntimeException('Failed to issue a Pathao access token.');
+            throw CourierException::http(self::NAME, $response->status(), $response->body());
         }
 
         // Cache for the reported lifetime minus a 5-minute safety buffer (default

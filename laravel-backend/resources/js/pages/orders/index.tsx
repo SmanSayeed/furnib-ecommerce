@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/admin/empty-state';
 import { FilterBar } from '@/components/admin/filter-bar';
 import { PageHeader } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
+import { PENDING_REASON_LABELS } from '@/lib/order-labels';
 
 type OrderRow = {
     id: number;
@@ -18,6 +19,8 @@ type OrderRow = {
     total: string;
     status: string;
     pending_reason: string | null;
+    pending_note: string | null;
+    admin_note: string | null;
     payment_status: string;
     courier: string | null;
     courier_status: string | null;
@@ -36,18 +39,11 @@ type CourierOption = {
 // booked inline from the table — selecting one opens the order detail cascade.
 const LOCATION_DRIVERS = ['redx', 'pathao'];
 
-const PENDING_REASON_LABELS: Record<string, string> = {
-    new_order: 'New order',
-    call_waiting: 'Call waiting',
-    payment_pending: 'Payment pending',
-    need_expert_call: 'Need expert call',
-    other: 'Other',
-};
-
 type Filters = {
     search: string;
     status: string;
     payment_status: string;
+    pending_reason: string;
     sort: string;
     dir: SortDir;
     range: DatePreset;
@@ -62,6 +58,7 @@ type Props = {
     filters: Filters;
     statuses: string[];
     paymentStatuses: string[];
+    pendingReasons: string[];
     transitions: Record<string, string[]>;
     couriers: CourierOption[];
     canBook: boolean;
@@ -173,11 +170,6 @@ function RowStatus({ row, transitions }: { row: OrderRow; transitions: Record<st
     return (
         <div className="flex flex-col items-start gap-1">
             <StatusBadge status={row.status} />
-            {row.pending_reason && (
-                <span className="text-xs text-muted-foreground">
-                    {PENDING_REASON_LABELS[row.pending_reason] ?? row.pending_reason}
-                </span>
-            )}
             {options.length > 0 && (
                 <div className="mt-0.5 flex items-center gap-1">
                     <select
@@ -197,6 +189,71 @@ function RowStatus({ row, transitions }: { row: OrderRow; transitions: Record<st
                         Save
                     </Button>
                 </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Set a pending order's reason without opening it. Mirrors the detail page's form:
+ * "Other" requires a note (the server enforces `required_if:pending_reason,other`),
+ * so the input appears inline rather than bouncing the admin to the order.
+ */
+function RowPendingReason({ row, pendingReasons }: { row: OrderRow; pendingReasons: string[] }) {
+    const [reason, setReason] = useState(row.pending_reason ?? '');
+    const [note, setNote] = useState(row.pending_note ?? '');
+    const [saving, setSaving] = useState(false);
+    const inputClass = 'h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-xs';
+
+    const dirty = reason !== (row.pending_reason ?? '') || note !== (row.pending_note ?? '');
+    const needsNote = reason === 'other' && note.trim() === '';
+
+    const save = () =>
+        router.put(
+            `/admin/orders/${row.id}/pending`,
+            { pending_reason: reason, pending_note: reason === 'other' ? note : null },
+            {
+                preserveScroll: true,
+                onStart: () => setSaving(true),
+                onFinish: () => setSaving(false),
+            },
+        );
+
+    return (
+        <div className="flex flex-col items-start gap-1">
+            <select
+                aria-label={`Pending reason for ${row.order_no}`}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className={inputClass}
+            >
+                {pendingReasons.map((r) => (
+                    <option key={r} value={r}>
+                        {PENDING_REASON_LABELS[r] ?? r}
+                    </option>
+                ))}
+            </select>
+
+            {reason === 'other' && (
+                <input
+                    type="text"
+                    aria-label={`Pending note for ${row.order_no}`}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Why? (required)"
+                    className={`${inputClass} w-40`}
+                />
+            )}
+
+            {dirty && (
+                <Button
+                    size="sm"
+                    className="h-8 px-2 text-xs"
+                    disabled={saving || needsNote}
+                    onClick={save}
+                >
+                    Save reason
+                </Button>
             )}
         </div>
     );
@@ -297,7 +354,7 @@ function RowActions({ row }: { row: OrderRow }) {
     );
 }
 
-export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses, transitions, couriers, canBook }: Props) {
+export default function OrdersIndex({ orders, meta, filters, statuses, paymentStatuses, pendingReasons, transitions, couriers, canBook }: Props) {
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [selected, setSelected] = useState<Set<string | number>>(new Set());
     const [allMatching, setAllMatching] = useState(false);
@@ -320,6 +377,12 @@ params.status = extra.status;
 
         if (extra.payment_status) {
 params.payment_status = extra.payment_status;
+}
+
+        // Must be carried here too, or a "select all matching" bulk action would
+        // target every order instead of just the filtered ones.
+        if (extra.pending_reason) {
+params.pending_reason = extra.pending_reason;
 }
 
         if (extra.range && extra.range !== 'all') {
@@ -354,6 +417,10 @@ params.to = extra.to;
 
         if (merged.payment_status) {
             params.payment_status = merged.payment_status;
+        }
+
+        if (merged.pending_reason) {
+            params.pending_reason = merged.pending_reason;
         }
 
         if (merged.sort !== 'created_at' || merged.dir !== 'desc') {
@@ -489,6 +556,28 @@ params.to = extra.to;
             cell: (row) => <RowStatus row={row} transitions={transitions} />,
         },
         {
+            key: 'pending_reason',
+            header: 'Pending reason',
+            cell: (row) =>
+                row.status === 'pending' ? (
+                    <RowPendingReason row={row} pendingReasons={pendingReasons} />
+                ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                ),
+        },
+        {
+            key: 'admin_note',
+            header: 'Notes',
+            cell: (row) =>
+                row.admin_note ? (
+                    <span className="line-clamp-2 max-w-40 text-xs text-muted-foreground" title={row.admin_note}>
+                        {row.admin_note}
+                    </span>
+                ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                ),
+        },
+        {
             key: 'payment_status',
             header: 'Payment',
             cell: (row) => <span className="text-muted-foreground capitalize">{row.payment_status}</span>,
@@ -561,6 +650,19 @@ params.to = extra.to;
                         {paymentStatuses.map((s) => (
                             <option key={s} value={s} className="capitalize">
                                 {s}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        aria-label="Filter by pending reason"
+                        defaultValue={filters.pending_reason}
+                        onChange={(e) => apply({ pending_reason: e.target.value, page: 1 })}
+                        className={inputClass}
+                    >
+                        <option value="">All pending reasons</option>
+                        {pendingReasons.map((r) => (
+                            <option key={r} value={r}>
+                                {PENDING_REASON_LABELS[r] ?? r}
                             </option>
                         ))}
                     </select>

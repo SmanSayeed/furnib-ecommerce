@@ -141,6 +141,14 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:orders.manage')->name('orders.status');
     Route::put('orders/{order}/pending', [OrderController::class, 'updatePending'])
         ->middleware('permission:orders.manage')->name('orders.pending');
+    // Admin's own note on the order — free text, any status, never wiped by a
+    // status change (unlike pending_note).
+    Route::put('orders/{order}/note', [OrderController::class, 'updateNote'])
+        ->middleware('permission:orders.manage')->name('orders.note');
+    // Correct the customer (name/mobile/email) and the delivery address/zone.
+    // A zone change recomputes shipping + total server-side.
+    Route::put('orders/{order}/customer', [OrderController::class, 'updateCustomer'])
+        ->middleware('permission:orders.manage')->name('orders.customer');
     // Manual payment ledger adjustment (credit = received, debit = refund).
     Route::post('orders/{order}/payments', [OrderPaymentController::class, 'store'])
         ->middleware('permission:orders.manage')->name('orders.payments.store');
@@ -197,6 +205,9 @@ Route::middleware('auth')->prefix('admin/shipping')->name('admin.')->group(funct
         Route::get('couriers/{courier}/edit', [CourierUiController::class, 'edit'])->name('couriers.edit');
         Route::put('couriers/{courier}', [CourierUiController::class, 'update'])->name('couriers.update');
         Route::delete('couriers/{courier}', [CourierUiController::class, 'destroy'])->name('couriers.destroy');
+        // Read-only credential check against the live provider API — the only way
+        // to answer "are my keys right?" without placing a real order.
+        Route::post('couriers/{courier}/test', [CourierUiController::class, 'test'])->name('couriers.test');
     });
 });
 

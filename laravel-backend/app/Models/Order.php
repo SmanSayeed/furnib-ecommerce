@@ -34,6 +34,8 @@ use Illuminate\Support\Carbon;
  * @property Money $advance_paid
  * @property int|null $shipping_zone_id
  * @property string $address
+ * @property string|null $notes The CUSTOMER's checkout note — read-only for staff
+ * @property string|null $admin_note Staff's own note. Any status; never wiped by a transition.
  * @property string|null $customer_ip
  * @property string|null $user_agent
  * @property string|null $fbp
@@ -85,7 +87,7 @@ class Order extends Model
     protected $fillable = [
         'order_no', 'customer_id', 'status', 'pending_reason', 'pending_note', 'payment_status',
         'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
-        'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes',
+        'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes', 'admin_note',
         'fbp', 'fbc', 'ttp', 'ttclid', 'ga_client_id', 'marketing_purchase_sent_at',
         'terms_accepted_at', 'terms_ip',
     ];

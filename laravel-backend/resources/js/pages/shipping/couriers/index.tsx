@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, Truck } from 'lucide-react';
+import { Pencil, Plug, Plus, Trash2, Truck } from 'lucide-react';
+import { useState } from 'react';
 import { DataTable } from '@/components/admin/data-table';
 import type { Column } from '@/components/admin/data-table';
 import { EmptyState } from '@/components/admin/empty-state';
@@ -50,18 +51,47 @@ export default function CouriersIndex({ couriers }: { couriers: Courier[] }) {
             onBefore: () => confirm(`Remove courier “${c.name}”? Existing shipments keep its name.`),
         });
 
-    const RowActions = ({ c }: { c: Courier }) => (
-        <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="icon" asChild aria-label="Edit">
-                <Link href={`/admin/shipping/couriers/${c.id}/edit`}>
-                    <Pencil className="size-4" />
-                </Link>
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => remove(c)}>
-                <Trash2 className="size-4 text-destructive" />
-            </Button>
-        </div>
-    );
+    const RowActions = ({ c }: { c: Courier }) => {
+        const [testing, setTesting] = useState(false);
+
+        // Calls the provider for real (read-only) and toasts their actual answer —
+        // the only way to know a credential works without shipping something.
+        const test = () =>
+            router.post(
+                `/admin/shipping/couriers/${c.id}/test`,
+                {},
+                {
+                    preserveScroll: true,
+                    onStart: () => setTesting(true),
+                    onFinish: () => setTesting(false),
+                },
+            );
+
+        return (
+            <div className="flex justify-end gap-1">
+                {c.is_api && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={test}
+                        disabled={testing}
+                        aria-label={`Test ${c.name} connection`}
+                    >
+                        <Plug className="size-4" />
+                        {testing ? 'Testing…' : 'Test'}
+                    </Button>
+                )}
+                <Button variant="ghost" size="icon" asChild aria-label="Edit">
+                    <Link href={`/admin/shipping/couriers/${c.id}/edit`}>
+                        <Pencil className="size-4" />
+                    </Link>
+                </Button>
+                <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => remove(c)}>
+                    <Trash2 className="size-4 text-destructive" />
+                </Button>
+            </div>
+        );
+    };
 
     const columns: Column<Courier>[] = [
         {
@@ -110,7 +140,7 @@ export default function CouriersIndex({ couriers }: { couriers: Courier[] }) {
             <div className="mx-auto w-full max-w-4xl p-4">
                 <PageHeader
                     title="Couriers"
-                    description="Manage delivery partners. API couriers (Steadfast) book automatically; a manual courier is booked by hand and its name still prints on the label. The default is auto-booked when an order is confirmed."
+                    description="Manage delivery partners. API couriers (Steadfast) book automatically; a manual courier is booked by hand and its name still prints on the label. The default is auto-booked when an order is confirmed. Use Test to check an API courier's credentials against the live provider."
                     actions={
                         <Button asChild>
                             <Link href="/admin/shipping/couriers/create">

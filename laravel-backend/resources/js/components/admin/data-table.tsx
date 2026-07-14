@@ -45,6 +45,12 @@ type Props<T> = {
      */
     renderMobileCard?: (row: T) => ReactNode;
     className?: string;
+    /**
+     * Minimum table width on md+ (any Tailwind width class, e.g. `min-w-[72rem]`).
+     * Below this the table scrolls horizontally inside its own container instead of
+     * spilling its last columns past the viewport. Set it on wide tables.
+     */
+    minWidth?: string;
     /** Active sort column key (matches a column's `sortKey`). */
     sort?: string;
     /** Active sort direction. */
@@ -78,6 +84,7 @@ export function DataTable<T>({
     rowKey,
     renderMobileCard,
     className,
+    minWidth,
     sort,
     dir,
     onSort,
@@ -91,8 +98,13 @@ export function DataTable<T>({
         pageKeys.length > 0 && pageKeys.every((k) => selection?.selected.has(k));
 
     return (
-        <div className={`rounded-xl border bg-card ${className ?? ''}`}>
-            <table className="hidden w-full text-sm md:table">
+        <div className={`overflow-hidden rounded-xl border bg-card ${className ?? ''}`}>
+            {/* The table scrolls inside this box. Without it, a wide table (many
+                columns, or inline controls with a minimum width) simply spills its
+                last columns — Actions included — past the right edge of the page,
+                with no scrollbar to reach them. */}
+            <div className="hidden overflow-x-auto md:block">
+            <table className={`w-full text-sm ${minWidth ?? ''}`}>
                 <thead>
                     <tr className="border-b text-left text-xs text-muted-foreground">
                         {selection && (
@@ -168,6 +180,7 @@ export function DataTable<T>({
                     })}
                 </tbody>
             </table>
+            </div>
 
             <div className="divide-y md:hidden">
                 {rows.map((row) => {

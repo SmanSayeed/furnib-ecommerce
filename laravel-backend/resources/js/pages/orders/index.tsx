@@ -606,6 +606,16 @@ params.to = extra.to;
                         </>
                     )}
                 </div>
+                {row.status === 'pending' && row.pending_reason && (
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                        {PENDING_REASON_LABELS[row.pending_reason] ?? row.pending_reason}
+                    </div>
+                )}
+                {row.admin_note && (
+                    <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground italic">
+                        {row.admin_note}
+                    </div>
+                )}
             </div>
             <Eye className="size-4 text-muted-foreground" />
         </Link>
@@ -616,7 +626,7 @@ params.to = extra.to;
     return (
         <>
             <Head title="Orders" />
-            <div className="mx-auto w-full max-w-6xl p-4">
+            <div className="mx-auto w-full max-w-7xl p-4">
                 <PageHeader
                     title="Orders"
                     description={`${meta.total} order${meta.total === 1 ? '' : 's'} placed.`}
@@ -726,6 +736,10 @@ params.to = extra.to;
                             rows={orders}
                             rowKey={(row) => row.id}
                             renderMobileCard={mobileCard}
+                            // Nine columns, three of them holding inline selects —
+                            // below this the table scrolls rather than pushing
+                            // Actions off the right edge of the page.
+                            minWidth="min-w-[76rem]"
                             sort={filters.sort}
                             dir={filters.dir}
                             onSort={onSort}

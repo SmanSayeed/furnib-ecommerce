@@ -17,7 +17,7 @@ final class JsonLd
      */
     public function product(Product $product, ?string $url = null, ?string $image = null): array
     {
-        $price = ($product->discount_price ?? $product->price);
+        $price = $product->effectivePrice();
 
         return [
             '@context' => 'https://schema.org',

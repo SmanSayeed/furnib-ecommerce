@@ -36,7 +36,13 @@ class ProductResource extends JsonResource
                 'position' => $image->position,
             ])->values()->all()),
             'price' => $this->money($this->price),
-            'discount_price' => $this->discount_price instanceof Money ? $this->money($this->discount_price) : null,
+            // Only an EFFECTIVE discount is exposed. The storefront computes
+            // `discount_price ?? price`, so gating the field here makes that
+            // expression provably identical to the server's effectivePrice() for
+            // every input — the page can never advertise a price we won't charge.
+            'discount_price' => $this->effectiveDiscount() instanceof Money
+                ? $this->money($this->effectiveDiscount())
+                : null,
             'in_stock' => $this->isInStock(),
             'stock_amount' => (int) $this->stock_amount,
             'free_shipping' => ! (bool) $this->shipping_charge_allowed,

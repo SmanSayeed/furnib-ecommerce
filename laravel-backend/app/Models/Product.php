@@ -97,6 +97,36 @@ class Product extends Model
         return $charge?->extra_cost->toMinor() ?? 0;
     }
 
+    /**
+     * The discount, but only when it is a REAL one: non-null and strictly below
+     * the regular price. A stored discount that is >= price (a legacy row, or one
+     * written before Catalog\UpdateProductRequest gained its `lt:price` rule) is
+     * ignored — the effective price can only ever go DOWN, never up.
+     *
+     * Zero is a legitimate discount: the admin form validates discount_price as
+     * min:0 | lt:price, so a deliberately free product is a valid input.
+     */
+    public function effectiveDiscount(): ?Money
+    {
+        $discount = $this->discount_price;
+
+        if (! $discount instanceof Money) {
+            return null;
+        }
+
+        return $discount->toMinor() < $this->price->toMinor() ? $discount : null;
+    }
+
+    /**
+     * What this product ACTUALLY costs. The single source of truth for pricing —
+     * used by order placement, the public API, the product feed and the marketing
+     * events, so no surface can ever advertise a price the server won't charge.
+     */
+    public function effectivePrice(): Money
+    {
+        return $this->effectiveDiscount() ?? $this->price;
+    }
+
     /** @param Builder<Product> $query */
     public function scopePublished(Builder $query): void
     {

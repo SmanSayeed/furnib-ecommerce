@@ -10,3 +10,10 @@ Thumbs.db
 # Stray local spreadsheets
 farnid.xlsx
 *.xlsx
+
+# SMS gateway scratch notes — these hold a live Automas API key. Never commit.
+/docs/sms-gateway/notes.txt
+/docs/sms-gateway/code-examples.txt
+
+# Playwright MCP scratch output
+/.playwright-mcp/

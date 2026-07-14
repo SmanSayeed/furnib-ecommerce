@@ -3,6 +3,11 @@
     $tkMinor = static fn (int $minor) => number_format($minor / 100, 0) . 'Tk.';
     $advancePaidMinor = $order->advance_paid->toMinor();
     $dueMinor = max(0, $order->total->toMinor() - $advancePaidMinor);
+    // orders.subtotal is already NET of any product discount. To show the saving
+    // and still have the column add up, present the GROSS subtotal and subtract
+    // the discount: gross − discount + delivery = total.
+    $itemDiscountMinor = $order->items->sum(fn ($i) => $i->discount_amount?->toMinor() ?? 0);
+    $grossSubtotalMinor = $order->subtotal->toMinor() + $itemDiscountMinor;
     $courier = $order->shipment?->courier;
     $zone = $order->shippingZone?->name;
     $payMethod = match ($order->payment_status) {
@@ -74,7 +79,12 @@
                     <td class="c-sku">{{ $item->sku }}</td>
                     <td class="c-attr"></td>
                     <td class="c-qty">{{ $item->qty }}</td>
-                    <td class="right">{{ $tk($item->price) }}</td>
+                    <td class="right">
+                        @if ($item->wasDiscounted())
+                            <s>{{ $tk($item->original_price) }}</s><br>
+                        @endif
+                        {{ $tk($item->price) }}
+                    </td>
                     <td class="right">{{ $tk($item->line_total) }}</td>
                 </tr>
             @endforeach
@@ -90,9 +100,9 @@
             </td>
             <td class="foot-totals">
                 <table class="totals">
-                    <tr><td>Sub Total:</td><td class="right">{{ $tk($order->subtotal) }}</td></tr>
+                    <tr><td>Sub Total:</td><td class="right">{{ $tkMinor($grossSubtotalMinor) }}</td></tr>
                     <tr><td>Delivery:</td><td class="right">{{ $tk($order->shipping_cost) }}</td></tr>
-                    <tr><td>Discount:</td><td class="right">0Tk.</td></tr>
+                    <tr><td>Discount:</td><td class="right">{{ $tkMinor($itemDiscountMinor) }}</td></tr>
                     <tr><td>Total:</td><td class="right">{{ $tk($order->total) }}</td></tr>
                     <tr><td>Advance Paid:</td><td class="right">{{ $tkMinor($advancePaidMinor) }}</td></tr>
                     <tr class="payable">

@@ -135,6 +135,9 @@ class OrderController extends Controller
                     'title' => $i->title,
                     'sku' => $i->sku,
                     'price' => $i->price->format(),
+                    // Only present when the line carried a product discount.
+                    'original_price' => $i->wasDiscounted() ? $i->original_price->format() : null,
+                    'discount_amount' => $i->wasDiscounted() ? $i->discount_amount->format() : null,
                     'qty' => $i->qty,
                     'line_total' => $i->line_total->format(),
                 ])->all(),

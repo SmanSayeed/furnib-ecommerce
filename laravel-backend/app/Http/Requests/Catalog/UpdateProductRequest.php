@@ -33,7 +33,10 @@ class UpdateProductRequest extends FormRequest
             'main_image' => ['nullable', 'string'],
             'social_thumbnail_image' => ['nullable', 'string'],
             'price' => ['sometimes', 'numeric', 'min:0'],
-            'discount_price' => ['nullable', 'numeric', 'min:0'],
+            // Must stay strictly below the price, exactly as StoreProductRequest
+            // and Admin\ProductFormRequest already require. Without this, the API
+            // could persist a "discount" that is higher than the price.
+            'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
             'is_advance_payment' => ['boolean'],
             'advance_payment_type' => ['nullable', Rule::in(['full', 'partial'])],
             'partial_amount_type' => ['nullable', Rule::in(['percentage', 'amount'])],
@@ -49,5 +52,20 @@ class UpdateProductRequest extends FormRequest
             'meta_description' => ['nullable', 'string', 'max:500'],
             'og_image' => ['nullable', 'string'],
         ];
+    }
+
+    /**
+     * This is a partial update, so `price` may be absent while `discount_price`
+     * is being changed. `lt:price` needs something to compare against, so fall
+     * back to the product's stored price (as a display amount, matching the
+     * incoming payload's units).
+     */
+    protected function prepareForValidation(): void
+    {
+        $product = $this->route('product');
+
+        if ($product instanceof Product && ! $this->has('price')) {
+            $this->merge(['price' => $product->price->toDisplay()]);
+        }
     }
 }

@@ -12,7 +12,11 @@ use Illuminate\Support\Collection;
  * The one place that knows what delivery costs.
  *
  *   shipping = (any chargeable line ? zone.cost : 0)
- *            + Σ over chargeable lines [ product.extraPerUnitMinorFor(zone) × qty ]
+ *            + Σ over chargeable lines [ product.extraMinorFor(zone, qty) ]
+ *
+ * The per-line extra is quantity-aware: a product can charge less for each unit
+ * after the first (one van goes out either way). That rule lives on the Product —
+ * see extraMinorFor().
  *
  * The zone base is charged ONCE per order (not per product), and only when at
  * least one line is chargeable — an all-free-shipping cart ships free. A product
@@ -45,7 +49,7 @@ final class ShippingCalculator
             }
 
             $anyChargeable = true;
-            $minor += $product->extraPerUnitMinorFor($zone->id) * $line['qty'];
+            $minor += $product->extraMinorFor($zone->id, $line['qty']);
         }
 
         return $anyChargeable ? $minor + $zone->cost->toMinor() : $minor;

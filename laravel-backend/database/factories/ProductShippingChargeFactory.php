@@ -23,6 +23,8 @@ class ProductShippingChargeFactory extends Factory
             'shipping_zone_id' => ShippingZone::factory(),
             // display amount; the Money cast stores it as minor units
             'extra_cost' => fake()->randomFloat(2, 10, 100),
+            // Not configured by default — the line then charges extra_cost per unit.
+            'multi_extra_cost' => null,
         ];
     }
 }

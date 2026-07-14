@@ -70,8 +70,18 @@ export type ShippingZone = {
 export type ProductShippingZone = {
   id: number;
   name: string;
+  /** The zone's base cost — charged once per order. */
   base: Money;
+  /** What the FIRST unit of this product adds in this zone. */
   extra_per_unit: Money;
+  /**
+   * What EACH FURTHER unit adds. The server derives this (the 2-unit line minus
+   * the 1-unit line), so when the product has no multi-quantity discount it comes
+   * back equal to `extra_per_unit` — and the one formula below stays correct:
+   *
+   *   shipping = base + extra_per_unit + multi_extra_per_unit × (qty − 1)
+   */
+  multi_extra_per_unit: Money;
 };
 
 export type OrderItemLine = {

@@ -12,7 +12,13 @@ type Category = { id: number; title: string };
 
 type Zone = { id: number; name: string; base: string };
 
-type ShippingCharge = { shipping_zone_id: number; extra_cost: number };
+type ShippingCharge = {
+    shipping_zone_id: number;
+    /** What the FIRST unit adds (or every unit, when the multi-qty option is off). */
+    extra_cost: number;
+    /** What EACH FURTHER unit adds. null = not configured → falls back to per-unit. */
+    multi_extra_cost: number | null;
+};
 
 type GalleryImage = { id: number; url: string };
 
@@ -37,6 +43,7 @@ type Product = {
     stock_amount: number;
     stock_status: boolean;
     shipping_charge_allowed: boolean;
+    multi_qty_shipping_enabled: boolean;
     meta_title: string | null;
     meta_description: string | null;
     main_image_url: string | null;
@@ -53,6 +60,60 @@ type GalleryItem =
 const SELECT_CLASS =
     'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs';
 const TEXTAREA_CLASS = 'rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs';
+
+/** "৳80" / "৳1,250" → 80 / 1250. The zone base arrives pre-formatted. */
+const parseTk = (v: string | undefined | null): number => {
+    const n = Number(String(v ?? '').replace(/[^\d.]/g, ''));
+
+    return Number.isFinite(n) ? n : 0;
+};
+
+/**
+ * What the customer will actually be charged, for the first few quantities.
+ *
+ * The rule is easy to state and easy to get wrong when you are typing numbers into
+ * two boxes, so we show the answer instead of asking the admin to do the algebra:
+ *
+ *   shipping = base + extra + multi × (qty − 1)
+ *
+ * Mirrors ShippingCalculator + Product::extraMinorFor() on the server.
+ */
+function ShippingPreview({
+    base,
+    extra,
+    multi,
+    multiEnabled,
+}: {
+    base: string;
+    extra: string | undefined;
+    multi: string | undefined;
+    multiEnabled: boolean;
+}) {
+    const baseTk = parseTk(base);
+    const extraTk = parseTk(extra);
+
+    if (!extra || extraTk <= 0) {
+        return null;
+    }
+
+    // Blank additional-unit rate = not configured, so every unit pays the extra.
+    const hasMulti = multiEnabled && multi !== undefined && multi !== '';
+    const multiTk = hasMulti ? parseTk(multi) : extraTk;
+
+    const totalFor = (qty: number) => baseTk + extraTk + multiTk * (qty - 1);
+    const tk = (n: number) => `৳${n.toLocaleString()}`;
+
+    return (
+        <p className="text-xs text-muted-foreground">
+            {[1, 2, 3].map((qty, i) => (
+                <span key={qty}>
+                    {i > 0 && ' · '}
+                    {qty} pc{qty > 1 ? 's' : ''} → <strong>{tk(totalFor(qty))}</strong>
+                </span>
+            ))}
+        </p>
+    );
+}
 
 export default function ProductForm({
     product,
@@ -93,6 +154,7 @@ export default function ProductForm({
         stock_amount: String(product?.stock_amount ?? 0),
         stock_status: product?.stock_status ?? true,
         shipping_charge_allowed: product?.shipping_charge_allowed ?? true,
+        multi_qty_shipping_enabled: product?.multi_qty_shipping_enabled ?? false,
         meta_title: product?.meta_title ?? '',
         meta_description: product?.meta_description ?? '',
         main_image: null as File | null,
@@ -114,6 +176,19 @@ export default function ProductForm({
         const map: Record<number, string> = {};
         product?.shipping_charges?.forEach((c) => {
             map[c.shipping_zone_id] = String(c.extra_cost);
+        });
+
+        return map;
+    });
+
+    // What EACH FURTHER unit costs, per zone (display ৳). Blank = not configured,
+    // so that zone keeps charging the first-unit rate for every unit.
+    const [multiByZone, setMultiByZone] = useState<Record<number, string>>(() => {
+        const map: Record<number, string> = {};
+        product?.shipping_charges?.forEach((c) => {
+            if (c.multi_extra_cost != null) {
+                map[c.shipping_zone_id] = String(c.multi_extra_cost);
+            }
         });
 
         return map;
@@ -187,6 +262,9 @@ return { type: 'existing', id: item.id };
         const shippingCharges = zones.map((z) => ({
             shipping_zone_id: z.id,
             extra_cost: extraByZone[z.id] ?? '',
+            // Only meaningful while the option is on — send blanks otherwise so a
+            // stale rate can't lie in wait for the next time it's ticked.
+            multi_extra_cost: data.multi_qty_shipping_enabled ? (multiByZone[z.id] ?? '') : '',
         }));
 
         transform((current) => ({
@@ -196,6 +274,7 @@ return { type: 'existing', id: item.id };
             is_new: bool(current.is_new as boolean),
             stock_status: bool(current.stock_status as boolean),
             shipping_charge_allowed: bool(current.shipping_charge_allowed as boolean),
+            multi_qty_shipping_enabled: bool(current.multi_qty_shipping_enabled as boolean),
             gallery_new: newFiles,
             gallery_layout: JSON.stringify(layout),
             shipping_charges: shippingCharges,
@@ -633,40 +712,100 @@ setMainPreview(URL.createObjectURL(file));
                                 Shipping charges (optional)
                             </h2>
                             <p className="mt-1 text-xs text-muted-foreground">
-                                Extra delivery cost for this product, <strong>per unit</strong>,
-                                added on top of each zone&apos;s base charge. Leave blank for no
-                                extra. Example: Inside Dhaka base ৳80 + ৳20 here = ৳100/unit.
+                                Extra delivery cost for this product, added on top of each
+                                zone&apos;s base charge. Leave blank for no extra.
                             </p>
                         </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
+
+                        <div className="rounded-lg border border-dashed p-3">
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="multi_qty_shipping_enabled"
+                                    checked={data.multi_qty_shipping_enabled}
+                                    onCheckedChange={(v) =>
+                                        setData('multi_qty_shipping_enabled', v === true)
+                                    }
+                                />
+                                <Label htmlFor="multi_qty_shipping_enabled">
+                                    Cheaper delivery for each additional unit
+                                </Label>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                One van goes out either way, so the 2nd and 3rd piece cost less
+                                to carry. When on, the <strong>first</strong> unit pays the extra
+                                below and <strong>every further</strong> unit pays the additional
+                                rate. Off = the extra is charged per unit, as before.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
                             {zones.map((zone, idx) => {
                                 const errs = errors as Record<string, string | undefined>;
                                 const err =
                                     errs[`shipping_charges.${idx}.extra_cost`] ??
+                                    errs[`shipping_charges.${idx}.multi_extra_cost`] ??
                                     errs[`shipping_charges.${idx}.shipping_zone_id`];
 
                                 return (
-                                    <div key={zone.id} className="grid gap-2">
+                                    <div key={zone.id} className="grid gap-2 rounded-lg border p-3">
                                         <Label htmlFor={`zone_${zone.id}`}>
                                             {zone.name}{' '}
                                             <span className="text-xs text-muted-foreground">
                                                 (base {zone.base})
                                             </span>
                                         </Label>
-                                        <Input
-                                            id={`zone_${zone.id}`}
-                                            type="number"
-                                            step="0.01"
-                                            min={0}
-                                            value={extraByZone[zone.id] ?? ''}
-                                            onChange={(e) =>
-                                                setExtraByZone((prev) => ({
-                                                    ...prev,
-                                                    [zone.id]: e.target.value,
-                                                }))
-                                            }
-                                            placeholder="extra ৳ (optional)"
+
+                                        <div>
+                                            <span className="text-xs text-muted-foreground">
+                                                {data.multi_qty_shipping_enabled
+                                                    ? 'Extra — first unit'
+                                                    : 'Extra — per unit'}
+                                            </span>
+                                            <Input
+                                                id={`zone_${zone.id}`}
+                                                type="number"
+                                                step="0.01"
+                                                min={0}
+                                                value={extraByZone[zone.id] ?? ''}
+                                                onChange={(e) =>
+                                                    setExtraByZone((prev) => ({
+                                                        ...prev,
+                                                        [zone.id]: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="extra ৳ (optional)"
+                                            />
+                                        </div>
+
+                                        {data.multi_qty_shipping_enabled && (
+                                            <div>
+                                                <span className="text-xs text-muted-foreground">
+                                                    Extra — each additional unit
+                                                </span>
+                                                <Input
+                                                    id={`zone_multi_${zone.id}`}
+                                                    type="number"
+                                                    step="0.01"
+                                                    min={0}
+                                                    value={multiByZone[zone.id] ?? ''}
+                                                    onChange={(e) =>
+                                                        setMultiByZone((prev) => ({
+                                                            ...prev,
+                                                            [zone.id]: e.target.value,
+                                                        }))
+                                                    }
+                                                    placeholder="blank = same as first unit"
+                                                />
+                                            </div>
+                                        )}
+
+                                        <ShippingPreview
+                                            base={zone.base}
+                                            extra={extraByZone[zone.id]}
+                                            multi={multiByZone[zone.id]}
+                                            multiEnabled={data.multi_qty_shipping_enabled}
                                         />
+
                                         <InputError message={err} />
                                     </div>
                                 );

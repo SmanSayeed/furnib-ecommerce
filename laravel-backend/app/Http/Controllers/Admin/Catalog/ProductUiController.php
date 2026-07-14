@@ -287,7 +287,8 @@ class ProductUiController extends Controller
             'price', 'discount_price', 'is_advance_payment', 'advance_payment_type',
             'partial_amount_type', 'partial_amount', 'is_featured', 'is_new',
             'position_order', 'product_status', 'stock_amount', 'stock_status',
-            'shipping_charge_allowed', 'meta_title', 'meta_description',
+            'shipping_charge_allowed', 'multi_qty_shipping_enabled',
+            'meta_title', 'meta_description',
         ]);
     }
 
@@ -397,9 +398,16 @@ class ProductUiController extends Controller
                 continue;
             }
 
+            // The per-unit rate for units AFTER the first. A blank means "not
+            // configured" → the line falls back to extra × qty. Zero is kept as a
+            // deliberate value: the later units then ship free.
+            $multi = $row['multi_extra_cost'] ?? null;
+            $multi = ($multi === null || $multi === '') ? null : $multi;
+
             $product->shippingCharges()->create([
                 'shipping_zone_id' => $zoneId,
                 'extra_cost' => $extra, // display amount; MoneyCast → minor units
+                'multi_extra_cost' => $multi,
             ]);
         }
     }
@@ -478,6 +486,7 @@ class ProductUiController extends Controller
             'stock_amount' => $product->stock_amount,
             'stock_status' => $product->stock_status,
             'shipping_charge_allowed' => $product->shipping_charge_allowed,
+            'multi_qty_shipping_enabled' => $product->multi_qty_shipping_enabled,
             'meta_title' => $product->meta_title,
             'meta_description' => $product->meta_description,
             'main_image_url' => $this->url($product->main_image),
@@ -489,6 +498,7 @@ class ProductUiController extends Controller
             'shipping_charges' => $product->shippingCharges->map(fn ($c): array => [
                 'shipping_zone_id' => $c->shipping_zone_id,
                 'extra_cost' => $c->extra_cost->toDisplay(),
+                'multi_extra_cost' => $c->multi_extra_cost?->toDisplay(),
             ])->all(),
         ];
     }

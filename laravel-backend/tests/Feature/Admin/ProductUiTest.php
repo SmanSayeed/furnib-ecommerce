@@ -157,8 +157,56 @@ it('saves per-zone shipping charges, persisting only non-zero entries', function
     $product = Product::query()->where('title', 'Big Table')->firstOrFail();
 
     expect($product->shippingCharges()->count())->toBe(1);
-    expect($product->extraPerUnitMinorFor($inside->id))->toBe(2000);
-    expect($product->extraPerUnitMinorFor($outside->id))->toBe(0);
+    expect($product->extraMinorFor($inside->id))->toBe(2000);
+    expect($product->extraMinorFor($outside->id))->toBe(0);
+});
+
+it('saves the additional-unit rate when the multi-quantity option is on', function () {
+    $category = Category::factory()->create();
+    $inside = ShippingZone::factory()->create(['name' => 'Inside Dhaka', 'cost' => 80]);
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Tulip Chair',
+            'price' => '4000',
+            'product_status' => 'published',
+            'multi_qty_shipping_enabled' => '1',
+            'shipping_charges' => [
+                ['shipping_zone_id' => $inside->id, 'extra_cost' => '20', 'multi_extra_cost' => '10'],
+            ],
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product = Product::query()->where('title', 'Tulip Chair')->firstOrFail();
+
+    expect($product->multi_qty_shipping_enabled)->toBeTrue()
+        ->and($product->extraMinorFor($inside->id, 1))->toBe(2000)   // ৳20
+        ->and($product->extraMinorFor($inside->id, 3))->toBe(4000);  // ৳20 + ৳10×2
+});
+
+it('falls back to per-unit when the option is left off', function () {
+    $category = Category::factory()->create();
+    $inside = ShippingZone::factory()->create(['name' => 'Inside Dhaka', 'cost' => 80]);
+
+    actingAs(productManager())
+        ->post('/admin/catalog/products', [
+            'category_id' => $category->id,
+            'title' => 'Plain Chair',
+            'price' => '4000',
+            'product_status' => 'published',
+            // multi_qty_shipping_enabled absent → false
+            'shipping_charges' => [
+                ['shipping_zone_id' => $inside->id, 'extra_cost' => '20', 'multi_extra_cost' => '10'],
+            ],
+        ])
+        ->assertRedirect(route('admin.products.index'));
+
+    $product = Product::query()->where('title', 'Plain Chair')->firstOrFail();
+
+    // The rate is stored, but ignored until the option is ticked.
+    expect($product->multi_qty_shipping_enabled)->toBeFalse()
+        ->and($product->extraMinorFor($inside->id, 3))->toBe(6000); // ৳20 × 3
 });
 
 it('clears a previously set shipping charge on update', function () {
@@ -211,7 +259,7 @@ it('wipes shipping charges and marks the product free when shipping is disabled'
     $product->refresh();
     expect($product->shipping_charge_allowed)->toBeFalse()
         ->and($product->shippingCharges()->count())->toBe(0)
-        ->and($product->extraPerUnitMinorFor($inside->id))->toBe(0);
+        ->and($product->extraMinorFor($inside->id))->toBe(0);
 });
 
 it('defaults shipping_charge_allowed to true when the field is absent', function () {

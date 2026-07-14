@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $stock_status
  * @property int $stock_amount
  * @property bool $shipping_charge_allowed
+ * @property bool $multi_qty_shipping_enabled Cheaper delivery for each unit after the first
  * @property string $product_status
  */
 class Product extends Model
@@ -41,7 +42,7 @@ class Product extends Model
         'main_image', 'social_thumbnail_image', 'price', 'discount_price',
         'is_advance_payment', 'advance_payment_type', 'partial_amount_type', 'partial_amount',
         'is_featured', 'is_new', 'position_order', 'product_status',
-        'stock_amount', 'stock_status', 'shipping_charge_allowed',
+        'stock_amount', 'stock_status', 'shipping_charge_allowed', 'multi_qty_shipping_enabled',
         'meta_title', 'meta_description', 'og_image',
     ];
 
@@ -55,6 +56,7 @@ class Product extends Model
             'is_new' => 'boolean',
             'stock_status' => 'boolean',
             'shipping_charge_allowed' => 'boolean',
+            'multi_qty_shipping_enabled' => 'boolean',
             'stock_amount' => 'integer',
             'position_order' => 'integer',
             'partial_amount' => 'integer',
@@ -80,21 +82,44 @@ class Product extends Model
     }
 
     /**
-     * Per-unit extra delivery cost (in minor units / paisa) for the given
-     * shipping zone, or 0 if this product has no charge configured for it.
+     * The extra delivery cost (paisa) this product adds to ONE ORDER LINE of the
+     * given quantity, in the given zone. Excludes the zone's base cost, which is
+     * charged once per order.
+     *
+     *   option on + a rate for the zone → extra + multi × (qty − 1)
+     *   otherwise                       → extra × qty
+     *
+     * One van goes out either way, so the units after the first cost less to carry.
+     * At qty = 1 both branches give `extra`, which is why turning the option on can
+     * never change a single-item order.
+     *
      * Uses the loaded `shippingCharges` relation when available to avoid N+1.
      */
-    public function extraPerUnitMinorFor(int $zoneId): int
+    public function extraMinorFor(int $zoneId, int $qty = 1): int
     {
-        // A product marked "no delivery charge" never adds a per-unit extra,
-        // regardless of any rows left in shipping_charges.
+        // A product marked "no delivery charge" never adds an extra, regardless of
+        // any rows left behind in shipping_charges.
         if (! $this->shipping_charge_allowed) {
             return 0;
         }
 
+        $qty = max(1, $qty);
         $charge = $this->shippingCharges->firstWhere('shipping_zone_id', $zoneId);
 
-        return $charge?->extra_cost->toMinor() ?? 0;
+        if ($charge === null) {
+            return 0;
+        }
+
+        $extra = $charge->extra_cost->toMinor();
+        $multi = $charge->multi_extra_cost;
+
+        // NULL means "not configured" and falls back to per-unit. Zero, by
+        // contrast, is a deliberate value — the later units then ship free.
+        if (! $this->multi_qty_shipping_enabled || ! $multi instanceof Money) {
+            return $extra * $qty;
+        }
+
+        return $extra + $multi->toMinor() * ($qty - 1);
     }
 
     /**

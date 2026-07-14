@@ -18,14 +18,14 @@ it('exposes a per-unit extra cost for a zone the product has a charge for', func
         'extra_cost' => Money::fromMinor(2000), // ৳20
     ]);
 
-    expect($product->extraPerUnitMinorFor($zone->id))->toBe(2000);
+    expect($product->extraMinorFor($zone->id))->toBe(2000);
 });
 
 it('returns zero extra for a zone the product has no charge for', function () {
     $product = Product::factory()->create();
     $zone = ShippingZone::factory()->create();
 
-    expect($product->extraPerUnitMinorFor($zone->id))->toBe(0);
+    expect($product->extraMinorFor($zone->id))->toBe(0);
 });
 
 it('relates shipping charges to the product', function () {
@@ -45,7 +45,7 @@ it('relates shipping charges to the product', function () {
     ]);
 
     expect($product->shippingCharges()->count())->toBe(2)
-        ->and($product->extraPerUnitMinorFor($zoneB->id))->toBe(4000);
+        ->and($product->extraMinorFor($zoneB->id))->toBe(4000);
 });
 
 it('enforces one charge per product+zone pair', function () {

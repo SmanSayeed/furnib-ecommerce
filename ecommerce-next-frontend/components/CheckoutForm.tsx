@@ -46,9 +46,18 @@ export function CheckoutForm({
     !product.free_shipping;
   const blockedNoZone = needsShippingZone && zones.length === 0;
 
-  // Effective shipping for a zone = base + this product's per-unit extra × qty.
+  // Effective shipping for a zone, mirroring the server exactly:
+  //
+  //   base + first-unit extra + each-further-unit rate × (qty − 1)
+  //
+  // One van goes out either way, so a product can charge less for the units after
+  // the first. When it doesn't, the server sends `multi_extra_per_unit` equal to
+  // `extra_per_unit` and this collapses back to `extra × qty` on its own — so
+  // there is no second branch here to get wrong.
   const zoneCostMinor = (zone: ProductShippingZone): number =>
-    zone.base.minor + zone.extra_per_unit.minor * qty;
+    zone.base.minor +
+    zone.extra_per_unit.minor +
+    zone.multi_extra_per_unit.minor * (qty - 1);
 
   const subtotalMinor = unit.minor * qty;
   // A free-shipping product never adds any delivery charge.

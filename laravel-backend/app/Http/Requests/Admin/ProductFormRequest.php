@@ -54,6 +54,8 @@ class ProductFormRequest extends FormRequest
             'stock_amount' => ['nullable', 'integer', 'min:0'],
             'stock_status' => ['boolean'],
             'shipping_charge_allowed' => ['boolean'],
+            // Cheaper delivery for each unit after the first.
+            'multi_qty_shipping_enabled' => ['boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
 
@@ -71,6 +73,10 @@ class ProductFormRequest extends FormRequest
                 Rule::exists('shipping_zones', 'id')->where('status', true),
             ],
             'shipping_charges.*.extra_cost' => ['nullable', 'numeric', 'min:0'],
+            // Per-unit cost of each unit AFTER the first. Blank = not configured
+            // (fall back to per-unit). Zero is allowed and means "later units ship
+            // free". It may legitimately exceed extra_cost — the admin sets prices.
+            'shipping_charges.*.multi_extra_cost' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -99,6 +105,7 @@ class ProductFormRequest extends FormRequest
             'shipping_charge_allowed' => $this->has('shipping_charge_allowed')
                 ? $this->boolean('shipping_charge_allowed')
                 : true,
+            'multi_qty_shipping_enabled' => $this->boolean('multi_qty_shipping_enabled'),
             'position_order' => $this->input('position_order', 0),
             'stock_amount' => $this->input('stock_amount', 0),
         ]);

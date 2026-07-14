@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingZone;
 use App\Services\Orders\CustomerService;
+use App\Services\Shipping\ShippingCalculator;
 use App\Support\AdvancePayment;
 use App\Support\Money;
 use App\Support\OrderNumber;
@@ -25,7 +26,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class PlaceOrder
 {
-    public function __construct(private readonly CustomerService $customers) {}
+    public function __construct(
+        private readonly CustomerService $customers,
+        private readonly ShippingCalculator $shipping,
+    ) {}
 
     public function handle(PlaceOrderData $data): Order
     {
@@ -136,30 +140,17 @@ final class PlaceOrder
                 }
             }
 
-            // Effective shipping = zone base + Σ per-line (product per-unit extra
-            // for this zone × qty). A product flagged shipping_charge_allowed =
-            // false never contributes: not its per-unit extra, and not a share of
-            // the zone base. The base is charged once, but only when at least one
-            // line in the cart is chargeable — an all-free cart ships free (0).
-            $shippingMinor = 0;
-            if ($zone !== null) {
-                $anyChargeable = false;
-
-                foreach ($lines as $line) {
-                    $product = $products->get($line['product_id']);
-
-                    if ($product === null || ! $product->shipping_charge_allowed) {
-                        continue;
-                    }
-
-                    $anyChargeable = true;
-                    $shippingMinor += $product->extraPerUnitMinorFor($zone->id) * $line['qty'];
-                }
-
-                if ($anyChargeable) {
-                    $shippingMinor += $zone->cost->toMinor();
-                }
-            }
+            // Effective shipping, via the one calculator the admin zone-change path
+            // uses too — so placement and a later correction can never disagree.
+            $shippingMinor = $this->shipping->minorFor(
+                collect($lines)
+                    ->map(fn (array $line): ?array => ($product = $products->get($line['product_id'])) === null
+                        ? null
+                        : ['product' => $product, 'qty' => $line['qty']])
+                    ->filter()
+                    ->values(),
+                $zone,
+            );
 
             // Shipping-charge advance (partial → shipping): the customer prepays
             // the delivery fee of the zone they selected, so a zone is required.

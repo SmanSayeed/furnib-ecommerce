@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Settings;
 
 use App\Models\Setting;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 
 /**
@@ -51,13 +52,30 @@ final class SettingsService
             })->all();
     }
 
+    /**
+     * A secret encrypted under a DIFFERENT APP_KEY (DB moved between environments,
+     * key rotated, `config:cache` baked a build-time key) throws here. Nothing used
+     * to catch it, so the Integrations page 500'd on load with APP_DEBUG=false —
+     * i.e. a blank error and no clue. Degrade to null (= "not set, re-enter it")
+     * and report, so the cause is visible in /admin/dev/errors.
+     */
     private function decrypt(Setting $setting): ?string
     {
         if ($setting->value === null) {
             return null;
         }
 
-        return $setting->is_secret ? Crypt::decryptString($setting->value) : $setting->value;
+        if (! $setting->is_secret) {
+            return $setting->value;
+        }
+
+        try {
+            return Crypt::decryptString($setting->value);
+        } catch (DecryptException $e) {
+            report($e);
+
+            return null;
+        }
     }
 
     /**

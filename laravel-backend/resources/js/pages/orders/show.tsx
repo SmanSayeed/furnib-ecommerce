@@ -6,14 +6,7 @@ import type {Column} from '@/components/admin/data-table';
 import { PageHeader } from '@/components/admin/page-header';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-
-export const PENDING_REASON_LABELS: Record<string, string> = {
-    new_order: 'New order',
-    call_waiting: 'Call waiting',
-    payment_pending: 'Payment pending',
-    need_expert_call: 'Need expert call',
-    other: 'Other',
-};
+import { PENDING_REASON_LABELS } from '@/lib/order-labels';
 
 type Item = {
     title: string;
@@ -81,14 +74,20 @@ type Order = {
     advance_paid: string;
     due: string;
     address: string;
+    /** The CUSTOMER's checkout note — read-only for staff. */
     notes: string | null;
+    /** Staff's own note. Survives every status change. */
+    admin_note: string | null;
     created_at: string | null;
     customer: { name: string | null; mobile: string | null; email: string | null };
     shipping_zone: string | null;
+    shipping_zone_id: number | null;
     items: Item[];
     payments: PaymentRow[];
     shipment: ShipmentInfo | null;
 };
+
+type ZoneOption = { id: number; name: string };
 
 const RISK_STYLES: Record<string, string> = {
     high: 'bg-red-500/15 text-red-600 dark:text-red-400',
@@ -519,10 +518,195 @@ function PaymentsCard({
     );
 }
 
+/**
+ * The admin's own note. Deliberately separate from `notes` (the customer wrote
+ * that at checkout) and from `pending_note` (which the server wipes the moment the
+ * order moves forward). This one survives the whole life of the order.
+ */
+function AdminNoteCard({ order, canEdit }: { order: Order; canEdit: boolean }) {
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Admin note</h2>
+
+            {canEdit ? (
+                <Form
+                    method="put"
+                    action={`/admin/orders/${order.id}/note`}
+                    options={{ preserveScroll: true }}
+                    className="space-y-2"
+                >
+                    {({ processing, errors }) => (
+                        <>
+                            <textarea
+                                name="admin_note"
+                                rows={4}
+                                maxLength={2000}
+                                defaultValue={order.admin_note ?? ''}
+                                placeholder="Internal note — who called, what was promised, why it's late…"
+                                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                            />
+                            <InputError message={errors.admin_note} />
+                            <Button type="submit" variant="outline" className="w-full" disabled={processing}>
+                                Save note
+                            </Button>
+                        </>
+                    )}
+                </Form>
+            ) : (
+                <p className="text-sm whitespace-pre-wrap">{order.admin_note ?? '—'}</p>
+            )}
+
+            {order.notes && (
+                <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">
+                    <span className="font-medium">Customer&apos;s note:</span> {order.notes}
+                </p>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Correct the customer and the delivery address.
+ *
+ * Two different scopes live in one form, and the copy says so: the ADDRESS belongs
+ * to this order, but the name/mobile/email belong to the shared customer record —
+ * editing those updates that person on every order they ever placed. Changing the
+ * ZONE is a money change (shipping → total), so the server recomputes and will
+ * refuse it on a paid order.
+ */
+function CustomerCard({
+    order,
+    zones,
+    canEdit,
+}: {
+    order: Order;
+    zones: ZoneOption[];
+    canEdit: boolean;
+}) {
+    const inputClass = 'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs';
+
+    if (!canEdit) {
+        return (
+            <div className="rounded-xl border bg-card p-4">
+                <h2 className="mb-2 text-sm font-medium text-muted-foreground">Customer</h2>
+                <Row label="Name" value={order.customer.name} />
+                <Row label="Mobile" value={order.customer.mobile} />
+                <Row label="Email" value={order.customer.email} />
+                <Row label="Payment" value={order.payment_status} />
+                <Row label="Zone" value={order.shipping_zone} />
+                <p className="mt-2 border-t pt-2 text-sm whitespace-pre-wrap">{order.address}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-1 text-sm font-medium text-muted-foreground">Customer &amp; delivery</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+                The address belongs to this order. The name, mobile and email belong to the customer —
+                editing them updates every order of theirs.
+            </p>
+
+            {order.shipment && (
+                <p className="mb-3 rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                    A consignment is already booked. The courier still holds the OLD address — cancel and
+                    re-book after saving.
+                </p>
+            )}
+
+            <Form
+                method="put"
+                action={`/admin/orders/${order.id}/customer`}
+                options={{ preserveScroll: true }}
+                className="space-y-2"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <div>
+                            <input
+                                name="name"
+                                type="text"
+                                maxLength={255}
+                                defaultValue={order.customer.name ?? ''}
+                                placeholder="Name"
+                                className={inputClass}
+                            />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div>
+                            <input
+                                name="mobile"
+                                type="tel"
+                                maxLength={20}
+                                required
+                                defaultValue={order.customer.mobile ?? ''}
+                                placeholder="Mobile — 01XXXXXXXXX"
+                                className={inputClass}
+                            />
+                            <InputError message={errors.mobile} />
+                        </div>
+
+                        <div>
+                            <input
+                                name="email"
+                                type="email"
+                                maxLength={255}
+                                defaultValue={order.customer.email ?? ''}
+                                placeholder="Email (optional)"
+                                className={inputClass}
+                            />
+                            <InputError message={errors.email} />
+                        </div>
+
+                        <div>
+                            <textarea
+                                name="address"
+                                rows={3}
+                                maxLength={1000}
+                                required
+                                defaultValue={order.address}
+                                placeholder="Delivery address"
+                                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                            />
+                            <InputError message={errors.address} />
+                        </div>
+
+                        <div>
+                            <select
+                                name="shipping_zone_id"
+                                defaultValue={order.shipping_zone_id ?? ''}
+                                className={inputClass}
+                                aria-label="Shipping zone"
+                            >
+                                <option value="">No zone (free delivery)</option>
+                                {zones.map((z) => (
+                                    <option key={z.id} value={z.id}>
+                                        {z.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Changing the zone recalculates delivery and the total.
+                            </p>
+                            <InputError message={errors.shipping_zone_id} />
+                        </div>
+
+                        <Button type="submit" variant="outline" className="w-full" disabled={processing}>
+                            Save customer &amp; address
+                        </Button>
+                    </>
+                )}
+            </Form>
+        </div>
+    );
+}
+
 export default function OrderShow({
     order,
     nextStatuses,
     pendingReasons,
+    shippingZones,
     canManagePayments,
     courierStats,
     couriers,
@@ -530,6 +714,7 @@ export default function OrderShow({
     order: Order;
     nextStatuses: string[];
     pendingReasons: string[];
+    shippingZones: ZoneOption[];
     canManagePayments: boolean;
     courierStats: CourierStats | null;
     couriers: CourierOption[];
@@ -708,22 +893,13 @@ export default function OrderShow({
                             </Form>
                         </div>
 
-                        <div className="rounded-xl border bg-card p-4">
-                            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Customer</h2>
-                            <Row label="Name" value={order.customer.name} />
-                            <Row label="Mobile" value={order.customer.mobile} />
-                            <Row label="Email" value={order.customer.email} />
-                            <Row label="Payment" value={order.payment_status} />
-                            <Row label="Zone" value={order.shipping_zone} />
-                        </div>
+                        <CustomerCard
+                            order={order}
+                            zones={shippingZones}
+                            canEdit={canManagePayments}
+                        />
 
-                        <div className="rounded-xl border bg-card p-4">
-                            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Delivery address</h2>
-                            <p className="text-sm whitespace-pre-wrap">{order.address}</p>
-                            {order.notes && (
-                                <p className="mt-2 text-sm text-muted-foreground">Notes: {order.notes}</p>
-                            )}
-                        </div>
+                        <AdminNoteCard order={order} canEdit={canManagePayments} />
 
                         {courierStats && <CourierRiskCard stats={courierStats} />}
                     </div>

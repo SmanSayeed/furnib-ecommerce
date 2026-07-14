@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Orders\UpdateOrderCustomer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OrderBulkStatusRequest;
+use App\Http\Requests\Admin\UpdateOrderCustomerRequest;
+use App\Http\Requests\Admin\UpdateOrderNoteRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Courier;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\ShippingZone;
 use App\Repositories\Eloquent\OrderRepository;
 use App\Services\Courier\CustomerCourierStats;
 use App\Support\Money;
@@ -40,6 +44,8 @@ class OrderController extends Controller
                 'total' => $o->total->format(),
                 'status' => $o->status,
                 'pending_reason' => $o->status === 'pending' ? $o->pending_reason : null,
+                'pending_note' => $o->status === 'pending' ? $o->pending_note : null,
+                'admin_note' => $o->admin_note,
                 'payment_status' => $o->payment_status,
                 // The booked courier (name snapshot) + its status, or null when the
                 // order has no shipment yet — drives the list's Courier column.
@@ -56,6 +62,7 @@ class OrderController extends Controller
                 'search' => $listQuery->search ?? '',
                 'status' => $listQuery->filters['status'] ?? '',
                 'payment_status' => $listQuery->filters['payment_status'] ?? '',
+                'pending_reason' => $listQuery->filters['pending_reason'] ?? '',
                 'sort' => $listQuery->sort,
                 'dir' => $listQuery->dir,
                 'range' => $listQuery->dateRange->preset,
@@ -65,6 +72,7 @@ class OrderController extends Controller
             ],
             'statuses' => Order::STATUSES,
             'paymentStatuses' => Order::PAYMENT_STATUSES,
+            'pendingReasons' => Order::PENDING_REASONS,
             // Legal next statuses per current status — drives the inline per-row
             // status dropdown (the server still re-validates every transition).
             'transitions' => Order::TRANSITIONS,
@@ -124,6 +132,7 @@ class OrderController extends Controller
                 'due' => Money::fromMinor($dueMinor)->format(),
                 'address' => $order->address,
                 'notes' => $order->notes,
+                'admin_note' => $order->admin_note,
                 'created_at' => $order->created_at?->toDateTimeString(),
                 'customer' => [
                     'name' => $order->customer?->name,
@@ -131,6 +140,7 @@ class OrderController extends Controller
                     'email' => $order->customer?->email,
                 ],
                 'shipping_zone' => $order->shippingZone?->name,
+                'shipping_zone_id' => $order->shipping_zone_id,
                 'items' => $order->items->map(fn ($i): array => [
                     'title' => $i->title,
                     'sku' => $i->sku,
@@ -164,6 +174,12 @@ class OrderController extends Controller
             ],
             'nextStatuses' => Order::TRANSITIONS[$order->status] ?? [],
             'pendingReasons' => Order::PENDING_REASONS,
+            // Active zones for the delivery-address editor. Changing the zone
+            // recomputes shipping + total server-side.
+            'shippingZones' => ShippingZone::query()->active()->ordered()
+                ->get(['id', 'name'])
+                ->map(fn (ShippingZone $z): array => ['id' => $z->id, 'name' => $z->name])
+                ->all(),
             'canManagePayments' => $request->user()?->can('orders.manage') ?? false,
             // Our own fraud/return-ratio signal for this customer's phone.
             'courierStats' => $fraud,
@@ -272,6 +288,47 @@ class OrderController extends Controller
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Pending reason updated.')]);
+
+        return back();
+    }
+
+    /**
+     * The admin's own note. Unlike `pending_note` (gated to pending, and wiped on
+     * any forward transition) this survives the whole life of the order, so it can
+     * carry the running story: who called, what was promised, why it is late.
+     */
+    public function updateNote(UpdateOrderNoteRequest $request, Order $order): RedirectResponse
+    {
+        $order->update(['admin_note' => $request->validated()['admin_note'] ?? null]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Admin note saved.')]);
+
+        return back();
+    }
+
+    /**
+     * Correct the customer (name/mobile/email) and the order's delivery address and
+     * zone. A zone change recomputes shipping and the total server-side, so the pay
+     * link and the invoice follow automatically.
+     */
+    public function updateCustomer(
+        UpdateOrderCustomerRequest $request,
+        Order $order,
+        UpdateOrderCustomer $updateCustomer,
+    ): RedirectResponse {
+        $order->load(['items', 'customer', 'shipment']);
+
+        /** @var array{name: ?string, email: ?string, mobile: string, address: string, shipping_zone_id: ?int} $data */
+        $data = $request->validated();
+
+        $consignmentIsStale = $updateCustomer->handle($order, $data);
+
+        Inertia::flash('toast', $consignmentIsStale
+            ? [
+                'type' => 'warning',
+                'message' => __('Saved — but this order is already booked with a courier, which still has the OLD address. Cancel and re-book the consignment.'),
+            ]
+            : ['type' => 'success', 'message' => __('Customer and address updated.')]);
 
         return back();
     }

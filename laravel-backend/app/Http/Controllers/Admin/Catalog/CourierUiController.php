@@ -7,7 +7,11 @@ namespace App\Http\Controllers\Admin\Catalog;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CourierFormRequest;
 use App\Models\Courier;
+use App\Support\Courier\CourierException;
+use App\Support\Courier\CourierManager;
+use App\Support\Courier\TestsConnection;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,6 +24,8 @@ use Inertia\Response;
  */
 class CourierUiController extends Controller
 {
+    public function __construct(private readonly CourierManager $couriers) {}
+
     public function index(): Response
     {
         return Inertia::render('shipping/couriers/index', [
@@ -71,9 +77,48 @@ class CourierUiController extends Controller
         $courier->update($data);
         $this->syncDefault($courier);
 
+        // Pathao's OAuth token is cached for days and is returned BEFORE the
+        // credentials are checked — so a corrected password would keep 401-ing
+        // behind the stale token. Drop it whenever the courier is saved.
+        Cache::forget(Courier::pathaoTokenCacheKey($courier->id));
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Courier updated.')]);
 
         return to_route('admin.couriers.index');
+    }
+
+    /**
+     * Prove the stored credentials actually work, without shipping anything.
+     *
+     * Until this existed there was no way to answer "are my keys right?" short of
+     * placing a live order and watching it fail. The provider's real answer is
+     * shown — balance, area count, or the exact rejection.
+     */
+    public function test(Courier $courier): RedirectResponse
+    {
+        $driver = $this->couriers->driverFor($courier);
+
+        if (! $driver instanceof TestsConnection) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __(':name has no API to test — it is booked by hand.', ['name' => $courier->name]),
+            ]);
+
+            return back();
+        }
+
+        try {
+            $message = $driver->testConnection();
+        } catch (CourierException $e) {
+            report($e);
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
+
+        return back();
     }
 
     public function destroy(Courier $courier): RedirectResponse

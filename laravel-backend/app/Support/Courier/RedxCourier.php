@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Courier;
 
 use App\Models\Shipment;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -17,8 +18,10 @@ use RuntimeException;
  *
  * @see https://redx.com.bd/developer-api/
  */
-final class RedxCourier implements CourierGateway, ListsDeliveryAreas
+final class RedxCourier implements CourierGateway, ListsDeliveryAreas, TestsConnection
 {
+    private const NAME = 'RedX';
+
     private const LIVE_URL = 'https://openapi.redx.com.bd/v1.0.0-beta';
 
     private const SANDBOX_URL = 'https://sandbox.redx.com.bd/v1.0.0-beta';
@@ -61,7 +64,7 @@ final class RedxCourier implements CourierGateway, ListsDeliveryAreas
         $trackingId = $response->json('tracking_id');
 
         if (! $response->successful() || blank($trackingId)) {
-            throw new RuntimeException('Failed to create RedX parcel.');
+            throw CourierException::http(self::NAME, $response->status(), $response->body());
         }
 
         return [
@@ -116,6 +119,28 @@ final class RedxCourier implements CourierGateway, ListsDeliveryAreas
         )));
     }
 
+    /**
+     * Read-only area lookup — authenticates the same bearer token booking uses, so
+     * a green result proves the token is live.
+     */
+    public function testConnection(): string
+    {
+        try {
+            $response = $this->client()->get($this->baseUrl().'/areas');
+        } catch (ConnectionException $e) {
+            throw CourierException::unreachable(self::NAME, $e->getMessage());
+        }
+
+        if (! $response->successful()) {
+            throw CourierException::http(self::NAME, $response->status(), $response->body());
+        }
+
+        $areas = $response->json('areas');
+        $count = is_array($areas) ? count($areas) : 0;
+
+        return "RedX connected. {$count} delivery areas available.";
+    }
+
     private function baseUrl(): string
     {
         return $this->sandbox ? self::SANDBOX_URL : self::LIVE_URL;
@@ -124,12 +149,20 @@ final class RedxCourier implements CourierGateway, ListsDeliveryAreas
     private function client(): PendingRequest
     {
         if (blank($this->accessToken)) {
-            throw new RuntimeException('RedX access token is not configured.');
+            throw CourierException::missingCredentials(self::NAME);
         }
 
+        // RedX expects the raw token here; we add the "Bearer " prefix ourselves.
+        // A token pasted WITH the prefix would become "Bearer Bearer …" → 401, so
+        // strip it defensively.
+        $token = preg_replace('/^Bearer\s+/i', '', (string) $this->accessToken) ?? (string) $this->accessToken;
+
         return Http::withHeaders([
-            'API-ACCESS-TOKEN' => 'Bearer '.$this->accessToken,
+            'API-ACCESS-TOKEN' => 'Bearer '.$token,
             'Content-Type' => 'application/json',
-        ]);
+        ])
+            ->connectTimeout(10)
+            ->timeout(20)
+            ->retry(2, 300, throw: false);
     }
 }

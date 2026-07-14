@@ -72,25 +72,21 @@ class RepositoryServiceProvider extends ServiceProvider
         });
 
         // Courier gateways, keyed by driver. Open for extension: RedX/Pathao
-        // register their own factory in later phases without touching callers. A
-        // Steadfast courier reads its own encrypted config, falling back to the
-        // legacy `steadfast` settings so pre-migration installs keep working.
-        $this->app->singleton(CourierManager::class, function ($app): CourierManager {
+        // register their own factory in later phases without touching callers.
+        // The legacy `steadfast` settings fallback now lives in Courier::credential()
+        // so the "configured" gate and this factory can never disagree again.
+        $this->app->singleton(CourierManager::class, function (): CourierManager {
             $manager = new CourierManager;
 
-            $manager->register(Courier::DRIVER_STEADFAST, function (Courier $courier) use ($app): SteadFastCourier {
-                $settings = $app->make(SettingsService::class);
-
-                return new SteadFastCourier(
-                    $courier->credential('api_key') ?? $settings->get('steadfast', 'api_key'),
-                    $courier->credential('secret_key') ?? $settings->get('steadfast', 'secret_key'),
-                );
-            });
+            $manager->register(Courier::DRIVER_STEADFAST, fn (Courier $courier): SteadFastCourier => new SteadFastCourier(
+                $courier->credential('api_key'),
+                $courier->credential('secret_key'),
+            ));
 
             $manager->register(Courier::DRIVER_REDX, fn (Courier $courier): RedxCourier => new RedxCourier(
                 $courier->credential('access_token'),
                 $courier->credential('pickup_store_id'),
-                (bool) ($courier->config['sandbox'] ?? false),
+                (bool) ($courier->safeConfig()['sandbox'] ?? false),
             ));
 
             $manager->register(Courier::DRIVER_PATHAO, fn (Courier $courier): PathaoCourier => new PathaoCourier(
@@ -99,8 +95,8 @@ class RepositoryServiceProvider extends ServiceProvider
                 $courier->credential('username'),
                 $courier->credential('password'),
                 $courier->credential('store_id'),
-                (bool) ($courier->config['sandbox'] ?? false),
-                'courier:pathao:token:'.$courier->id,
+                (bool) ($courier->safeConfig()['sandbox'] ?? false),
+                Courier::pathaoTokenCacheKey($courier->id),
             ));
 
             return $manager;

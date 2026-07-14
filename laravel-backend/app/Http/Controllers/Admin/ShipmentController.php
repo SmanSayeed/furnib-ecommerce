@@ -8,6 +8,7 @@ use App\Actions\Shipments\CreateConsignment;
 use App\Http\Controllers\Controller;
 use App\Models\Courier;
 use App\Models\Order;
+use App\Support\Courier\CourierException;
 use App\Support\Courier\CourierManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,7 +51,19 @@ class ShipmentController extends Controller
         }
 
         $note = $request->filled('note') ? (string) $request->string('note') : null;
-        $createConsignment->handle($order, $courier, $note, $this->metaFor($courier, $request));
+
+        // A provider rejection (bad key, duplicate invoice, blocked egress) used to
+        // escape as an unhandled exception and hit the admin as a white 500 page —
+        // with no way to tell WHICH of those it was. Surface the provider's own
+        // message and keep the full trace in /admin/dev/errors.
+        try {
+            $createConsignment->handle($order, $courier, $note, $this->metaFor($courier, $request));
+        } catch (CourierException $e) {
+            report($e);
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
 
         $message = $courier->isApi()
             ? __('Consignment booked with :name.', ['name' => $courier->name])
@@ -81,7 +94,15 @@ class ShipmentController extends Controller
             return back();
         }
 
-        $shipment->update(['status' => $driver->getStatus((string) $shipment->tracking_code)]);
+        try {
+            $shipment->update(['status' => $driver->getStatus((string) $shipment->tracking_code)]);
+        } catch (CourierException $e) {
+            report($e);
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Tracking status updated.')]);
 
         return back();

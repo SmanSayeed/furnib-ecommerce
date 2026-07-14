@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Courier;
 use App\Support\Courier\CascadesLocations;
+use App\Support\Courier\CourierException;
 use App\Support\Courier\CourierManager;
 use App\Support\Courier\ListsDeliveryAreas;
 use Illuminate\Http\JsonResponse;
@@ -81,10 +82,19 @@ class CourierLocationController extends Controller
     {
         try {
             return response()->json(['options' => $fetch()]);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            // The order page must keep rendering, so we still return an empty list.
+            // But this used to swallow the exception ENTIRELY — a bad credential, an
+            // APP_KEY mismatch and a blocked egress all produced the same amber
+            // message with nothing in the logs. Report it so the real cause lands in
+            // /admin/dev/errors.
+            report($e);
+
             return response()->json([
                 'options' => [],
-                'error' => __('Could not load courier locations. Check the courier credentials and try again.'),
+                'error' => $e instanceof CourierException
+                    ? $e->getMessage()
+                    : __('Could not load courier locations. Check the courier credentials and try again.'),
             ], 200);
         }
     }

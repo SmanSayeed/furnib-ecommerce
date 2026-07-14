@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Places a web order: resolves the customer by mobile, snapshots each line's
- * product price/title/sku, computes subtotal + shipping = total server-side,
+ * effective (discount-aware) price/title/sku plus the saving, computes
+ * subtotal + shipping = total server-side,
  * persists the order + items, decrements stock, and captures IP/UA. Runs in a
  * DB transaction so any failure rolls back cleanly. Audit-logged via the
  * model's Auditable trait.
@@ -70,7 +71,14 @@ final class PlaceOrder
                     throw new DomainException("Insufficient stock for: {$product->title}");
                 }
 
-                $priceMinor = $product->price->toMinor();
+                // The customer is charged what the storefront advertised: the
+                // discounted price when there is a real discount, otherwise the
+                // regular price. Resolved from the DB inside the lock — the client
+                // never sends money.
+                $priceMinor = $product->effectivePrice()->toMinor();
+                $regularMinor = $product->price->toMinor();
+                $discountedLine = $product->effectiveDiscount() !== null;
+
                 $lineMinor = $priceMinor * $qty;
                 $subtotalMinor += $lineMinor;
 
@@ -105,6 +113,12 @@ final class PlaceOrder
                     'title' => $product->title,
                     'sku' => $product->sku,
                     'price' => Money::fromMinor($priceMinor),
+                    // Snapshot the saving so it survives the order: NULL when the
+                    // line was not discounted, so historic rows stay valid.
+                    'original_price' => $discountedLine ? Money::fromMinor($regularMinor) : null,
+                    'discount_amount' => Money::fromMinor(
+                        $discountedLine ? ($regularMinor - $priceMinor) * $qty : 0,
+                    ),
                     'qty' => $qty,
                     'line_total' => Money::fromMinor($lineMinor),
                 ];

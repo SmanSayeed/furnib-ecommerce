@@ -19,6 +19,9 @@ type Item = {
     title: string;
     sku: string | null;
     price: string;
+    /** Regular price — only present when the line carried a product discount. */
+    original_price: string | null;
+    discount_amount: string | null;
     qty: number;
     line_total: string;
 };
@@ -544,7 +547,20 @@ export default function OrderShow({
                 </div>
             ),
         },
-        { key: 'price', header: 'Price', cell: (i) => i.price },
+        {
+            key: 'price',
+            header: 'Price',
+            cell: (i) =>
+                i.original_price ? (
+                    <div>
+                        <span className="text-xs text-muted-foreground line-through">{i.original_price}</span>{' '}
+                        <span className="font-medium">{i.price}</span>
+                        <div className="text-xs text-emerald-600 dark:text-emerald-400">saved {i.discount_amount}</div>
+                    </div>
+                ) : (
+                    i.price
+                ),
+        },
         { key: 'qty', header: 'Qty', cell: (i) => i.qty },
         { key: 'line_total', header: 'Line total', align: 'right', cell: (i) => <span className="font-medium">{i.line_total}</span> },
     ];

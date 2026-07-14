@@ -38,9 +38,11 @@ final class ProductFeed
                 'availability' => $p->isInStock() ? 'in stock' : 'out of stock',
                 'condition' => 'new',
                 // price is always the regular price; sale_price carries the discount.
+                // Meta rejects a sale_price that is not strictly below price, so
+                // only an EFFECTIVE discount is emitted.
                 'price' => number_format($p->price->toDisplay(), 2, '.', '').' BDT',
-                'sale_price' => $p->discount_price !== null
-                    ? number_format($p->discount_price->toDisplay(), 2, '.', '').' BDT'
+                'sale_price' => $p->effectiveDiscount() !== null
+                    ? number_format($p->effectiveDiscount()->toDisplay(), 2, '.', '').' BDT'
                     : '',
                 // Real storefront landing page (must not 404 — catalog ads link here).
                 'link' => $base.'/product/'.$p->slug,

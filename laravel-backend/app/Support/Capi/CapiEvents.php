@@ -71,7 +71,7 @@ final class CapiEvents
     {
         $qty = max(1, $qty);
         $sku = $product->sku !== '' ? $product->sku : (string) $product->id;
-        $unit = $product->discount_price ?? $product->price;
+        $unit = $product->effectivePrice();
 
         return new CapiEvent(
             eventName: $event,

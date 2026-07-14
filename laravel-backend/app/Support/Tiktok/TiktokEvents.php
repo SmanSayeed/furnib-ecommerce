@@ -65,7 +65,7 @@ final class TiktokEvents
     {
         $qty = max(1, $qty);
         $sku = $product->sku !== '' ? $product->sku : (string) $product->id;
-        $unit = $product->discount_price ?? $product->price;
+        $unit = $product->effectivePrice();
 
         return new TiktokEvent(
             eventName: self::NAMES[$metaName] ?? $metaName,

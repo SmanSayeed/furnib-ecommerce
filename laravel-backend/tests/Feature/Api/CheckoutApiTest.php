@@ -31,6 +31,19 @@ function checkoutPayload(Product $product, ShippingZone $zone, array $overrides 
     ], $overrides);
 }
 
+it('bills a discounted product at its discounted price end to end', function () {
+    // The reported bug, at the real HTTP boundary: the storefront advertises the
+    // discounted price and posts only {product_id, qty}. The order the API creates
+    // must carry the discounted total — that same number is what SSLCommerz charges.
+    $product = publishedProduct(['price' => 10000, 'discount_price' => 8000]);
+    $zone = ShippingZone::factory()->create(['cost' => 80]);
+
+    $this->postJson('/api/v1/orders', checkoutPayload($product, $zone))
+        ->assertCreated()
+        ->assertJsonPath('data.subtotal.minor', 1600000)  // 8,000 × 2 — not 10,000 × 2
+        ->assertJsonPath('data.total.minor', 1608000);    // + ৳80 delivery
+});
+
 it('places an order and returns 201 with totals', function () {
     $product = publishedProduct();
     $zone = ShippingZone::factory()->create(['cost' => 80]);

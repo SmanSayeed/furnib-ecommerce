@@ -141,6 +141,6 @@ stored **encrypted in the DB** — they do NOT go in env.
 
 - [ ] Storefront loads; admin login works; place a test order (COD + online).
 - [ ] Media (R2) images load on storefront.
-- [ ] `https://admin.<domain>/feed/products.csv` returns the catalog feed.
+- [ ] Product feed enabled at Marketing → Facebook Commerce; the secured `/feed/{slug}/products.csv` (Basic auth) returns the catalog. (The old public `/feed/products.csv` is removed.)
 - [ ] (Later) GTM / Pixel / CAPI token in **Admin → Marketing → Tracking & Pixels**.
 - [ ] TrustProxies set (see §3).

@@ -39,13 +39,14 @@ it('never leaks any configured secret through a public endpoint', function () {
         $settings->set($group, $key, $value, isSecret: true);
     }
 
+    // NB: the product feed is deliberately NOT in this list — it is no longer a
+    // public endpoint (Basic-auth + unguessable path); see ProductFeedTest.
     $publicEndpoints = [
         '/api/v1/marketing',
         '/api/v1/settings',
         '/api/v1/maintenance',
         '/sitemap.xml',
         '/robots.txt',
-        '/feed/products.csv',
     ];
 
     foreach ($publicEndpoints as $endpoint) {

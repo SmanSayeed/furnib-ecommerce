@@ -35,8 +35,11 @@ Route::redirect('/', '/login')->name('home');
 Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
-// Public product feed (Meta/Google Merchant).
-Route::get('feed/products.csv', [FeedController::class, 'products'])->name('feed.products');
+// Product feed (Meta/Google Merchant) — NOT public. Gated by an unguessable path
+// segment + HTTP Basic auth (see FeedController/FeedAccess) and rate-limited so
+// the full catalogue can't be scraped. Meta's scheduled fetch runs hourly.
+Route::get('feed/{token}/products.csv', [FeedController::class, 'products'])
+    ->middleware('throttle:30,60')->name('feed.products');
 
 // Customer invoice download — signed URL only (handed out on the success page).
 Route::get('invoice/{order}', [InvoiceDownloadController::class, 'show'])

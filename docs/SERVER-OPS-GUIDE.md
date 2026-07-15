@@ -330,6 +330,6 @@ The first-deploy steps (§3) are for a fresh server. For shipping a **new commit
 - [ ] migrate + seed done; admin login works
 - [ ] Storage = R2; product image upload works
 - [ ] Real domains + Let's Encrypt + Cloudflare Full(Strict)
-- [ ] Test order (COD + online); R2 images load; feed at `/feed/products.csv`
+- [ ] Test order (COD + online); R2 images load; product feed enabled + reachable at the secured `/feed/{slug}/products.csv` (Marketing → Facebook Commerce)
 - [ ] `TrustProxies` set (correct client IP/HTTPS); GTM/Pixel/CAPI IDs in Admin → Marketing
 - [ ] `APP_DEBUG=false`, secrets only in EasyPanel/encrypted DB, DB not public

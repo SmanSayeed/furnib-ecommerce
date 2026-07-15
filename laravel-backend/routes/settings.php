@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\FacebookCommerceController;
 use App\Http\Controllers\Settings\FooterDetailController;
 use App\Http\Controllers\Settings\FooterSocialController;
 use App\Http\Controllers\Settings\IntegrationSettingController;
@@ -57,6 +58,12 @@ Route::middleware(['auth', 'permission:settings.manage'])->group(function () {
 Route::middleware(['auth', 'permission:marketing.manage'])->group(function () {
     Route::get('settings/marketing', [MarketingSettingController::class, 'edit'])->name('marketing-settings.edit');
     Route::post('settings/marketing', [MarketingSettingController::class, 'update'])->name('marketing-settings.update');
+
+    // Facebook Commerce — scheduled feed URL + credentials + category-filtered export.
+    Route::get('settings/facebook-commerce', [FacebookCommerceController::class, 'edit'])->name('facebook-commerce.edit');
+    Route::post('settings/facebook-commerce', [FacebookCommerceController::class, 'update'])->name('facebook-commerce.update');
+    Route::post('settings/facebook-commerce/regenerate', [FacebookCommerceController::class, 'regenerate'])->name('facebook-commerce.regenerate');
+    Route::get('settings/facebook-commerce/download', [FacebookCommerceController::class, 'download'])->name('facebook-commerce.download');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

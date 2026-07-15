@@ -82,6 +82,7 @@ const navGroups: AdminNavGroup[] = [
         permission: 'marketing.manage',
         items: [
             { title: 'Tracking & Pixels', href: '/settings/marketing', icon: Megaphone },
+            { title: 'Facebook Commerce', href: '/settings/facebook-commerce', icon: Store },
         ],
     },
     {

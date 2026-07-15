@@ -160,7 +160,7 @@ result for the backend.
 ## Phase 6 — Verify & go-live
 
 - Storefront loads; admin login; place a COD + an online test order; R2 images load.
-- `https://admin.<domain>/feed/products.csv` returns the feed.
+- The product feed is enabled at Marketing → Facebook Commerce; its secured URL (`/feed/{slug}/products.csv`, HTTP Basic auth) returns the catalog. The bare `/feed/products.csv` is intentionally gone (was public).
 
 ## Phase 7 — Hardening
 

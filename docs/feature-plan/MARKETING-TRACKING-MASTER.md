@@ -203,7 +203,7 @@ Backend TDD with a faked CAPI (no real network); storefront tsc/eslint-clean.
      this is what de-dupes against our server CAPI. Map value/currency/content_ids from the dataLayer.
    - (Optional) **Clarity** tag on All Pages.
 4. **Test** with Meta **Test Events** (paste the code into the Test event code field for QA) + GA4 **DebugView**. Confirm each event shows **once** (server + browser deduped).
-5. **Catalog ads (Phase 3):** Commerce Manager → add a **data feed** = `https://<api-domain>/feed/products.csv` (scheduled refresh). Same feed → Google Merchant Center. `content_ids` (sku) already match.
+5. **Catalog ads (Phase 3):** enable the feed at Marketing → Facebook Commerce, then in Commerce Manager add a **scheduled data feed** = the secured `https://<api-domain>/feed/{slug}/products.csv` with the Basic-auth username/password (1-hour interval). Same feed → Google Merchant Center. `content_ids` (sku) already match.
 
 ## 11. Deploy notes / caveats
 - **Trusted proxies:** `client_ip_address` in CAPI is only correct if Laravel trusts the storefront/edge proxy (`X-Forwarded-For`). Set `App\Http\Middleware\TrustProxies` before launch — otherwise the proxy IP is sent.

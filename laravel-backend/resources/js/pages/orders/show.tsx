@@ -69,6 +69,8 @@ type Order = {
     pending_note: string | null;
     payment_status: string;
     subtotal: string;
+    discount: string;
+    discount_note: string | null;
     shipping_cost: string;
     total: string;
     advance_paid: string;
@@ -418,6 +420,15 @@ function Row({ label, value }: { label: string; value: string | null }) {
     );
 }
 
+/** Whether a server-formatted money string represents a non-zero amount. */
+function moneyIsNonZero(formatted: string | null | undefined): boolean {
+    if (!formatted) {
+return false;
+}
+
+    return Number(formatted.replace(/[^0-9.]/g, '')) > 0;
+}
+
 const PAYMENT_STATUS_STYLES: Record<string, string> = {
     success: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
     failed: 'bg-red-500/15 text-red-600 dark:text-red-400',
@@ -561,6 +572,72 @@ function AdminNoteCard({ order, canEdit }: { order: Order; canEdit: boolean }) {
                     <span className="font-medium">Customer&apos;s note:</span> {order.notes}
                 </p>
             )}
+        </div>
+    );
+}
+
+/**
+ * Order-level discount. A money change: it moves the total, hence the due and the
+ * amount the pay link + invoice charge — so the server rejects it on a paid or
+ * already-booked order and shows the reason here. Zero clears the discount.
+ */
+function DiscountCard({ order, canEdit }: { order: Order; canEdit: boolean }) {
+    const current = Number((order.discount ?? '').replace(/[^0-9.]/g, '')) || 0;
+
+    if (!canEdit) {
+        return moneyIsNonZero(order.discount) ? (
+            <div className="rounded-xl border bg-card p-4">
+                <h2 className="mb-1 text-sm font-medium text-muted-foreground">Discount</h2>
+                <p className="text-sm font-medium">− {order.discount}</p>
+                {order.discount_note && <p className="mt-1 text-xs text-muted-foreground">{order.discount_note}</p>}
+            </div>
+        ) : null;
+    }
+
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Discount</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+                A goodwill discount off the goods. The pay link, due and invoice follow automatically. Set 0 to clear.
+                Not allowed on a paid or already-booked order.
+            </p>
+            <Form
+                method="put"
+                action={`/admin/orders/${order.id}/discount`}
+                options={{ preserveScroll: true }}
+                className="space-y-3"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <div>
+                            <label className="mb-1 block text-xs text-muted-foreground">Discount amount (৳)</label>
+                            <input
+                                type="number"
+                                name="discount"
+                                min={0}
+                                step={1}
+                                defaultValue={current}
+                                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            />
+                            <InputError message={errors.discount} />
+                        </div>
+                        <div>
+                            <input
+                                type="text"
+                                name="note"
+                                maxLength={500}
+                                defaultValue={order.discount_note ?? ''}
+                                placeholder="Reason (required for a non-zero discount)"
+                                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            />
+                            <InputError message={errors.note} />
+                        </div>
+                        <Button type="submit" variant="outline" className="w-full" disabled={processing}>
+                            Apply discount
+                        </Button>
+                    </>
+                )}
+            </Form>
         </div>
     );
 }
@@ -789,6 +866,12 @@ export default function OrderShow({
                             />
                             <div className="mt-3 space-y-1 border-t pt-3">
                                 <Row label="Subtotal" value={order.subtotal} />
+                                {moneyIsNonZero(order.discount) && (
+                                    <div className="flex justify-between gap-4 text-sm text-emerald-600 dark:text-emerald-400">
+                                        <span>Discount{order.discount_note ? ` — ${order.discount_note}` : ''}</span>
+                                        <span className="text-right">− {order.discount}</span>
+                                    </div>
+                                )}
                                 <Row label="Shipping" value={order.shipping_cost} />
                                 <Row label="Total" value={order.total} />
                                 <Row label="Advance paid" value={order.advance_paid} />
@@ -898,6 +981,8 @@ export default function OrderShow({
                             zones={shippingZones}
                             canEdit={canManagePayments}
                         />
+
+                        <DiscountCard order={order} canEdit={canManagePayments} />
 
                         <AdminNoteCard order={order} canEdit={canManagePayments} />
 

@@ -7,6 +7,7 @@ namespace App\Actions\Orders;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingZone;
+use App\Services\Orders\RecalculateOrderTotals;
 use App\Services\Payments\OrderPaymentReconciler;
 use App\Services\Shipping\ShippingCalculator;
 use App\Support\Money;
@@ -99,7 +100,11 @@ final class UpdateOrderCustomer
             ->values();
 
         $shippingMinor = $this->shipping->minorFor($lines, $zone);
-        $totalMinor = $order->subtotal->toMinor() + $shippingMinor;
+        // Set the new shipping first, then resolve the total through the single
+        // invariant (subtotal − discount + shipping) so a discounted order keeps
+        // its discount when the zone changes.
+        $order->shipping_cost = Money::fromMinor($shippingMinor);
+        $totalMinor = RecalculateOrderTotals::totalMinor($order);
 
         // Never let a recompute leave the customer owed money without an explicit
         // refund decision — that is a different, deliberate action.

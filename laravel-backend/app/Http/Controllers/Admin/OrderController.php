@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Orders\ApplyOrderDiscount;
 use App\Actions\Orders\UpdateOrderCustomer;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ApplyOrderDiscountRequest;
 use App\Http\Requests\Admin\OrderBulkStatusRequest;
 use App\Http\Requests\Admin\UpdateOrderCustomerRequest;
 use App\Http\Requests\Admin\UpdateOrderNoteRequest;
@@ -126,6 +128,8 @@ class OrderController extends Controller
                 'pending_note' => $order->pending_note,
                 'payment_status' => $order->payment_status,
                 'subtotal' => $order->subtotal->format(),
+                'discount' => $order->discount->format(),
+                'discount_note' => $order->discount_note,
                 'shipping_cost' => $order->shipping_cost->format(),
                 'total' => $order->total->format(),
                 'advance_paid' => $order->advance_paid->format(),
@@ -329,6 +333,33 @@ class OrderController extends Controller
                 'message' => __('Saved — but this order is already booked with a courier, which still has the OLD address. Cancel and re-book the consignment.'),
             ]
             : ['type' => 'success', 'message' => __('Customer and address updated.')]);
+
+        return back();
+    }
+
+    /**
+     * Apply (or clear) an order-level discount. Reduces the total, hence the due
+     * and the amount the pay link + invoice charge — so it is guarded on paid /
+     * booked / over-discount / below-paid edges inside the action. A zero amount
+     * clears any existing discount.
+     */
+    public function applyDiscount(
+        ApplyOrderDiscountRequest $request,
+        Order $order,
+        ApplyOrderDiscount $applyDiscount,
+    ): RedirectResponse {
+        $order->loadMissing('shipment');
+
+        $data = $request->validated();
+
+        $applyDiscount->handle(
+            $order,
+            (int) $request->integer('discount_minor'),
+            $data['note'] ?? null,
+            $request->user(),
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Discount applied.')]);
 
         return back();
     }

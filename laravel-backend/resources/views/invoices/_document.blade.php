@@ -8,6 +8,9 @@
     // the discount: gross − discount + delivery = total.
     $itemDiscountMinor = $order->items->sum(fn ($i) => $i->discount_amount?->toMinor() ?? 0);
     $grossSubtotalMinor = $order->subtotal->toMinor() + $itemDiscountMinor;
+    // Order-level discount (admin-granted after placement), shown as its own line
+    // only when non-zero. gross − itemDiscount − orderDiscount + delivery = total.
+    $orderDiscountMinor = $order->discount?->toMinor() ?? 0;
     $courier = $order->shipment?->courier;
     $zone = $order->shippingZone?->name;
     $payMethod = match ($order->payment_status) {
@@ -103,6 +106,9 @@
                     <tr><td>Sub Total:</td><td class="right">{{ $tkMinor($grossSubtotalMinor) }}</td></tr>
                     <tr><td>Delivery:</td><td class="right">{{ $tk($order->shipping_cost) }}</td></tr>
                     <tr><td>Discount:</td><td class="right">{{ $tkMinor($itemDiscountMinor) }}</td></tr>
+                    @if ($orderDiscountMinor > 0)
+                        <tr><td>Order Discount:</td><td class="right">{{ $tkMinor($orderDiscountMinor) }}</td></tr>
+                    @endif
                     <tr><td>Total:</td><td class="right">{{ $tk($order->total) }}</td></tr>
                     <tr><td>Advance Paid:</td><td class="right">{{ $tkMinor($advancePaidMinor) }}</td></tr>
                     <tr class="payable">

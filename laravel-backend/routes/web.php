@@ -149,6 +149,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // A zone change recomputes shipping + total server-side.
     Route::put('orders/{order}/customer', [OrderController::class, 'updateCustomer'])
         ->middleware('permission:orders.manage')->name('orders.customer');
+    // Order-level admin discount (0 clears it). Recomputes total + reconciles.
+    Route::put('orders/{order}/discount', [OrderController::class, 'applyDiscount'])
+        ->middleware('permission:orders.manage')->name('orders.discount');
     // Manual payment ledger adjustment (credit = received, debit = refund).
     Route::post('orders/{order}/payments', [OrderPaymentController::class, 'store'])
         ->middleware('permission:orders.manage')->name('orders.payments.store');

@@ -28,6 +28,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $pending_note
  * @property string $payment_status
  * @property Money $subtotal
+ * @property Money $discount Order-level admin discount (paisa). 0 = none.
+ * @property string|null $discount_note
+ * @property int|null $discount_by
  * @property Money $shipping_cost
  * @property Money $total
  * @property Money $advance_amount
@@ -86,7 +89,8 @@ class Order extends Model
 
     protected $fillable = [
         'order_no', 'customer_id', 'status', 'pending_reason', 'pending_note', 'payment_status',
-        'subtotal', 'shipping_cost', 'total', 'advance_amount', 'advance_paid',
+        'subtotal', 'discount', 'discount_note', 'discount_by',
+        'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes', 'admin_note',
         'fbp', 'fbc', 'ttp', 'ttclid', 'ga_client_id', 'marketing_purchase_sent_at',
         'terms_accepted_at', 'terms_ip',
@@ -96,6 +100,7 @@ class Order extends Model
     {
         return [
             'subtotal' => MoneyCast::class,
+            'discount' => MoneyCast::class,
             'shipping_cost' => MoneyCast::class,
             'total' => MoneyCast::class,
             'advance_amount' => MoneyCast::class,

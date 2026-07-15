@@ -5,12 +5,48 @@ declare(strict_types=1);
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
+use App\Support\Money;
 use Database\Seeders\PermissionRoleSeeder;
 
 use function Pest\Laravel\actingAs;
 
 beforeEach(function () {
     $this->seed(PermissionRoleSeeder::class);
+});
+
+function renderInvoice(Order $order): string
+{
+    return view('invoices.order', [
+        'order' => $order,
+        'siteName' => 'Furnib',
+        'logoUrl' => null,
+        'company' => ['name' => 'Furnib', 'website' => null, 'address' => null, 'phone' => null, 'email' => null],
+    ])->render();
+}
+
+it('shows an order-level discount line when the order is discounted', function () {
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(1)->state([
+            'price' => Money::fromMinor(1000000), 'qty' => 1, 'line_total' => Money::fromMinor(1000000),
+        ]), 'items')
+        ->create([
+            'subtotal' => Money::fromMinor(1000000),
+            'discount' => Money::fromMinor(50000),      // ৳500 off
+            'shipping_cost' => Money::fromMinor(10000),
+            'total' => Money::fromMinor(960000),
+        ]);
+
+    expect(renderInvoice($order))
+        ->toContain('Order Discount:')
+        ->toContain('500Tk.');
+});
+
+it('omits the order-discount line when there is no order discount', function () {
+    $order = Order::factory()
+        ->has(OrderItem::factory()->count(1), 'items')
+        ->create(['discount' => Money::fromMinor(0)]);
+
+    expect(renderInvoice($order))->not->toContain('Order Discount:');
 });
 
 it('downloads an order invoice as a PDF for orders.view staff', function () {

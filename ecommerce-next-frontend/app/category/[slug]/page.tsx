@@ -17,9 +17,19 @@ export async function generateMetadata({
   const data = await getCategory(slug);
   if (!data) return { title: "Not found" };
   const { category } = data;
+  const ogImage =
+    imageUrl(category.header_image) ?? imageUrl(category.thumbnail_image);
   return {
     title: category.seo.meta_title ?? category.title,
     description: category.seo.meta_description ?? category.details ?? undefined,
+    openGraph: {
+      title: category.seo.meta_title ?? category.title,
+      description: category.seo.meta_description ?? category.details ?? undefined,
+      type: "website",
+      images: ogImage
+        ? [{ url: ogImage, secureUrl: ogImage, width: 1200, height: 630, alt: category.title }]
+        : undefined,
+    },
   };
 }
 
@@ -45,11 +55,14 @@ export default async function CategoryPage({
 
   return (
     <div>
-      <section className="relative mt-3 h-[22vh] w-full overflow-hidden rounded-card border border-border sm:h-[50vh]">
+      {/* An ASPECT box, not a viewport-height box: the banner keeps the same
+          shape on every screen, so object-cover has nothing left to crop. The
+          aspect switch is at md: to match the <source> breakpoint below — mobile
+          portrait (800×1000 = 4/5), desktop landscape (1600×600 = 8/3). */}
+      <section className="relative mt-3 aspect-4/5 w-full overflow-hidden rounded-card border border-border md:aspect-8/3">
         {desktopHeader ? (
           <picture className="block h-full w-full">
             <source media="(min-width:768px)" srcSet={desktopHeader} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={mobileHeader ?? desktopHeader}
               alt={category.title}

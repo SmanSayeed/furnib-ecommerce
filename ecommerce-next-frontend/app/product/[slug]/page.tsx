@@ -18,13 +18,31 @@ export async function generateMetadata({
   if (!product) return { title: "Not found" };
 
   const image = product.social_thumbnail || product.main_image;
+  const imageAbsolute = imageUrl(image);
+  const url = `${config.siteUrl}/product/${product.slug}`;
   return {
     title: product.seo.meta_title ?? product.title,
     description: product.seo.meta_description ?? product.details ?? undefined,
+    alternates: { canonical: url },
     openGraph: {
       title: product.seo.meta_title ?? product.title,
-      images: image ? [{ url: imageUrl(image) ?? "" }] : undefined,
+      description: product.seo.meta_description ?? product.details ?? undefined,
+      url,
       type: "website",
+      // A fully-specified OG image so WhatsApp/Facebook render a proper preview
+      // card. width/height/secure_url matter — crawlers skip images they can't
+      // size, and secure_url is required over HTTPS.
+      images: imageAbsolute
+        ? [
+            {
+              url: imageAbsolute,
+              secureUrl: imageAbsolute,
+              width: 1200,
+              height: 630,
+              alt: product.title,
+            },
+          ]
+        : undefined,
     },
   };
 }

@@ -23,6 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const tagline = settings?.tagline || config.tagline;
 
   return {
+    // Absolute base for every relative OG/canonical URL — without this, social
+    // crawlers (WhatsApp, Facebook) can't resolve a product's og:image and show
+    // no preview. Set NEXT_PUBLIC_SITE_URL to the production origin at build time.
+    metadataBase: new URL(config.siteUrl),
     title: {
       default: `${name} — ${tagline}`,
       template: `%s — ${name}`,

@@ -38,13 +38,17 @@ export default function PayPage() {
   const [paying, setPaying] = useState<string | null>(null);
 
   useEffect(() => {
-    if (order === "" || token === "") {
-      setError("This payment link is invalid.");
-      setLoading(false);
-      return;
-    }
     let alive = true;
+    // All state updates live inside the async body — never synchronously in the
+    // effect, which would trigger cascading renders.
     (async () => {
+      if (order === "" || token === "") {
+        if (alive) {
+          setError("This payment link is invalid.");
+          setLoading(false);
+        }
+        return;
+      }
       try {
         const res = await fetch(
           `/api/pay-summary?order=${encodeURIComponent(order)}&t=${encodeURIComponent(token)}`,

@@ -1,5 +1,4 @@
 import { config } from "./config";
-import { imageUrl } from "./image";
 import type { Product } from "./types";
 
 /**
@@ -34,16 +33,17 @@ export function whatsappInquiry(
   number?: string | null,
 ): string {
   const price = product.discount_price ?? product.price;
-  // WhatsApp deep links carry text only (no attachments), so the main photo is
-  // sent as its absolute URL — WhatsApp renders a link preview of it. Only the
-  // product name, SKU, price and main photo are included (no details).
-  const photo = imageUrl(product.main_image);
+  // WhatsApp renders a link PREVIEW (thumbnail + title) by crawling the OG tags
+  // of the FIRST URL in the text. A bare image-file URL has no OG tags, so it
+  // showed nothing — the old bug. Send the product PAGE url instead and let its
+  // OG image (see product/[slug] generateMetadata) drive the thumbnail.
+  const url = `${config.siteUrl}/product/${product.slug}`;
   const lines = [
     `*Inquiry — ${product.title}*`,
     `SKU: ${product.sku}`,
     `Price: ${price.formatted}`,
-    photo ? `\n${photo}` : "",
-  ].filter(Boolean);
+    `\n${url}`,
+  ];
   return link(lines.join("\n"), number);
 }
 

@@ -7,10 +7,11 @@ import { trackViewContent } from "@/lib/track";
 type CaptionItem = { sku: string; name: string; price: number };
 
 /**
- * Facebook-style post caption. Collapsed it is a FIXED two-line block, with an
- * inline "See more" sitting at the END of the second line (not on a third line)
- * — every card's caption is the same height, so the media below stays aligned.
- * "See more" only appears when the text actually overflows two lines.
+ * Facebook-style post caption. Collapsed it clamps to two lines (an ellipsis ends
+ * line 2), and when the text overflows a "See more" appears on its OWN line below,
+ * with a gap — never overlaid on the text (an overlay bled the clipped words
+ * through on the semi-transparent card). The caption block reserves a min height so
+ * one-line captions don't collapse the card and the grid stays tidy.
  *
  * Opening "See more" is our `view_item` signal (the storefront has no separate
  * product page), so the click fires ViewContent / view_item once.
@@ -39,35 +40,34 @@ export function ProductCaption({
   };
 
   return (
-    <div className="px-3 sm:px-4">
-      <div className="relative">
-        <p
-          ref={ref}
-          className={`whitespace-pre-line text-sm leading-relaxed text-foreground ${
-            expanded ? "" : "line-clamp-2 min-h-[2.6em]"
-          }`}
-        >
-          {text}
-        </p>
+    <div className="flex min-h-[2.6em] flex-col gap-1.5 px-3 sm:px-4">
+      <p
+        ref={ref}
+        className={`whitespace-pre-line text-sm leading-relaxed text-foreground ${
+          expanded ? "" : "line-clamp-2"
+        }`}
+      >
+        {text}
+      </p>
 
-        {/* Inline at the end of line 2 — a left-fading mask hides the clipped
-            word so "See more" reads cleanly instead of dropping to a 3rd line. */}
-        {clamped && !expanded && (
-          <button
-            type="button"
-            onClick={expand}
-            className="absolute right-0 bottom-0 flex items-center bg-gradient-to-l from-surface from-40% to-transparent pl-10 text-sm font-semibold text-accent"
-          >
-            … See more
-          </button>
-        )}
-      </div>
+      {/* A normal block on its own line, left-aligned, with a gap above — no
+          overlay, so nothing bleeds through the semi-transparent card. py-1
+          gives the tap target height on top of the line box. */}
+      {clamped && !expanded && (
+        <button
+          type="button"
+          onClick={expand}
+          className="self-start py-1 text-sm font-semibold text-accent underline-offset-2 hover:underline"
+        >
+          See more
+        </button>
+      )}
 
       {expanded && (
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="mt-1 text-sm font-semibold text-muted transition hover:text-accent"
+          className="self-start py-1 text-sm font-semibold text-muted transition hover:text-accent"
         >
           See less
         </button>

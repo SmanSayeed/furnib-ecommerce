@@ -630,6 +630,13 @@ params.to = extra.to;
                 <PageHeader
                     title="Orders"
                     description={`${meta.total} order${meta.total === 1 ? '' : 's'} placed.`}
+                    actions={
+                        canBook ? (
+                            <Button asChild>
+                                <Link href="/admin/orders/create">+ Create order</Link>
+                            </Button>
+                        ) : undefined
+                    }
                 />
 
                 <FilterBar

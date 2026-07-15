@@ -122,6 +122,15 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('orders', [OrderController::class, 'index'])
         ->middleware('permission:orders.view')->name('orders.index');
 
+    // Admin-created orders (staff placing on a customer's behalf). Declared before
+    // the {order} wildcard so "create" / "product-search" aren't captured as an id.
+    Route::get('orders/create', [OrderController::class, 'create'])
+        ->middleware('permission:orders.manage')->name('orders.create');
+    Route::post('orders', [OrderController::class, 'store'])
+        ->middleware('permission:orders.manage')->name('orders.store');
+    Route::get('orders/product-search', [OrderController::class, 'productSearch'])
+        ->middleware('permission:orders.manage')->name('orders.product-search');
+
     // Bulk actions — declared before the {order} wildcard. Downloads are GET
     // (id list / filter in the query); the status change is a guarded mutation.
     Route::get('orders/bulk/invoices', [InvoiceController::class, 'bulkInvoices'])

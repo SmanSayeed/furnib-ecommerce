@@ -7,7 +7,13 @@ namespace App\DTOs;
 final class PlaceOrderData
 {
     /**
-     * @param  array<int, array{product_id:int, qty:int}>  $items
+     * @param  array<int, array{product_id:int, qty:int, price_override?:int}>  $items
+     *                                                                                  `price_override` (minor units) is honoured ONLY when $source === 'admin'.
+     * @param  string  $source  'storefront' (public checkout) | 'admin' (staff-created).
+     *                          Every override below is IGNORED unless this is 'admin'.
+     * @param  int|null  $createdBy  staff user id for an admin-created order
+     * @param  int|null  $discountMinor  order-level discount (admin only)
+     * @param  int|null  $shippingOverrideMinor  manual shipping override (admin only)
      */
     public function __construct(
         public readonly array $items,
@@ -24,5 +30,15 @@ final class PlaceOrderData
         public readonly ?string $ttp = null,
         public readonly ?string $ttclid = null,
         public readonly ?string $gaClientId = null,
+        public readonly string $source = 'storefront',
+        public readonly ?int $createdBy = null,
+        public readonly ?int $discountMinor = null,
+        public readonly ?string $discountNote = null,
+        public readonly ?int $shippingOverrideMinor = null,
     ) {}
+
+    public function isAdmin(): bool
+    {
+        return $this->source === 'admin';
+    }
 }

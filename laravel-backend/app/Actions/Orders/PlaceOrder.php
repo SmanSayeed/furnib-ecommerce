@@ -37,7 +37,14 @@ final class PlaceOrder
             throw new DomainException('Order has no items.');
         }
 
-        return DB::transaction(function () use ($data): Order {
+        // Every price/shipping/discount override below is honoured ONLY for an
+        // admin-created order. A storefront payload can carry these fields (it
+        // never should) and they are still ignored — the public checkout is byte
+        // -identical to before. This is the one place a price-tampering hole could
+        // enter, so the gate lives here, not in the caller.
+        $isAdmin = $data->isAdmin();
+
+        return DB::transaction(function () use ($data, $isAdmin): Order {
             $customer = $this->customers->findOrCreateByMobile(
                 $data->customerMobile,
                 $data->customerName,
@@ -78,38 +85,48 @@ final class PlaceOrder
                 // The customer is charged what the storefront advertised: the
                 // discounted price when there is a real discount, otherwise the
                 // regular price. Resolved from the DB inside the lock — the client
-                // never sends money.
-                $priceMinor = $product->effectivePrice()->toMinor();
+                // never sends money. An admin may override the unit price per line
+                // (e.g. a negotiated price); the override is ignored for storefront.
                 $regularMinor = $product->price->toMinor();
-                $discountedLine = $product->effectiveDiscount() !== null;
+                $priceMinor = ($isAdmin && isset($item['price_override']))
+                    ? max(0, (int) $item['price_override'])
+                    : $product->effectivePrice()->toMinor();
+                // A line counts as discounted (for the strike-through snapshot) when
+                // it is charged below the regular price, however that came about.
+                $discountedLine = $priceMinor < $regularMinor;
 
                 $lineMinor = $priceMinor * $qty;
                 $subtotalMinor += $lineMinor;
 
-                // Per-line advance (full / percentage / fixed-amount). The
-                // shipping-charge rule is order-level, added once below.
-                $advanceMinor += AdvancePayment::forLine(
-                    Money::fromMinor($lineMinor),
-                    (bool) $product->is_advance_payment,
-                    $product->advance_payment_type,
-                    $product->partial_amount_type,
-                    $product->partial_amount,
-                )->toMinor();
+                // The product advance rules drive a storefront prepay. An admin
+                // order is paid however the admin records it (a manual ledger
+                // entry), so the automatic advance is skipped entirely.
+                if (! $isAdmin) {
+                    // Per-line advance (full / percentage / fixed-amount). The
+                    // shipping-charge rule is order-level, added once below.
+                    $advanceMinor += AdvancePayment::forLine(
+                        Money::fromMinor($lineMinor),
+                        (bool) $product->is_advance_payment,
+                        $product->advance_payment_type,
+                        $product->partial_amount_type,
+                        $product->partial_amount,
+                    )->toMinor();
 
-                // A shipping-charge advance only makes sense when the product
-                // actually incurs delivery: a free-shipping product has nothing
-                // to prepay, so it neither triggers the advance nor forces a zone.
-                if ($product->is_advance_payment
-                    && $product->advance_payment_type === 'partial'
-                    && $product->partial_amount_type === 'shipping'
-                    && $product->shipping_charge_allowed) {
-                    $needsShippingAdvance = true;
-                }
+                    // A shipping-charge advance only makes sense when the product
+                    // actually incurs delivery: a free-shipping product has nothing
+                    // to prepay, so it neither triggers the advance nor forces a zone.
+                    if ($product->is_advance_payment
+                        && $product->advance_payment_type === 'partial'
+                        && $product->partial_amount_type === 'shipping'
+                        && $product->shipping_charge_allowed) {
+                        $needsShippingAdvance = true;
+                    }
 
-                // A FULL advance prepays the entire order, so it must include the
-                // delivery charge too (not just the product price).
-                if ($product->is_advance_payment && $product->advance_payment_type === 'full') {
-                    $fullAdvanceInOrder = true;
+                    // A FULL advance prepays the entire order, so it must include the
+                    // delivery charge too (not just the product price).
+                    if ($product->is_advance_payment && $product->advance_payment_type === 'full') {
+                        $fullAdvanceInOrder = true;
+                    }
                 }
 
                 $lines[] = [
@@ -142,15 +159,18 @@ final class PlaceOrder
 
             // Effective shipping, via the one calculator the admin zone-change path
             // uses too — so placement and a later correction can never disagree.
-            $shippingMinor = $this->shipping->minorFor(
-                collect($lines)
-                    ->map(fn (array $line): ?array => ($product = $products->get($line['product_id'])) === null
-                        ? null
-                        : ['product' => $product, 'qty' => $line['qty']])
-                    ->filter()
-                    ->values(),
-                $zone,
-            );
+            // An admin may override the computed shipping with a manual figure.
+            $shippingMinor = ($isAdmin && $data->shippingOverrideMinor !== null)
+                ? max(0, $data->shippingOverrideMinor)
+                : $this->shipping->minorFor(
+                    collect($lines)
+                        ->map(fn (array $line): ?array => ($product = $products->get($line['product_id'])) === null
+                            ? null
+                            : ['product' => $product, 'qty' => $line['qty']])
+                        ->filter()
+                        ->values(),
+                    $zone,
+                );
 
             // Shipping-charge advance (partial → shipping): the customer prepays
             // the delivery fee of the zone they selected, so a zone is required.
@@ -165,7 +185,13 @@ final class PlaceOrder
                 $advanceMinor += $shippingMinor;
             }
 
-            $totalMinor = $subtotalMinor + $shippingMinor;
+            // Order-level discount (admin only), capped at the subtotal so the
+            // total can never go negative.
+            $discountMinor = ($isAdmin && $data->discountMinor !== null)
+                ? min(max(0, $data->discountMinor), $subtotalMinor)
+                : 0;
+
+            $totalMinor = max(0, $subtotalMinor - $discountMinor + $shippingMinor);
             // Advance can never exceed the order total.
             $advanceMinor = min($advanceMinor, $totalMinor);
 
@@ -174,7 +200,12 @@ final class PlaceOrder
                 'customer_id' => $customer->id,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
+                'source' => $data->source,
+                'created_by' => $data->createdBy,
                 'subtotal' => Money::fromMinor($subtotalMinor),
+                'discount' => Money::fromMinor($discountMinor),
+                'discount_note' => $discountMinor > 0 ? $data->discountNote : null,
+                'discount_by' => $discountMinor > 0 ? $data->createdBy : null,
                 'shipping_cost' => Money::fromMinor($shippingMinor),
                 'total' => Money::fromMinor($totalMinor),
                 'advance_amount' => Money::fromMinor($advanceMinor),

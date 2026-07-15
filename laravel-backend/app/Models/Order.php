@@ -27,6 +27,8 @@ use Illuminate\Support\Carbon;
  * @property string $pending_reason
  * @property string|null $pending_note
  * @property string $payment_status
+ * @property string $source 'storefront' | 'admin'
+ * @property int|null $created_by
  * @property Money $subtotal
  * @property Money $discount Order-level admin discount (paisa). 0 = none.
  * @property string|null $discount_note
@@ -89,6 +91,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_no', 'customer_id', 'status', 'pending_reason', 'pending_note', 'payment_status',
+        'source', 'created_by',
         'subtotal', 'discount', 'discount_note', 'discount_by',
         'shipping_cost', 'total', 'advance_amount', 'advance_paid',
         'shipping_zone_id', 'address', 'customer_ip', 'user_agent', 'notes', 'admin_note',

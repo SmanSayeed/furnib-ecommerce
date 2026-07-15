@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Orders\ApplyOrderDiscount;
+use App\Actions\Orders\CreateAdminOrder;
 use App\Actions\Orders\UpdateOrderCustomer;
 use App\Enums\OrderNotificationEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApplyOrderDiscountRequest;
 use App\Http\Requests\Admin\OrderBulkStatusRequest;
+use App\Http\Requests\Admin\StoreAdminOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderCustomerRequest;
 use App\Http\Requests\Admin\UpdateOrderNoteRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
@@ -18,12 +20,14 @@ use App\Models\Courier;
 use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\ShippingZone;
 use App\Repositories\Eloquent\OrderRepository;
 use App\Services\Courier\CustomerCourierStats;
 use App\Services\Notifications\OrderNotificationService;
 use App\Support\Money;
 use App\Support\Orders\PayLink;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -409,5 +413,79 @@ class OrderController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Payment link SMS resent.')]);
 
         return back();
+    }
+
+    /**
+     * The admin "Create order" page — staff placing an order on a customer's
+     * behalf. Renders the zone list; products are fetched on demand via
+     * productSearch(). Gated by orders.manage.
+     */
+    public function create(): Response
+    {
+        return Inertia::render('orders/create', [
+            'shippingZones' => ShippingZone::query()->active()->ordered()
+                ->get(['id', 'name', 'cost'])
+                ->map(fn (ShippingZone $z): array => [
+                    'id' => $z->id,
+                    'name' => $z->name,
+                    'cost' => $z->cost->format('৳'),
+                ])
+                ->all(),
+        ]);
+    }
+
+    /**
+     * Create the order through the same placement engine the storefront uses, with
+     * the staff-only levers (unit price / discount / shipping override) unlocked by
+     * source = admin — a gate enforced inside PlaceOrder, never here. On success we
+     * land on the new order's detail page (which carries the copyable pay link).
+     */
+    public function store(StoreAdminOrderRequest $request, CreateAdminOrder $create): RedirectResponse
+    {
+        /** @var array<string, mixed> $data */
+        $data = $request->validated();
+
+        try {
+            $order = $create->handle($data, $request->user());
+        } catch (\DomainException $e) {
+            throw ValidationException::withMessages(['items' => $e->getMessage()]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Order :no created.', ['no' => $order->order_no])]);
+
+        return redirect()->route('admin.orders.show', $order);
+    }
+
+    /**
+     * Lightweight product lookup for the create page's picker. Returns the unit
+     * price already resolved to the effective (discount-aware) price, so the form
+     * defaults match what placement would charge. Gated by orders.manage.
+     */
+    public function productSearch(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        $products = Product::query()
+            ->published()
+            ->when($q !== '', fn ($query) => $query->where(fn ($w) => $w
+                ->where('title', 'like', "%{$q}%")
+                ->orWhere('sku', 'like', "%{$q}%")))
+            ->orderBy('title')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'products' => $products->map(fn (Product $p): array => [
+                'id' => $p->id,
+                'title' => $p->title,
+                'sku' => $p->sku,
+                'stock_amount' => $p->stock_amount,
+                'in_stock' => $p->stock_status && $p->stock_amount > 0,
+                'unit_price_minor' => $p->effectivePrice()->toMinor(),
+                'unit_price' => $p->effectivePrice()->format('৳'),
+                'regular_price' => $p->price->format('৳'),
+                'is_discounted' => $p->effectivePrice()->toMinor() < $p->price->toMinor(),
+            ])->all(),
+        ]);
     }
 }

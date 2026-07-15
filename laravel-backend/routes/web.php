@@ -152,6 +152,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Order-level admin discount (0 clears it). Recomputes total + reconciles.
     Route::put('orders/{order}/discount', [OrderController::class, 'applyDiscount'])
         ->middleware('permission:orders.manage')->name('orders.discount');
+    // Re-send the customer's pay-link SMS (rate-limited to 3/hour/order).
+    Route::post('orders/{order}/resend-pay-link', [OrderController::class, 'resendPayLink'])
+        ->middleware('permission:orders.manage')->name('orders.resend-pay-link');
     // Manual payment ledger adjustment (credit = received, debit = refund).
     Route::post('orders/{order}/payments', [OrderPaymentController::class, 'store'])
         ->middleware('permission:orders.manage')->name('orders.payments.store');

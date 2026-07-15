@@ -80,6 +80,8 @@ type Order = {
     notes: string | null;
     /** Staff's own note. Survives every status change. */
     admin_note: string | null;
+    /** Customer self-service payment link (HMAC-tokenised). */
+    pay_url: string;
     created_at: string | null;
     customer: { name: string | null; mobile: string | null; email: string | null };
     shipping_zone: string | null;
@@ -577,6 +579,61 @@ function AdminNoteCard({ order, canEdit }: { order: Order; canEdit: boolean }) {
 }
 
 /**
+ * The customer's self-service payment link — copy it to paste into WhatsApp, open
+ * it to preview, or re-send the SMS (rate-limited server-side to 3/hour/order).
+ * The link auto-reflects the current total, so a resend after a discount carries
+ * the reduced amount.
+ */
+function PayLinkCard({ order, canManage }: { order: Order; canManage: boolean }) {
+    const [copied, setCopied] = useState(false);
+
+    const copy = () => {
+        navigator.clipboard?.writeText(order.pay_url).then(() => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1500);
+        });
+    };
+
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Payment link</h2>
+            <input
+                readOnly
+                value={order.pay_url}
+                onFocus={(e) => e.currentTarget.select()}
+                className="mb-2 w-full truncate rounded-md border border-input bg-muted/40 px-3 py-2 font-mono text-xs shadow-xs"
+            />
+            <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={copy}>
+                    {copied ? 'Copied ✓' : 'Copy'}
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                    <a href={order.pay_url} target="_blank" rel="noopener noreferrer">
+                        Open
+                    </a>
+                </Button>
+                {canManage && (
+                    <Form
+                        method="post"
+                        action={`/admin/orders/${order.id}/resend-pay-link`}
+                        options={{ preserveScroll: true }}
+                    >
+                        {({ processing, errors }) => (
+                            <div className="flex flex-col gap-1">
+                                <Button type="submit" variant="outline" size="sm" disabled={processing}>
+                                    Resend SMS
+                                </Button>
+                                <InputError message={errors.pay_link} />
+                            </div>
+                        )}
+                    </Form>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/**
  * Order-level discount. A money change: it moves the total, hence the due and the
  * amount the pay link + invoice charge — so the server rejects it on a paid or
  * already-booked order and shows the reason here. Zero clears the discount.
@@ -981,6 +1038,8 @@ export default function OrderShow({
                             zones={shippingZones}
                             canEdit={canManagePayments}
                         />
+
+                        <PayLinkCard order={order} canManage={canManagePayments} />
 
                         <DiscountCard order={order} canEdit={canManagePayments} />
 

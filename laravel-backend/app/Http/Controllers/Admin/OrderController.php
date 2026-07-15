@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Orders\ApplyOrderDiscount;
 use App\Actions\Orders\UpdateOrderCustomer;
+use App\Enums\OrderNotificationEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApplyOrderDiscountRequest;
 use App\Http\Requests\Admin\OrderBulkStatusRequest;
@@ -14,14 +15,18 @@ use App\Http\Requests\Admin\UpdateOrderNoteRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Courier;
+use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ShippingZone;
 use App\Repositories\Eloquent\OrderRepository;
 use App\Services\Courier\CustomerCourierStats;
+use App\Services\Notifications\OrderNotificationService;
 use App\Support\Money;
+use App\Support\Orders\PayLink;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -137,6 +142,9 @@ class OrderController extends Controller
                 'address' => $order->address,
                 'notes' => $order->notes,
                 'admin_note' => $order->admin_note,
+                // The customer's self-service payment link — copyable/resendable by
+                // the admin. The token is an HMAC of the order_no (unguessable).
+                'pay_url' => PayLink::for($order),
                 'created_at' => $order->created_at?->toDateTimeString(),
                 'customer' => [
                     'name' => $order->customer?->name,
@@ -360,6 +368,45 @@ class OrderController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Discount applied.')]);
+
+        return back();
+    }
+
+    /**
+     * Re-send the customer's pay-link SMS (the "Placed" notification). Rate-limited
+     * to 3/hour/order so it can never be turned into an SMS-bill DoS. The channel's
+     * idempotency guard would otherwise swallow a repeat, so we clear this order's
+     * prior "placed" logs first, then send synchronously for immediate feedback.
+     * The message is re-rendered from the live order row, so a resend after a
+     * discount carries the updated due + pay link automatically.
+     */
+    public function resendPayLink(
+        Request $request,
+        Order $order,
+        OrderNotificationService $notifications,
+    ): RedirectResponse {
+        $key = 'resend-pay-link:'.$order->id;
+
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($key) / 60);
+
+            throw ValidationException::withMessages([
+                'pay_link' => "Too many resends for this order. Try again in about {$minutes} min.",
+            ]);
+        }
+
+        RateLimiter::hit($key, 3600);
+
+        // Clear this order's "placed" notification logs so the channel idempotency
+        // guard lets the message go out again.
+        NotificationLog::query()
+            ->where('order_id', $order->id)
+            ->where('event', OrderNotificationEvent::Placed->value)
+            ->delete();
+
+        $notifications->notify($order, OrderNotificationEvent::Placed);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Payment link SMS resent.')]);
 
         return back();
     }

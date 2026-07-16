@@ -20,6 +20,7 @@ use Spatie\Activitylog\LogOptions;
  * @property int $id
  * @property int $order_id
  * @property string $gateway
+ * @property string|null $method bKash/Nagad/Rocket/bank/cash/other for manual entries
  * @property Money $amount
  * @property string $type
  * @property string $direction
@@ -54,6 +55,24 @@ class Payment extends Model
 
     public const GATEWAY_MANUAL = 'manual';
 
+    // The channel a manual payment came through. `other` pairs with a free-text note.
+    public const METHOD_BKASH = 'bkash';
+
+    public const METHOD_NAGAD = 'nagad';
+
+    public const METHOD_ROCKET = 'rocket';
+
+    public const METHOD_BANK = 'bank';
+
+    public const METHOD_CASH = 'cash';
+
+    public const METHOD_OTHER = 'other';
+
+    public const METHODS = [
+        self::METHOD_BKASH, self::METHOD_NAGAD, self::METHOD_ROCKET,
+        self::METHOD_BANK, self::METHOD_CASH, self::METHOD_OTHER,
+    ];
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_SUCCESS = 'success';
@@ -73,7 +92,7 @@ class Payment extends Model
     ];
 
     protected $fillable = [
-        'order_id', 'gateway', 'amount', 'type', 'direction', 'tran_id', 'val_id', 'status', 'note', 'raw_payload',
+        'order_id', 'gateway', 'method', 'amount', 'type', 'direction', 'tran_id', 'val_id', 'status', 'note', 'raw_payload',
     ];
 
     protected function casts(): array
@@ -90,7 +109,7 @@ class Payment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['order_id', 'gateway', 'amount', 'type', 'direction', 'tran_id', 'val_id', 'status', 'note'])
+            ->logOnly(['order_id', 'gateway', 'method', 'amount', 'type', 'direction', 'tran_id', 'val_id', 'status', 'note'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('Payment');

@@ -28,7 +28,16 @@ type Line = {
     regular_price: string;
 };
 
-type Props = { shippingZones: ZoneOption[] };
+type Props = { shippingZones: ZoneOption[]; paymentMethods: string[] };
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+    bkash: 'bKash',
+    nagad: 'Nagad',
+    rocket: 'Rocket',
+    bank: 'Bank',
+    cash: 'Cash',
+    other: 'Other',
+};
 
 const inputClass =
     'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring/50';
@@ -38,7 +47,7 @@ function taka(formatted: string): number {
     return Number(formatted.replace(/[^0-9.]/g, '')) || 0;
 }
 
-export default function OrdersCreate({ shippingZones }: Props) {
+export default function OrdersCreate({ shippingZones, paymentMethods }: Props) {
     const { data, setData, post, processing, errors, transform } = useForm({
         customer: { name: '', mobile: '', email: '' },
         address: '',
@@ -48,6 +57,8 @@ export default function OrdersCreate({ shippingZones }: Props) {
         discount_note: '',
         shipping_override: '',
         advance_paid: '',
+        advance_method: '',
+        advance_note: '',
         confirm: false,
         send_sms: false,
     });
@@ -353,6 +364,38 @@ export default function OrdersCreate({ shippingZones }: Props) {
                                     />
                                     <InputError message={errors.advance_paid} />
                                 </div>
+                                {Number(data.advance_paid) > 0 && (
+                                    <>
+                                        <div>
+                                            <label className="mb-1 block text-xs text-muted-foreground">Received via</label>
+                                            <select
+                                                className={inputClass}
+                                                value={data.advance_method}
+                                                onChange={(e) => setData('advance_method', e.target.value)}
+                                            >
+                                                <option value="" disabled>
+                                                    Method (bKash / Nagad / …)
+                                                </option>
+                                                {paymentMethods.map((m) => (
+                                                    <option key={m} value={m}>
+                                                        {PAYMENT_METHOD_LABELS[m] ?? m}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <InputError message={errors.advance_method} />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-xs text-muted-foreground">Transaction ID / ref</label>
+                                            <input
+                                                className={inputClass}
+                                                value={data.advance_note}
+                                                onChange={(e) => setData('advance_note', e.target.value)}
+                                                placeholder="TrxID / bank ref / note"
+                                            />
+                                            <InputError message={errors.advance_note} />
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Shipping shown is an estimate (zone base). The server recalculates the exact delivery — including

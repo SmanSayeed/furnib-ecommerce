@@ -164,6 +164,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Order-level admin discount (0 clears it). Recomputes total + reconciles.
     Route::put('orders/{order}/discount', [OrderController::class, 'applyDiscount'])
         ->middleware('permission:orders.manage')->name('orders.discount');
+    // Manual delivery-charge override. Recomputes total + reconciles.
+    Route::put('orders/{order}/shipping', [OrderController::class, 'updateShipping'])
+        ->middleware('permission:orders.manage')->name('orders.shipping');
     // Re-send the customer's pay-link SMS (rate-limited to 3/hour/order).
     Route::post('orders/{order}/resend-pay-link', [OrderController::class, 'resendPayLink'])
         ->middleware('permission:orders.manage')->name('orders.resend-pay-link');

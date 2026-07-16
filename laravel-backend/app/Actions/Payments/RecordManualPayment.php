@@ -22,14 +22,17 @@ final class RecordManualPayment
 {
     public function __construct(private readonly OrderPaymentReconciler $reconciler) {}
 
-    public function handle(Order $order, string $direction, Money $amount, string $note): Payment
+    public function handle(Order $order, string $direction, Money $amount, string $note, ?string $method = null): Payment
     {
-        return DB::transaction(function () use ($order, $direction, $amount, $note): Payment {
+        return DB::transaction(function () use ($order, $direction, $amount, $note, $method): Payment {
             $locked = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
 
             $payment = Payment::query()->create([
                 'order_id' => $locked->id,
                 'gateway' => Payment::GATEWAY_MANUAL,
+                // The channel the money moved through (bKash/Nagad/…); the tran id /
+                // bank reference lives in the note.
+                'method' => $method,
                 'amount' => $amount,
                 'type' => Payment::TYPE_MANUAL,
                 'direction' => $direction,

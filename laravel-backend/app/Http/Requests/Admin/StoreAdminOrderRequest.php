@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Payment;
 use App\Support\MobileNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -96,6 +97,13 @@ class StoreAdminOrderRequest extends FormRequest
 
             'advance_paid' => ['nullable', 'numeric', 'min:0'],
             'advance_paid_minor' => ['nullable', 'integer', 'min:0'],
+            // When an advance is collected up front, capture HOW (bKash/Nagad/…) and
+            // its transaction id / reference in the note.
+            'advance_method' => [
+                Rule::requiredIf(fn (): bool => (int) $this->input('advance_paid_minor') > 0),
+                'nullable', Rule::in(Payment::METHODS),
+            ],
+            'advance_note' => ['nullable', 'string', 'max:255'],
 
             'confirm' => ['boolean'],
             'send_sms' => ['boolean'],

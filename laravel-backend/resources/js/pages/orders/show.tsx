@@ -22,12 +22,23 @@ type Item = {
 type PaymentRow = {
     id: number;
     gateway: string;
+    /** bKash/Nagad/Rocket/bank/cash/other for a manual entry; null for gateway rows. */
+    method: string | null;
     amount: string;
     type: string;
     direction: string;
     status: string;
     note: string | null;
     at: string | null;
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+    bkash: 'bKash',
+    nagad: 'Nagad',
+    rocket: 'Rocket',
+    bank: 'Bank',
+    cash: 'Cash',
+    other: 'Other',
 };
 
 type ShipmentInfo = {
@@ -441,11 +452,13 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
 function PaymentsCard({
     order,
     canManage,
+    methods,
     direction,
     setDirection,
 }: {
     order: Order;
     canManage: boolean;
+    methods: string[];
     direction: string;
     setDirection: (d: string) => void;
 }) {
@@ -471,7 +484,7 @@ function PaymentsCard({
                                         {p.status}
                                     </span>
                                     <span className="text-xs text-muted-foreground capitalize">
-                                        {p.gateway}
+                                        {p.method ? PAYMENT_METHOD_LABELS[p.method] ?? p.method : p.gateway}
                                         {p.type === 'manual' ? ' · manual' : ''}
                                     </span>
                                 </div>
@@ -511,11 +524,26 @@ function PaymentsCard({
                                     />
                                 </div>
                                 <InputError message={errors.amount} />
+                                <select
+                                    name="method"
+                                    defaultValue=""
+                                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                >
+                                    <option value="" disabled>
+                                        Method (bKash / Nagad / …)
+                                    </option>
+                                    {methods.map((m) => (
+                                        <option key={m} value={m}>
+                                            {PAYMENT_METHOD_LABELS[m] ?? m}
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.method} />
                                 <input
                                     name="note"
                                     type="text"
                                     maxLength={255}
-                                    placeholder="Note (required) — e.g. bKash received, partial refund"
+                                    placeholder="Transaction ID / bank ref / note (required)"
                                     className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                                 />
                                 <InputError message={errors.note} />
@@ -629,6 +657,57 @@ function PayLinkCard({ order, canManage }: { order: Order; canManage: boolean })
                     </Form>
                 )}
             </div>
+        </div>
+    );
+}
+
+/**
+ * Manual delivery-charge override for this specific order. Shipping is normally
+ * derived from the zone, but an order sometimes needs a hand-set figure (negotiated
+ * free delivery, a remote-area surcharge, a correction). It moves the total, so the
+ * server rejects it on a paid or already-booked order. Note: a later zone change
+ * re-derives shipping and replaces this override.
+ */
+function ShippingCard({ order, canEdit }: { order: Order; canEdit: boolean }) {
+    const current = Number((order.shipping_cost ?? '').replace(/[^0-9.]/g, '')) || 0;
+
+    if (!canEdit) {
+return null;
+}
+
+    return (
+        <div className="rounded-xl border bg-card p-4">
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Delivery charge</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+                Override the delivery charge for this order. The pay link, due and invoice follow. Not allowed on a
+                paid or already-booked order. A later zone change re-calculates and replaces this.
+            </p>
+            <Form
+                method="put"
+                action={`/admin/orders/${order.id}/shipping`}
+                options={{ preserveScroll: true }}
+                className="space-y-3"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <div>
+                            <label className="mb-1 block text-xs text-muted-foreground">Delivery charge (৳)</label>
+                            <input
+                                type="number"
+                                name="shipping_cost"
+                                min={0}
+                                step={1}
+                                defaultValue={current}
+                                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            />
+                            <InputError message={errors.shipping_cost} />
+                        </div>
+                        <Button type="submit" variant="outline" className="w-full" disabled={processing}>
+                            Update delivery charge
+                        </Button>
+                    </>
+                )}
+            </Form>
         </div>
     );
 }
@@ -842,6 +921,7 @@ export default function OrderShow({
     pendingReasons,
     shippingZones,
     canManagePayments,
+    paymentMethods,
     courierStats,
     couriers,
 }: {
@@ -850,6 +930,7 @@ export default function OrderShow({
     pendingReasons: string[];
     shippingZones: ZoneOption[];
     canManagePayments: boolean;
+    paymentMethods: string[];
     courierStats: CourierStats | null;
     couriers: CourierOption[];
 }) {
@@ -939,7 +1020,7 @@ export default function OrderShow({
                             </div>
                         </div>
 
-                        <PaymentsCard order={order} canManage={canManagePayments} direction={direction} setDirection={setDirection} />
+                        <PaymentsCard order={order} canManage={canManagePayments} methods={paymentMethods} direction={direction} setDirection={setDirection} />
                     </div>
 
                     <div className="space-y-4">
@@ -1042,6 +1123,8 @@ export default function OrderShow({
                         <PayLinkCard order={order} canManage={canManagePayments} />
 
                         <DiscountCard order={order} canEdit={canManagePayments} />
+
+                        <ShippingCard order={order} canEdit={canManagePayments} />
 
                         <AdminNoteCard order={order} canEdit={canManagePayments} />
 

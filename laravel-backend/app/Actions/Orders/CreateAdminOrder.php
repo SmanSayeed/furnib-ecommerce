@@ -80,11 +80,17 @@ final class CreateAdminOrder
         $advanceMinor = min((int) ($data['advance_paid_minor'] ?? 0), $order->total->toMinor());
 
         if ($advanceMinor > 0) {
+            $method = isset($data['advance_method']) ? (string) $data['advance_method'] : null;
+            $note = isset($data['advance_note']) && (string) $data['advance_note'] !== ''
+                ? (string) $data['advance_note']
+                : 'Advance collected at admin order creation.';
+
             $this->recordManual->handle(
                 $order,
                 Payment::DIRECTION_CREDIT,
                 Money::fromMinor($advanceMinor),
-                'Advance collected at admin order creation.',
+                $note,
+                $method,
             );
         }
 

@@ -136,14 +136,29 @@ it('records an advance as a manual payment and derives the payment status', func
     $product = sellable(['price' => 1000]);
 
     actingAs($this->manager)
-        ->post('/admin/orders', createPayload($product, ['advance_paid' => 500]))
+        ->post('/admin/orders', createPayload($product, [
+            'advance_paid' => 500,
+            'advance_method' => 'bkash',
+            'advance_note' => 'TrxID ABC123',
+        ]))
         ->assertRedirect();
 
     $order = Order::query()->latest('id')->firstOrFail();
+    $payment = $order->payments->first();
 
     expect($order->advance_paid->toMinor())->toBe(50000)
         ->and($order->payment_status)->toBe('partial')
-        ->and($order->payments)->toHaveCount(1);
+        ->and($order->payments)->toHaveCount(1)
+        ->and($payment->method)->toBe('bkash')
+        ->and($payment->note)->toBe('TrxID ABC123');
+});
+
+it('requires a method when an advance is collected at creation', function () {
+    $product = sellable();
+
+    actingAs($this->manager)
+        ->post('/admin/orders', createPayload($product, ['advance_paid' => 500]))
+        ->assertSessionHasErrors('advance_method');
 });
 
 it('confirms the order immediately when asked', function () {

@@ -40,6 +40,9 @@ class StoreManualPaymentRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:1'],
             'amount_minor' => ['required', 'integer', 'min:1'],
             'direction' => ['required', Rule::in(Payment::DIRECTIONS)],
+            // Which channel the money moved through — bKash/Nagad/Rocket/bank/cash/other.
+            'method' => ['required', Rule::in(Payment::METHODS)],
+            // The transaction id / bank reference / any detail for this entry.
             'note' => ['required', 'string', 'max:255'],
         ];
     }

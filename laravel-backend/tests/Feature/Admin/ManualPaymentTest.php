@@ -46,15 +46,17 @@ it('records a manual credit and reconciles advance_paid (taka -> paisa)', functi
         ->post("/admin/orders/{$order->id}/payments", [
             'direction' => 'credit',
             'amount' => '1000', // ৳1000 → 100000 paisa
-            'note' => 'bKash received',
+            'method' => 'bkash',
+            'note' => 'TrxID 9XY12ABZ',
         ])->assertRedirect();
 
     $payment = $order->payments()->firstOrFail();
     expect($payment->amount->toMinor())->toBe(100000)
         ->and($payment->direction)->toBe('credit')
         ->and($payment->gateway)->toBe('manual')
+        ->and($payment->method)->toBe('bkash')
         ->and($payment->type)->toBe('manual')
-        ->and($payment->note)->toBe('bKash received');
+        ->and($payment->note)->toBe('TrxID 9XY12ABZ');
 
     expect($order->refresh()->advance_paid->toMinor())->toBe(100000)
         ->and($order->payment_status)->toBe('partial');
@@ -72,6 +74,7 @@ it('records a manual debit (refund) and reduces advance_paid', function () {
         ->post("/admin/orders/{$order->id}/payments", [
             'direction' => 'debit',
             'amount' => '500', // refund ৳500
+            'method' => 'bkash',
             'note' => 'Partial refund for damage',
         ])->assertRedirect();
 
@@ -87,7 +90,7 @@ it('never touches the original gateway payment row', function () {
 
     actingAs(paymentManager())
         ->post("/admin/orders/{$order->id}/payments", [
-            'direction' => 'credit', 'amount' => '1000', 'note' => 'Cash top-up',
+            'direction' => 'credit', 'amount' => '1000', 'method' => 'cash', 'note' => 'Cash top-up',
         ])->assertRedirect();
 
     // Original row unchanged; a NEW row was appended.
@@ -105,10 +108,28 @@ it('rejects a refund larger than the amount paid', function () {
 
     actingAs(paymentManager())
         ->post("/admin/orders/{$order->id}/payments", [
-            'direction' => 'debit', 'amount' => '2000', 'note' => 'Too much',
+            'direction' => 'debit', 'amount' => '2000', 'method' => 'bank', 'note' => 'Too much',
         ])->assertSessionHasErrors('amount');
 
     expect($order->refresh()->advance_paid->toMinor())->toBe(100000); // unchanged
+});
+
+it('requires a payment method', function () {
+    $order = manualOrder();
+
+    actingAs(paymentManager())
+        ->post("/admin/orders/{$order->id}/payments", [
+            'direction' => 'credit', 'amount' => '1000', 'note' => 'x',
+        ])->assertSessionHasErrors('method');
+});
+
+it('rejects an unknown payment method', function () {
+    $order = manualOrder();
+
+    actingAs(paymentManager())
+        ->post("/admin/orders/{$order->id}/payments", [
+            'direction' => 'credit', 'amount' => '1000', 'method' => 'paypal', 'note' => 'x',
+        ])->assertSessionHasErrors('method');
 });
 
 it('requires a note', function () {
@@ -116,7 +137,7 @@ it('requires a note', function () {
 
     actingAs(paymentManager())
         ->post("/admin/orders/{$order->id}/payments", [
-            'direction' => 'credit', 'amount' => '1000',
+            'direction' => 'credit', 'amount' => '1000', 'method' => 'bkash',
         ])->assertSessionHasErrors('note');
 });
 
@@ -125,7 +146,7 @@ it('requires a positive amount', function () {
 
     actingAs(paymentManager())
         ->post("/admin/orders/{$order->id}/payments", [
-            'direction' => 'credit', 'amount' => '0', 'note' => 'x',
+            'direction' => 'credit', 'amount' => '0', 'method' => 'bkash', 'note' => 'x',
         ])->assertSessionHasErrors('amount');
 });
 
@@ -134,7 +155,7 @@ it('forbids a viewer without orders.manage', function () {
 
     actingAs(paymentViewer())
         ->post("/admin/orders/{$order->id}/payments", [
-            'direction' => 'credit', 'amount' => '1000', 'note' => 'x',
+            'direction' => 'credit', 'amount' => '1000', 'method' => 'bkash', 'note' => 'x',
         ])->assertForbidden();
 
     expect($order->payments()->count())->toBe(0);
@@ -145,7 +166,7 @@ it('marks the order paid when the ledger covers the total', function () {
 
     actingAs(paymentManager())
         ->post("/admin/orders/{$order->id}/payments", [
-            'direction' => 'credit', 'amount' => '3000', 'note' => 'Full cash',
+            'direction' => 'credit', 'amount' => '3000', 'method' => 'cash', 'note' => 'Full cash',
         ])->assertRedirect();
 
     expect($order->refresh()->payment_status)->toBe('paid')

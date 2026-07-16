@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Orders\ApplyOrderDiscount;
 use App\Actions\Orders\CreateAdminOrder;
 use App\Actions\Orders\UpdateOrderCustomer;
+use App\Actions\Orders\UpdateOrderShipping;
 use App\Enums\OrderNotificationEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApplyOrderDiscountRequest;
@@ -14,6 +15,7 @@ use App\Http\Requests\Admin\OrderBulkStatusRequest;
 use App\Http\Requests\Admin\StoreAdminOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderCustomerRequest;
 use App\Http\Requests\Admin\UpdateOrderNoteRequest;
+use App\Http\Requests\Admin\UpdateOrderShippingRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Http\Requests\Admin\UpdatePendingReasonRequest;
 use App\Models\Courier;
@@ -172,6 +174,8 @@ class OrderController extends Controller
                 'payments' => $order->payments->map(fn (Payment $p): array => [
                     'id' => $p->id,
                     'gateway' => $p->gateway,
+                    // The channel a manual payment came through (bKash/Nagad/…); null for gateway rows.
+                    'method' => $p->method,
                     'amount' => $p->amount->format('৳'),
                     'type' => $p->type,
                     'direction' => $p->direction,
@@ -197,6 +201,8 @@ class OrderController extends Controller
                 ->map(fn (ShippingZone $z): array => ['id' => $z->id, 'name' => $z->name])
                 ->all(),
             'canManagePayments' => $request->user()?->can('orders.manage') ?? false,
+            // Manual payment channels for the "record payment" select.
+            'paymentMethods' => Payment::METHODS,
             // Our own fraud/return-ratio signal for this customer's phone.
             'courierStats' => $fraud,
             // Active couriers the admin can book this order with.
@@ -377,6 +383,25 @@ class OrderController extends Controller
     }
 
     /**
+     * Manually override the order's delivery charge. Like a discount it moves the
+     * total, so it is guarded on paid / booked / below-paid edges inside the action
+     * and the pay link + invoice follow the recomputed row.
+     */
+    public function updateShipping(
+        UpdateOrderShippingRequest $request,
+        Order $order,
+        UpdateOrderShipping $updateShipping,
+    ): RedirectResponse {
+        $order->loadMissing('shipment');
+
+        $updateShipping->handle($order, (int) $request->integer('shipping_minor'));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Delivery charge updated.')]);
+
+        return back();
+    }
+
+    /**
      * Re-send the customer's pay-link SMS (the "Placed" notification). Rate-limited
      * to 3/hour/order so it can never be turned into an SMS-bill DoS. The channel's
      * idempotency guard would otherwise swallow a repeat, so we clear this order's
@@ -431,6 +456,8 @@ class OrderController extends Controller
                     'cost' => $z->cost->format('৳'),
                 ])
                 ->all(),
+            // Manual payment channels for the advance-collected select.
+            'paymentMethods' => Payment::METHODS,
         ]);
     }
 

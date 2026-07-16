@@ -37,7 +37,7 @@ class OrderPaymentController extends Controller
             ]);
         }
 
-        $this->recordManual->handle($order, $data['direction'], $amount, $data['note']);
+        $this->recordManual->handle($order, $data['direction'], $amount, $data['note'], $data['method']);
 
         $verb = $data['direction'] === Payment::DIRECTION_CREDIT ? 'Payment recorded.' : 'Refund recorded.';
         Inertia::flash('toast', ['type' => 'success', 'message' => __($verb)]);
